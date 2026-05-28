@@ -6,11 +6,7 @@ class Snake:
         self.x = x
         self.y = y
         self.body = [] # multiple snake tiles
-    def snake_body(self, canvas, tile_size):
-        for tile in self.body:
-            tile_x, tile_y = tile
-            canvas.create_rectangle(tile_x, tile_y, tile_x + tile_size, tile_y + tile_size, fill = "lime green")
-
+    
 class Food:
     def __init__(self, x, y):
         self.x = x
@@ -21,17 +17,17 @@ class Movement:
         self.velocity_x = 0
         self.velocity_y = 0
 
-    def change_direction(self, e): # e = event
-        if (e.keysym == "Up" and self.velocity_y != 1):
+    def change_direction_from_text(self, direction): # direction is a string, "Up", "Down", "Left", "Right"
+        if (direction == "Up" and self.velocity_y != 1):
             self.velocity_x = 0
             self.velocity_y = -1
-        elif (e.keysym == "Down" and self.velocity_y != -1):
+        elif (direction == "Down" and self.velocity_y != -1):
             self.velocity_x = 0
             self.velocity_y = 1
-        elif (e.keysym == "Left" and self.velocity_x != 1):
+        elif (direction == "Left" and self.velocity_x != 1):
             self.velocity_x = -1
             self.velocity_y = 0
-        elif (e.keysym == "Right" and self.velocity_x != -1):
+        elif (direction == "Right" and self.velocity_x != -1):
             self.velocity_x = 1
             self.velocity_y = 0
 
@@ -102,18 +98,27 @@ class Window:
         self.window.geometry(f"{window_width}x{window_height}+{window_x}+{window_y}") # update the geometry of the window to center it on the screen
 
     def draw_snake(self, snake):
-        self.canvas.create_rectangle(snake.x, snake.y, snake.x + self.tile_size, snake.y + self.tile_size, fill = "lime green")
+        # draw the snake head
+        self.canvas.create_rectangle(snake.x, snake.y, snake.x + self.tile_size, snake.y + self.tile_size, fill = "yellow")
+    
+    def snake_body(self, snake):
+        # draw the snake body
+        for tile in snake.body:
+            tile_x, tile_y = tile
+            self.canvas.create_rectangle(tile_x, tile_y, tile_x + self.tile_size, tile_y + self.tile_size, fill = "lime green")
 
     def draw_food(self, food):
+        # draw the food
         self.canvas.create_rectangle(food.x, food.y, food.x + self.tile_size, food.y + self.tile_size, fill = "red")
     
     def draw_score(self, score, game_over, width, height):
+        # draw the score at the top left corner, and if game over, draw the game over message at the center of the window
         if (game_over):
             self.canvas.create_text(width/2, height/2, font = 'Arial 20 ', text = f"GAME OVER: {score}", fill = 'white')
         else:
             self.canvas.create_text(30, 20, font = 'Arial 10', text = f"Score: {score}", fill = 'white')
     
-    def clear(self):
+    def clear(self): # clear the canvas for the next frame
         self.canvas.delete("all")
     
     def after(self, delay, function):
@@ -129,11 +134,11 @@ class Game:
 
         snake_x = random.randint(0, self.window.width - 1) * self.window.tile_size
         snake_y = random.randint(0, self.window.height - 1) * self.window.tile_size
-        self.snake = Snake(snake_x, snake_y)
+        self.snake = Snake(snake_x, snake_y) # initialize the snake at a random position
 
         food_x = random.randint(0, self.window.width - 1) * self.window.tile_size
         food_y = random.randint(0, self.window.height - 1) * self.window.tile_size
-        self.food = Food(food_x, food_y)
+        self.food = Food(food_x, food_y) # initialize the food at a random position
 
         self.game_over = False 
         self.score = 0
@@ -142,16 +147,206 @@ class Game:
         self.window.clear()
         self.window.draw_food(self.food)
         self.window.draw_snake(self.snake)
-        self.snake.snake_body(self.window.canvas, self.window.tile_size)
+        self.window.snake_body(self.snake)
         self.window.draw_score(self.score, self.game_over, self.window.WINDOW_WIDTH, self.window.WINDOW_HEIGHT)
 
-    def handle_key_press(self, e):
-        if (self.game_over and e.keysym == "space"): # press space to reset the game
-            self.reset()
-            return
-        self.movement.change_direction(e)
+    def change_direction(self, e):
+        self.movement.change_direction_from_text(e.keysym)
+
+    def get_next_position(self, direction): # get next position from the snake head
+        next_x = self.snake.x
+        next_y = self.snake.y
+
+        if (direction == "Up"):
+            next_y -= self.window.tile_size
+        elif (direction == "Down"):
+            next_y += self.window.tile_size
+        elif (direction == "Left"):
+            next_x -= self.window.tile_size
+        elif (direction == "Right"):
+            next_x += self.window.tile_size
+
+        return next_x, next_y
+    
+    def get_position_after(self, x, y, direction): # path cheking
+        if (direction == "Up"):
+            y -= self.window.tile_size
+        elif (direction == "Down"):
+            y += self.window.tile_size
+        elif (direction == "Left"):
+            x -= self.window.tile_size
+        elif (direction == "Right"):
+            x += self.window.tile_size
+
+        return x, y
+    
+    def is_safe_position(self, x, y): # check whether the position is safe for the snake to move to
+        # check whether the next move will hit the wall
+        if (x < 0 or x >= self.window.WINDOW_WIDTH):
+            return False
+        if (y < 0 or y >= self.window.WINDOW_HEIGHT):
+            return False
+        
+        # check whether the next move will hit the snake body
+        if ((x, y) in self.snake.body):
+            return False
+        
+        return True
+    
+    def is_opposite_direction(self, first_direction, second_direction): # check whether the second direction is opposite to the first direction to avoid loops or corner traps
+        if (first_direction == "Up" and second_direction == "Down"):
+            return True
+        elif (first_direction == "Down" and second_direction == "Up"):
+            return True
+        elif (first_direction == "Left" and second_direction == "Right"):
+            return True
+        elif (first_direction == "Right" and second_direction == "Left"):
+            return True
+        return False
+    
+    def count_safe_moves(self, first_direction): # count the number of safe moves after the first move in the given direction, which can be used to evaluate how good the first move is
+        count = 0
+        
+        first_x, first_y = self.get_next_position(first_direction)
+
+        for direction in ["Up", "Down", "Left", "Right"]:
+            if (self.is_opposite_direction(first_direction, direction)):
+                continue
+
+            next_x = first_x
+            next_y = first_y
+
+            if (direction == "Up"):
+                next_y -= self.window.tile_size
+            elif (direction == "Down"):
+                next_y += self.window.tile_size
+            elif (direction == "Left"):
+                next_x -= self.window.tile_size
+            elif (direction == "Right"):
+                next_x += self.window.tile_size
+            
+            if (next_x < 0 or next_x >= self.window.WINDOW_WIDTH):
+                continue
+            if (next_y < 0 or next_y >= self.window.WINDOW_HEIGHT):
+                continue
+            
+            if ((next_x, next_y) in self.snake.body):
+                continue
+
+            count += 1
+
+        return count
+    
+    def can_reach_food(self, first_direction):
+        start_x, start_y = self.get_next_position(first_direction)
+
+        if (not self.is_safe_position(start_x, start_y)):
+            return False
+        
+        positions_to_check = [(start_x, start_y)]
+        visited_positions = [(start_x, start_y)]
+
+        while (len(positions_to_check) > 0):
+            current_x, current_y = positions_to_check.pop(0)
+
+            if (current_x == self.food.x and current_y == self.food.y):
+                return True
+            
+            for direction in ["Up", "Down", "Left", "Right"]:
+                next_x, next_y = self.get_position_after(current_x, current_y, direction)
+
+                if ((next_x, next_y) in visited_positions):
+                    continue
+
+                if (not self.is_safe_position(next_x, next_y)):
+                    continue
+
+                visited_positions.append((next_x, next_y))
+                positions_to_check.append((next_x, next_y))
+        return False
+    
+    def distance_to_food_after(self, direction): # to make sure the snake move closer to the food
+        next_x, next_y = self.get_next_position(direction)
+
+        distance_x = abs(self.food.x - next_x)
+        distance_y = abs(self.food.y - next_y)
+
+        return (distance_x + distance_y) // self.window.tile_size
+    
+    def distance_to_food_now(self):
+        distance_x = abs(self.food.x - self.snake.x)
+        distance_y = abs(self.food.y - self.snake.y)
+
+        return (distance_x + distance_y) // self.window.tile_size
+    
+    def safe_move(self, direction): # check safety
+        # check whether the next move is safe 
+        if (not self.can_turn(direction)):
+            return False
+        
+        next_x, next_y = self.get_next_position(direction)
+        
+        return self.is_safe_position(next_x, next_y)
+    
+    def can_turn(self, direction): # make sure it cannot turn back to the opposite direction
+        if (direction == "Up" and self.movement.velocity_y == 1): # if the snake is currently moving down, it cannot turn up
+            return False
+        elif (direction == "Down" and self.movement.velocity_y == -1): # if the snake is currently moving up, it cannot turn down
+            return False
+        elif (direction == "Left" and self.movement.velocity_x == 1): # if the snake is currently moving right, it cannot turn left
+            return False
+        elif (direction == "Right" and self.movement.velocity_x == -1): # if the snake is currently moving left, it cannot turn right
+            return False
+        return True 
+
+    def bot_change_direction(self):
+        directions = []
+
+        if (self.food.x > self.snake.x):
+            directions.append("Right")
+        elif (self.food.x < self.snake.x):
+            directions.append("Left")
+
+        if (self.food.y > self.snake.y):
+            directions.append("Down")
+        elif (self.food.y < self.snake.y):
+            directions.append("Up")
+
+        directions.append("Up")
+        directions.append("Down")
+        directions.append("Left")
+        directions.append("Right")
+
+        best_direction = None
+        best_score = -999999 # comparing score
+        current_distance = self.distance_to_food_now()
+
+        for direction in directions: # score each safe direction and choose the best one
+            if (self.safe_move(direction)):
+                safe_count = self.count_safe_moves(direction)
+                food_distance = self.distance_to_food_after(direction)
+                can_reach_food = self.can_reach_food(direction)
+
+                score = safe_count * 10 - food_distance
+
+                if (food_distance < current_distance):  # more rewards if closer the food, avoid food which spam near the wall
+                    score += 20 
+
+                if (can_reach_food): # more rewards if can reach the food, avoid food which is blocked by the snake body
+                    score += 15
+                else:
+                    score -= 50
+
+                if (score > best_score):
+                    best_score = score
+                    best_direction = direction
+            
+        if (best_direction != None):
+            self.movement.change_direction_from_text(best_direction)
 
     def update(self):
+        self.bot_change_direction()
+
         ate_food, self.game_over = self.movement.move(self.snake, self.window.tile_size, self.food, self.window.width, self.window.height, self.game_over)
 
         if (ate_food):
@@ -187,7 +382,6 @@ class Game:
     def run(self):
         self.window.create_canvas()
         self.window.center_window()
-        self.window.window.bind("<KeyRelease>", self.handle_key_press) # when you press on any key and then game start
         self.draw()
         self.update()
         self.window.start()
