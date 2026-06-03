@@ -133,3 +133,15 @@ Development Order:
 ### What I learned
 - A rule-based bot can be good without being unbeatable.
 - To beat Snake consistently, a stronger strategy would be needed later. 
+
+## 2026-06-03
+
+### What I worked on
+- Split the bot logic into a separate `Bot.py` file.
+- Made the project files more readable and easier to debug.
+
+### Problems I found
+- No major bug
+
+### What I learned
+- Separating the bot into its own file makes the project easier to organize.
