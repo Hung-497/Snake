@@ -51,15 +51,15 @@ class Window:
     def draw_score_label(self):
         self.score_label = tk.Label(
             self.window,
-            text = 'Score: 0',
+            text = 'Score: 0 Match: 0 Best score: 0',
             font = ('consolas', 40),
             fg = 'black',
             bg = 'white'
         )
         self.score_label.pack(fill = 'x', side = 'top')
     
-    def update_score_label(self, score):
-        self.score_label.config(text = f'Score: {score}')
+    def update_score_label(self, score, games_played, best_score):
+        self.score_label.config(text = f'Score: {score} Match: {games_played} Best score: {best_score}')
 
     def clear_canvas(self):
         self.canvas.delete("all")

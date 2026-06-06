@@ -5,8 +5,9 @@ class Food:
     def __init__(self, window, snake):
         self.window = window
         self.snake = snake
-        self.x = random.randint(0, self.window.width - 1) * self.window.tile_size
-        self.y = random.randint(0, self.window.height - 1) * self.window.tile_size
+        self.x = 0
+        self.y = 0
+        self.spawn_food()
     
     def draw_food(self):
         self.window.canvas.create_oval(
