@@ -145,3 +145,43 @@ Development Order:
 
 ### What I learned
 - Separating the bot into its own file makes the project easier to organize.
+
+## 2026-06-04 - 2026-06-06
+
+### What I worked on
+- Added a simple tabular Q-learning bot.
+- Created a Q-table to store state-action values.
+- Used actions: Straight, Turn_Left, Turn_Right.
+- Added epsilon so the bot can explore random moves while learning.
+- Added epsilon decay after each game.
+- Made the game reset automatically after game over.
+- Added games played, best score, and average score tracking.
+- Improved the state from absolute food direction to relative food direction.
+- Added a safe-action filter so the bot only chooses safe moves when possible.
+
+### Problems I found
+- At first, the bot looked very silly because epsilon was high, so it made many random moves.
+- The first Q-learning state was too weak or confusing.
+- A smaller state with only danger straight/left/right became worse at first.
+- Food direction needed to match the bot actions, so I changed it to relative food direction.
+- The bot still trapped itself inside its body.
+- The safe-action method had a bug because it looped through an empty list.
+- Even after improving, tabular Q-learning still does not understand long-term body traps.
+
+### Experiment results
+- Early Q-learning result: low scores and unstable behavior.
+- Old state reached around best score 49.
+- Bad state experiment dropped to around best score 8.
+- Relative food direction improved the bot again.
+- Setting epsilon to 0 after training showed that random exploration was hurting good runs.
+- After fixing the safe-action filter, average score improved clearly.
+- Best score reached around 76.
+- Average score reached around 36-37.
+
+### What I learned
+- Epsilon means the bot sometimes chooses random actions.
+- Too much randomness can kill the snake even if the bot learned something useful.
+- The state must match the action system.
+- Safe immediate moves are not enough to beat Snake.
+- Tabular Q-learning can learn short-term food seeking and danger avoidance.
+- It still struggles with long-term planning.
