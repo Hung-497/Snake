@@ -185,3 +185,39 @@ Development Order:
 - Safe immediate moves are not enough to beat Snake.
 - Tabular Q-learning can learn short-term food seeking and danger avoidance.
 - It still struggles with long-term planning.
+
+## 2026-06-08
+
+### What I worked on
+- Started building a planning AI using a Hamiltonian cycle.
+- Learned that a Hamiltonian cycle visits every tile exactly once and connects back to the start.
+- Changed the board to `24 x 25` because a Hamiltonian cycle is easier when at least one side is even.
+- Created `HamiltonianBot.py`.
+- Added logic to convert pixel positions to grid positions.
+- Created a Hamiltonian cycle path for the board.
+- Added a method to find the next tile in the cycle.
+- Added a method to convert the next tile into a movement direction.
+- Added a cycle validator to check whether the cycle is valid.
+- Connected the Hamiltonian bot to the main game.
+- Added a game won scenario when the snake fills the whole board.
+
+### Problems I found
+- My first board was `25 x 25`, but that is not good for a clean Hamiltonian cycle because both sides are odd.
+- I needed to understand the difference between pixel positions, grid positions, and tile numbers.
+- The bot looked slow because it follows the full cycle instead of rushing directly to food.
+- When the snake filled the board, the game froze because food spawning tried to find an empty tile forever.
+- I needed to add a win condition before spawning new food.
+
+### Experiment results
+- The Hamiltonian cycle validator returned true.
+- The snake followed the cycle without hitting the wall or its own body.
+- The score kept increasing slowly but safely.
+- The snake eventually filled the board.
+- The final score reached `599` on a `24 x 25` board.
+- Since the board has `600` tiles and the snake head counts as one tile, `599` is the maximum score.
+
+### What I learned
+- A Hamiltonian cycle is a safe route that can make Snake beatable.
+- Planning AI can be more reliable than Q-learning for this problem.
+- Q-learning learned short-term behavior, but Hamiltonian planning solves the long-term body-trap problem.
+- A safe solution is not always the fastest solution.
