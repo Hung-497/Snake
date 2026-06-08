@@ -37,17 +37,26 @@ class Window:
         self.canvas.pack()
         self.window.update() # update the window to display the canvas
     
-    def draw_game_over(self, score, game_over):
-        if (game_over):
-            self.canvas.create_text(
-                self.WINDOW_WIDTH // 2, 
-                self.WINDOW_HEIGHT // 2, 
-                text = f'Game Over! \nYour score: {score}', 
-                fill = 'red', 
-                font = ('consolas', 70),
-                tag = 'gameover'
-                )
+    def draw_game_over(self, score):
+        self.canvas.create_text(
+            self.WINDOW_WIDTH // 2, 
+            self.WINDOW_HEIGHT // 2, 
+            text = f'Game Over! \nYour score: {score}', 
+            fill = 'red', 
+            font = ('consolas', 70),
+            tag = 'gameover'
+            )
     
+    def draw_game_won(self, score):
+        self.canvas.create_text(
+            self.WINDOW_WIDTH // 2, 
+            self.WINDOW_HEIGHT // 2, 
+            text = f'You won! \nYour score: {score}', 
+            fill = 'Yellow', 
+            font = ('consolas', 70),
+            tag = 'gamewon'
+            )
+        
     def draw_score_label(self):
         self.score_label = tk.Label(
             self.window,

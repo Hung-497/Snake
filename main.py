@@ -5,7 +5,7 @@ from Game import Game
 from Movement import Movement
 
 if __name__ == "__main__":
-    window = Window(25,25,25)
+    window = Window(24,25,25)
     snake = Snake(window)
     food = Food(window, snake)
     movement = Movement()
