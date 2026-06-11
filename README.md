@@ -31,7 +31,7 @@ If a small Tkinter window opens, Tkinter is working.
 ```bash
 cd Snake && python3 main.py
 ```
-Then you can choose a bot:
+Then you can choose a bot by entering the number `1`, `2`, or `3`:
 ```text
 1. Rule-based bot
 2. Q-learning bot
