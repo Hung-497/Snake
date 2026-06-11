@@ -2,7 +2,7 @@
 
 ## Aim of this project
 
-Play snake game using AI
+Build a Snake game and add AI bots to play it.
 Development Order:
 - Step 1: Create a snake game using Python
 - Step 2: Add simple rule-based bot
@@ -146,7 +146,7 @@ Development Order:
 ### What I learned
 - Separating the bot into its own file makes the project easier to organize.
 
-## 2026-06-04 - 2026-06-06
+## 2026-06-04 to 2026-06-06
 
 ### What I worked on
 - Added a simple tabular Q-learning bot.
@@ -212,7 +212,7 @@ Development Order:
 - The Hamiltonian cycle validator returned true.
 - The snake followed the cycle without hitting the wall or its own body.
 - The score kept increasing slowly but safely.
-- The snake eventually filled the board.
+- The snake eventually filled the board. Yassss
 - The final score reached `599` on a `24 x 25` board.
 - Since the board has `600` tiles and the snake head counts as one tile, `599` is the maximum score.
 
@@ -221,3 +221,30 @@ Development Order:
 - Planning AI can be more reliable than Q-learning for this problem.
 - Q-learning learned short-term behavior, but Hamiltonian planning solves the long-term body-trap problem.
 - A safe solution is not always the fastest solution.
+
+## 2026-06-09 to 2026-06-11
+
+### What I worked on
+- Studied Hamiltonian cycle and how it can be used to beat Snake.
+- Added a bot selection menu so I can choose rule-based, Q-learning, or Hamiltonian bot.
+- Added shortcut logic to make the Hamiltonian bot faster.
+- Added tail reachability checking.
+- Added flood fill to count reachable space before taking shortcuts.
+- Compared total moves between different matches.
+
+### Problems I found
+- Calling `get_best_shortcut_direction()` directly made the Hamiltonian bot act badly because it can return `None`.
+- I fixed it by using `get_next_direction()`, which falls back to the normal Hamiltonian cycle.
+- Some safety checks were placed after choosing `best_direction`, so bad moves could still be selected.
+- The max shortcut distance rule made the bot slower.
+
+### Experiment results
+- The pure Hamiltonian bot took around `85,000` moves.
+- After adding shortcut safety, tail reachability, and flood fill, the bot averaged around `47,000` moves.
+- In one test, 6 winning games averaged around `47,458` moves.
+
+### What I learned
+- Shortcuts must be checked carefully before using them.
+- Tail reachability helps check whether the snake still has an escape path.
+- Flood fill can count reachable space and reject risky shortcuts.
+- The order of safety checks matters.
