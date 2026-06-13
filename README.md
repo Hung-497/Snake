@@ -58,9 +58,15 @@ Then you can choose a bot by entering the number `1`, `2`, or `3`:
 
 *Results on the terminal*
 
+2. Hamiltonian Bot
 
+![demo_q_learning_bot](/img/Demo_HamiltonianBot.gif)
 
+*Display*
 
+![result_q_learning_bot](/img/Result_HamiltonianBot.png)
+
+*Results on the terminal*
 
 ## Project Structure
 
