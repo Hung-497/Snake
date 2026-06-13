@@ -39,9 +39,24 @@ Then you can choose a bot by entering the number `1`, `2`, or `3`:
 ```
 ## Demo
 1. Rule-based Bot
+
 ![demo_rule_based_bot](/img/Demo_RuleBasedBot.gif)
+
 *Display*
+
 ![result_rule_based_bot](/img/Result_RuleBasedBot.png)
+
+*Results on the terminal*
+
+2. Q-learning Bot
+
+![demo_q_learning_bot](/img/Demo_QLearningBot.gif)
+
+*Display*
+
+![result_q_learning_bot](/img/Result_QLearningBot.png)
+
+*Results on the terminal*
 
 
 
