@@ -42,7 +42,7 @@ Then you can choose a bot by entering the number `1`, `2`, or `3`:
 3. Hamiltonian bot
 ```
 
-## Bot results
+## Bot Results
 
 | Bot             | Result                                                              |
 | --------------- | ------------------------------------------------------------------- |
@@ -98,3 +98,7 @@ QLearningBot.py      # Tabular Q-learning bot
 HamiltonianBot.py    # Hamiltonian cycle bot
 DEVLOG.md            # Development diary
 ```
+
+## Development Diary
+
+I documented the learning process, bugs, experiments, and results in [DEVLOG.md](DEVLOG.md).
