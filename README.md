@@ -25,48 +25,64 @@ Tkinter usually comes with Python. You can check it with:
 ```bash
 python3 -m tkinter
 ```
+
 If a small Tkinter window opens, Tkinter is working.
 
 ## How to Run
+
 ```bash
 cd Snake && python3 main.py
 ```
+
 Then you can choose a bot by entering the number `1`, `2`, or `3`:
+
 ```text
 1. Rule-based bot
 2. Q-learning bot
 3. Hamiltonian bot
 ```
+
+## Bot results
+
+| Bot             | Result                                                              |
+| --------------- | ------------------------------------------------------------------- |
+| Rule-based bot  | Can play, but may still trap itself                                 |
+| Q-learning bot  | Learns short-term behavior, but struggles with long-term traps      |
+| Hamiltonian bot | Beats the game consistently using cycle planning and safe shortcuts |
+
 ## Demo
+
+The demos below compare the three bot modes: rule-based, Q-learning, and Hamiltonian cycle.
+
 1. Rule-based Bot
 
 ![demo_rule_based_bot](/img/Demo_RuleBasedBot.gif)
 
-*Display*
+_Display_
 
 ![result_rule_based_bot](/img/Result_RuleBasedBot.png)
 
-*Results on the terminal*
+_Results on the terminal_
 
 2. Q-learning Bot
 
 ![demo_q_learning_bot](/img/Demo_QLearningBot.gif)
 
-*Display*
+_Display_
 
 ![result_q_learning_bot](/img/Result_QLearningBot.png)
 
-*Results on the terminal*
+_Results on the terminal_
 
-2. Hamiltonian Bot
+3. Hamiltonian Bot
 
-![demo_q_learning_bot](/img/Demo_HamiltonianBot.gif)
+![demo_hamiltonian_bot](/img/Demo_HamiltonianBot.gif)
 
-*Display*
+_Display_
 
-![result_q_learning_bot](/img/Result_HamiltonianBot.png)
+![result_hamiltonian_bot](/img/Result_HamiltonianBot.png)
 
-*Results on the terminal*
+_Results on the terminal_
 
 ## Project Structure
 
