@@ -1,6 +1,13 @@
 import tkinter as tk
 
 class Window:
+    """
+    Manages the Tkinter window and drawing surface.
+
+    Window creates the canvas, updates the score label, clears the screen, and
+    draws the game over or game won messages.
+    """
+
     def __init__(self, width, height, tile_size):
         self.width = width
         self.height = height

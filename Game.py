@@ -1,16 +1,25 @@
-from Bot import Bot
+from RuleBasedBot import RuleBasedBot
 from QLearningBot import QLearningBot
 from HamiltonianBot import HamiltonianBot
+import time
 
 class Game:
+    """
+    Coordinates the main Snake game loop.
+
+    Game owns the current score, win/loss state, selected bot mode, and update
+    loop. It asks the active bot for a direction, moves the snake, checks food
+    and collisions, then redraws the screen.
+    """
+
     def __init__(self, window, snake, food, movement, bot_mode):
         self.window = window
         self.snake = snake
         self.food = food
         self.movement = movement
 
-        self.bot = Bot(self)
-        self.q_bot = QLearningBot()
+        self.bot = RuleBasedBot(self)
+        self.q_bot = QLearningBot(self)
         self.hamiltonian_bot = HamiltonianBot(self)
 
         self.bot_mode = bot_mode
@@ -23,11 +32,11 @@ class Game:
         self.games_played = 0
         self.best_score = 0
 
-        self.training_games = 1000
-        self.is_training = True
-
         self.total_moves = 0
         self.total_moves_history = []
+
+        self.session_start_time = time.perf_counter()
+        self.game_start_time = time.perf_counter()
     
     def draw(self):
         self.window.clear_canvas()
@@ -37,18 +46,18 @@ class Game:
         self.snake.draw_snake_body()
     
     def update(self):
-        q_state = None
-        q_action = None
         q_old_distance = None
+        direction = None
 
         if (self.bot_mode == "rule"):
-            self.bot.bot_change_direction()
+            direction = self.bot.get_next_direction()
         elif (self.bot_mode == "q_learning"):
-            q_old_distance = self.q_bot.get_food_distance(self)
-            q_state, q_action, direction = self.q_bot.get_action_and_direction (self)
-            self.movement.change_direction(direction)
+            q_old_distance = self.q_bot.get_food_distance()
+            direction = self.q_bot.get_next_direction()
         elif (self.bot_mode == "hamiltonian"):
             direction = self.hamiltonian_bot.get_next_direction()
+
+        if (direction is not None):
             self.movement.change_direction(direction)
 
         ate_food, self.game_over = self.movement.move_snake(
@@ -75,25 +84,21 @@ class Game:
                 self.food.spawn_food()
 
         if (self.bot_mode == "q_learning"):
-            if (self.is_training):
-                self.q_bot.learn_from_move(
-                    self, 
-                    q_state, 
-                    q_action, 
-                    q_old_distance, 
-                    ate_food, 
-                    self.game_over
-                )
+            self.q_bot.learn_from_move(
+                q_old_distance,
+                ate_food,
+                self.game_over
+            )
         
         self.draw()
 
         if (self.game_over):
             self.games_played += 1
             self.recent_scores.append(self.score)
-            
+
             if (self.score > self.best_score):
                 self.best_score = self.score
-            
+
             if (len(self.recent_scores) > 100):
                 self.recent_scores.pop(0)
 
@@ -105,21 +110,23 @@ class Game:
             if (len(self.total_moves_history) > 10):
                 self.total_moves_history.pop(0)
 
+            game_time = time.perf_counter() - self.game_start_time
+            session_time = time.perf_counter() - self.session_start_time
+
             print(
                 f"Game: {self.games_played}, "
                 f"Score: {self.score}, "
                 f"Best: {self.best_score}, "
                 f"Avg: {average_score:.1f}, "
                 f"Total Moves: {self.total_moves}, "
-                f"Avg total move: {avg_score:.1f}"
+                f"Avg total move: {avg_score:.1f}, "
+                f"Epsilon: {self.q_bot.epsilon:.3f}, "
+                f"Game Time: {game_time:.1f}s, "
+                f"Session Time: {session_time:.1f}s"
             )
 
             if (self.bot_mode == "q_learning"):
-                if (self.games_played >= self.training_games):
-                    self.is_training = False
-                    self.q_bot.epsilon = 0
-                else:
-                    self.q_bot.decay_epsilon()
+                self.q_bot.decay_epsilon()
 
             if (self.game_won):
                 self.window.draw_game_won(self.score)
@@ -131,7 +138,7 @@ class Game:
             return
         
         # Call update again
-        time_delay = 1 # milliseconds
+        time_delay = 0 # milliseconds
         self.window.window.after(time_delay, self.update)
     
     def run(self):
@@ -150,6 +157,8 @@ class Game:
 
         self.total_moves = 0
         self.moves_for_current_food = 0
+        self.game_start_time = time.perf_counter()
+
 
         self.snake.reset()
         self.food.spawn_food()
