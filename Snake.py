@@ -1,6 +1,12 @@
 import random
 
 class Snake:
+    """
+    Represents the snake head and body.
+
+    The head is stored as pixel coordinates in x and y. The body is stored as a
+    list of previous head positions, also in pixel coordinates.
+    """
 
     def __init__(self, window):
         self.window = window

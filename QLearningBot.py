@@ -1,69 +1,64 @@
 import random
+from BaseBot import BaseBot
 
-class QLearningBot:
-    def __init__(self):
+class QLearningBot(BaseBot):
+    """
+    Bot that explores actions and learns from rewards with Q-learning.
+
+    It stores action values in a Q-table. Rewards and penalties update that
+    table so the bot can learn which action is usually better for a given game
+    state.
+    """
+
+    def __init__(self, game):
+        super().__init__(game)
+
         self.q_table = {} # the AI memory, store knowledge [state][action]
         self.learning_rate = 0.1 # how fast AI learns new information
         self.discount_rate = 0.9 # how much AI cares about future rewards
         self.epsilon = 1.0 # how often AI explores random actions
-        self.min_epsilon = 0.05
-        self.epsilon_decay = 0.995
+        self.min_epsilon = 0.00
+        self.epsilon_decay = 0.997
         self.actions = ["Straight", "Turn_Left", "Turn_Right"]
+        self.current_state = None
+        self.current_action = None
     
-    def get_next_position(self, game, direction):
-        next_x = game.snake.x
-        next_y = game.snake.y
+    def _is_danger(self, direction):
+        next_x, next_y = self._get_next_position(direction)
 
-        if (direction == "Up"):
-            next_y -= game.window.tile_size
-        elif (direction == "Down"):
-            next_y += game.window.tile_size
-        elif (direction == "Left"):
-            next_x -= game.window.tile_size
-        elif (direction == "Right"):
-            next_x += game.window.tile_size
-
-        return next_x, next_y
-    
-    def is_danger(self, game, direction):
-        next_x, next_y = self.get_next_position(game, direction)
-
-        if (next_x < 0 or next_x >= game.window.WINDOW_WIDTH):
-            return 1
-        
-        if (next_y < 0 or next_y >= game.window.WINDOW_HEIGHT):
+        if (not self._is_inside_board(next_x, next_y)):
             return 1
 
-        ate_food = (next_x == game.food.x and next_y == game.food.y)
+        ate_food = (next_x == self.game.food.x and next_y == self.game.food.y)
 
         if (ate_food):
-            body_to_check = game.snake.body
+            body_to_check = self.game.snake.body
         else:
-            body_to_check = game.snake.body[:-1]
+            body_to_check = self.game.snake.body[:-1]
 
         if ((next_x, next_y) in body_to_check):
             return 1
         
         return 0    
     
-    def get_state(self, game):
-        straight_direction = self.get_direction_from_action(game, "Straight")
-        left_direction = self.get_direction_from_action(game, "Turn_Left")
-        right_direction = self.get_direction_from_action(game, "Turn_Right")
+    def _get_state(self):
+        straight_direction = self._get_direction_from_action("Straight")
+        left_direction = self._get_direction_from_action("Turn_Left")
+        right_direction = self._get_direction_from_action("Turn_Right")
 
-        danger_straight = self.is_danger(game, straight_direction)
-        danger_left = self.is_danger(game, left_direction)
-        danger_right = self.is_danger(game, right_direction)
+        danger_straight = self._is_danger(straight_direction)
+        danger_left = self._is_danger(left_direction)
+        danger_right = self._is_danger(right_direction)
 
-        next_straight_x, next_straight_y = self.get_next_position(game, straight_direction)
-        next_left_x, next_left_y = self.get_next_position(game, left_direction)
-        next_right_x, next_right_y = self.get_next_position(game, right_direction)
+        next_straight_x, next_straight_y = self._get_next_position(straight_direction)
+        next_left_x, next_left_y = self._get_next_position(left_direction)
+        next_right_x, next_right_y = self._get_next_position(right_direction)
 
-        current_distance = self.get_food_distance(game)
+        current_distance = self.get_food_distance()
 
-        food_straight = int(abs(game.food.x - next_straight_x) + abs(game.food.y - next_straight_y) < current_distance)
-        food_left = int(abs(game.food.x - next_left_x) + abs(game.food.y - next_left_y) < current_distance)
-        food_right = int(abs(game.food.x - next_right_x) + abs(game.food.y - next_right_y) < current_distance)
+        food_straight = int(abs(self.game.food.x - next_straight_x) + abs(self.game.food.y - next_straight_y) < current_distance)
+        food_left = int(abs(self.game.food.x - next_left_x) + abs(self.game.food.y - next_left_y) < current_distance)
+        food_right = int(abs(self.game.food.x - next_right_x) + abs(self.game.food.y - next_right_y) < current_distance)
 
         return (
             danger_straight,
@@ -74,20 +69,20 @@ class QLearningBot:
             food_right
         )
 
-    def get_current_direction(self, game):
-        if (game.movement.velocity_y == -1):
+    def _get_current_direction(self):
+        if (self.game.movement.velocity_y == -1):
             return "Up"
-        elif (game.movement.velocity_y == 1):
+        elif (self.game.movement.velocity_y == 1):
             return "Down"
-        elif (game.movement.velocity_x == -1):
+        elif (self.game.movement.velocity_x == -1):
             return "Left"
-        elif (game.movement.velocity_x == 1):
+        elif (self.game.movement.velocity_x == 1):
             return "Right"
         
         return "Right"
     
-    def get_direction_from_action(self, game, action):
-        current_direction = self.get_current_direction(game)
+    def _get_direction_from_action(self, action):
+        current_direction = self._get_current_direction()
 
         if (action == "Straight"):
             return current_direction
@@ -113,7 +108,7 @@ class QLearningBot:
             elif (action == "Turn_Right"):
                 return "Down"
             
-    def make_state_if_needed(self, state):
+    def _make_state_if_needed(self, state):
         if (state not in self.q_table):
             self.q_table[state] = {
                 "Straight": 0,
@@ -121,9 +116,9 @@ class QLearningBot:
                 "Turn_Right": 0
             }
     
-    def update_q_values(self, state, action, reward, next_state):
-        self.make_state_if_needed(state)
-        self.make_state_if_needed(next_state)
+    def _update_q_values(self, state, action, reward, next_state):
+        self._make_state_if_needed(state)
+        self._make_state_if_needed(next_state)
 
         old_value = self.q_table[state][action]
         best_next_value = max(self.q_table[next_state].values())
@@ -134,13 +129,13 @@ class QLearningBot:
 
         self.q_table[state][action] = new_value
 
-    def get_food_distance(self, game):
-        distance_x = abs(game.food.x - game.snake.x)
-        distance_y = abs(game.food.y - game.snake.y)
+    def get_food_distance(self):
+        distance_x = abs(self.game.food.x - self.game.snake.x)
+        distance_y = abs(self.game.food.y - self.game.snake.y)
 
         return distance_x + distance_y
     
-    def get_reward(self, game_over, ate_food, old_distance, new_distance):
+    def _get_reward(self, game_over, ate_food, old_distance, new_distance):
         if (game_over):
             return -100
         
@@ -152,19 +147,17 @@ class QLearningBot:
         
         return -1 
     
-    def get_action_and_direction(self, game):
-        state = self.get_state(game)
-        action = self.choose_action(game, state)
-        direction = self.get_direction_from_action(game, action)
+    def learn_from_move(self, old_distance, ate_food, game_over):
+        new_distance = self.get_food_distance() # check new distance
+        reward = self._get_reward(game_over, ate_food, old_distance, new_distance) # calculate reward
+        next_state = self._get_state() # get the new state
 
-        return state, action, direction
-    
-    def learn_from_move(self, game, state, action, old_distance, ate_food, game_over):
-        new_distance = self.get_food_distance(game) # check new distance
-        reward = self.get_reward(game_over, ate_food, old_distance, new_distance) # calculate reward
-        next_state = self.get_state(game) # get the new state
-
-        self.update_q_values(state, action, reward, next_state) # update q-table memory
+        self._update_q_values(
+            self.current_state,
+            self.current_action,
+            reward,
+            next_state
+        ) # update q-table memory
     
     def decay_epsilon(self):
         if (self.epsilon > self.min_epsilon):
@@ -173,21 +166,21 @@ class QLearningBot:
         if (self.epsilon < self.min_epsilon):
             self.epsilon = self.min_epsilon
 
-    def get_safe_actions(self, game):
+    def _get_safe_actions(self):
         safe_actions = []
 
         for action in self.actions:
-            direction = self.get_direction_from_action(game, action)
+            direction = self._get_direction_from_action(action)
 
-            if (self.is_danger(game, direction) == 0):
+            if (self._is_danger(direction) == 0):
                 safe_actions.append(action)
 
         return safe_actions
     
-    def choose_action(self, game, state):
-        self.make_state_if_needed(state)
+    def _choose_action(self, state):
+        self._make_state_if_needed(state)
 
-        safe_actions = self.get_safe_actions(game)
+        safe_actions = self._get_safe_actions()
 
         if (len(safe_actions) == 0):
             return random.choice(self.actions)
@@ -206,3 +199,8 @@ class QLearningBot:
                 best_action = action
 
         return best_action
+
+    def get_next_direction(self):
+        self.current_state = self._get_state()
+        self.current_action = self._choose_action(self.current_state)
+        return self._get_direction_from_action(self.current_action)

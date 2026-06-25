@@ -1,6 +1,12 @@
 import random
 
 class Food:
+    """
+    Represents the food tile.
+
+    Food chooses a random empty tile and avoids spawning on the snake head or
+    body.
+    """
 
     def __init__(self, window, snake):
         self.window = window

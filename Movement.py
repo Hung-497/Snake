@@ -1,4 +1,11 @@
 class Movement:
+    """
+    Handles direction changes and snake movement.
+
+    Movement stores the current velocity, prevents reversing direction, checks
+    wall/body collisions, and updates the snake body after each move.
+    """
+
     def __init__(self):
         self.velocity_x = 0
         self.velocity_y = 0
