@@ -22,6 +22,8 @@ class Window:
         self.window.resizable(False, False)
     
     def center_window(self):
+        self.window.update_idletasks()
+        
         window_width = self.window.winfo_width()
         window_height = self.window.winfo_height()
         screen_width = self.window.winfo_screenwidth()

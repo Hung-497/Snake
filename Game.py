@@ -138,7 +138,10 @@ class Game:
             return
         
         # Call update again
-        time_delay = 0 # milliseconds
+        if self.bot_mode == "hamiltonian":
+            time_delay = 1 # milliseconds
+        else:
+            time_delay = 0
         self.window.window.after(time_delay, self.update)
     
     def run(self):
