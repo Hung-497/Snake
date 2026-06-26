@@ -318,3 +318,27 @@ Development Order:
 - HamiltonianBot works with grid tiles, while other helpers often work with pixel positions.
 - A cleaner interface makes code easier to read and maintain.
 - Time, score, and move count together make bot comparison more meaningful.
+
+## 2026-06-26
+
+### What I worked on
+
+- Created a menu screen using `customtkinter`.
+- Added main menu options: Play, Settings, and Logs.
+- Added a Play screen where I can choose between 3 bots.
+- Connected `menu_test.py` with `Game.py` so the game starts after choosing a bot.
+- Added simple screen switching by clearing the current frame before drawing the next screen.
+- Added close-window handling so closing the menu does not start a game accidentally.
+
+### Problems I found
+
+- `customtkinter` printed callback warnings when the window was closed, but it did not affect gameplay.
+- I needed to understand that button commands should use `lambda` when passing a bot mode.
+- The old menu widgets stayed behind at first, so I added `clear_screen()` to remove the current frame.
+
+### What I learned
+
+- Learned how to build a basic UI with `customtkinter`.
+- Learned how to connect a menu choice to the main game.
+- Learned that `quit()`, `withdraw()`, and `destroy()` have different jobs when closing a Tkinter window.
+- Learned how to switch screens by destroying the current frame and drawing a new one.
