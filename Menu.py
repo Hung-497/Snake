@@ -33,6 +33,14 @@ class MenuTestApp:
         self.window.configure(fg_color=self.background_color)
         self.window.protocol("WM_DELETE_WINDOW", self.close_menu)
 
+        self.name_label = ctk.CTkLabel(
+            self.window,
+            text="Created by Nhism",
+            font=("Arial", 14),
+            text_color=self.muted_text_color
+        )
+        self.name_label.place(relx=0.98, rely=0.99, anchor="se")
+
     def center_window(self):
         screen_width = self.window.winfo_screenwidth()
         screen_height = self.window.winfo_screenheight()
@@ -101,14 +109,6 @@ class MenuTestApp:
         )
         self.logs_button.pack(pady=10)
 
-        self.name_label = ctk.CTkLabel(
-            self.current_frame,
-            text="Created by Nhism",
-            font=("Arial", 14),
-            text_color=self.muted_text_color
-        )
-        self.name_label.place(relx=0.98, rely=0.99, anchor="se")
-
     def start(self):
         self.center_window()
         self.draw_menu()
@@ -175,6 +175,20 @@ class MenuTestApp:
             command=lambda: self.start_game_with_bot("hamiltonian")
         )
         self.Hamiltonian_Bot_button.pack(pady=10)
+
+        self.Back_button = ctk.CTkButton(
+            self.current_frame,
+            text="Back",
+            font=("Arial", 30),
+            width=160,
+            height=40,
+            corner_radius=10,
+            fg_color=self.muted_text_color,
+            hover_color=self.button_hover_color,
+            text_color=self.text_color,
+            command=self.draw_menu
+        )
+        self.Back_button.pack(pady=(25, 0))
 
     def open_settings(self):
         pass
