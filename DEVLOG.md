@@ -342,3 +342,24 @@ Development Order:
 - Learned how to connect a menu choice to the main game.
 - Learned that `quit()`, `withdraw()`, and `destroy()` have different jobs when closing a Tkinter window.
 - Learned how to switch screens by destroying the current frame and drawing a new one.
+
+## 2026-06-29
+
+### What I worked on
+
+- Added a Back button to the Play screen.
+- Checked the `Created by Nhism` label placement.
+- Moved the credit label so it is positioned relative to the whole menu window instead of the menu frame.
+- Found that the game screen white space came from the score label being wider than the canvas.
+- Planned to shorten or resize the score label so it does not stretch the game window.
+
+### Problems I found
+
+- `place(relx=..., rely=...)` depends on the parent widget, so placing a label inside `current_frame` positions it relative to that frame.
+- The score label font was too large, which made the game window wider than the canvas.
+- `customtkinter` can still print shutdown warnings when its internal callbacks run after the window is closed.
+
+### What I learned
+
+- A label can change the size of the whole Tkinter window if its text is too wide.
+- Some UI warnings are from library cleanup behavior, not from the Snake game logic.
