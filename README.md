@@ -18,7 +18,7 @@ The project starts with a basic Snake game, then adds different AI bots.
 
 ## Installation
 
-This project uses Python and Tkinter.
+This project uses Python, Tkinter, and CustomTkinter for the menu UI.
 
 Tkinter usually comes with Python. You can check it with:
 
@@ -28,19 +28,25 @@ python3 -m tkinter
 
 If a small Tkinter window opens, Tkinter is working.
 
+Install CustomTkinter with:
+
+```bash
+python3 -m pip install customtkinter
+```
+
 ## How to Run
 
 ```bash
-cd Snake && python3 main.py
+cd Snake && python3 Menu.py
 ```
 
-Then you can choose a bot by entering the number `1`, `2`, or `3`:
+Then use the menu to choose a bot:
 
 ```text
-1. Rule-based bot
-2. Q-learning bot
-3. Hamiltonian bot
+Play -> Rule-based bot / Q-learning bot / Hamiltonian bot
 ```
+
+You can also adjust speed, board size, and tile size in the Settings screen before starting a game.
 
 ## Bot Results
 
@@ -87,13 +93,15 @@ _Results on the terminal_
 ## Project Structure
 
 ```text
-main.py              # Starts the game and bot selection menu
+Menu.py              # Starts the CustomTkinter menu
+main.py              # Older terminal-based bot selection entry point
 Game.py              # Main game loop and score tracking
 Window.py            # Tkinter window and drawing
 Snake.py             # Snake position and body drawing
 Food.py              # Food spawning and drawing
 Movement.py          # Movement and collision logic
-Bot.py               # Rule-based bot
+BaseBot.py           # Shared bot helper methods
+RuleBasedBot.py      # Rule-based bot
 QLearningBot.py      # Tabular Q-learning bot
 HamiltonianBot.py    # Hamiltonian cycle bot
 DEVLOG.md            # Development diary

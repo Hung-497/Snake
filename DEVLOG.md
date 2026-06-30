@@ -363,3 +363,37 @@ Development Order:
 
 - A label can change the size of the whole Tkinter window if its text is too wide.
 - Some UI warnings are from library cleanup behavior, not from the Snake game logic.
+
+## 2026-06-30
+
+### What I worked on
+
+- Improved the CustomTkinter menu UI.
+- Added styled Settings controls for game speed, board size, and tile size.
+- Connected selected board size and tile size to the game window.
+- Connected selected game speed to the game loop.
+- Added validation so Hamiltonian bot cannot start on a board where both sides are odd.
+- Added a Tkinter `bgerror` handler to hide harmless CustomTkinter shutdown warnings.
+- Improved game window closing by canceling pending `after()` callbacks and stopping the main loop.
+- Renamed `MenuTestApp` class to `MenuApp`.
+- Updated `README.md` so it points to `Menu.py` instead of the older terminal entry point.
+- Removed the visible border around the snake head, snake body, and food.
+- Updated the canvas drawing code by setting the shape outline to empty.
+
+### Problems I found
+
+- The speed option existed in the menu but was not used by `Game.py` yet.
+- Closing the game window could leave scheduled callbacks running.
+- The menu and game used separate Tk windows, so cleanup needed to be handled carefully.
+- `moves_for_current_food` was leftover state and was no longer used.
+- The README still described the old terminal-based startup flow.
+- Tkinter canvas shapes can show a default outline even when the fill color is set.
+- The border color was not from the CustomTkinter menu theme.
+
+### What I learned
+
+- A settings UI should pass real values into the game, not only display choices.
+- `after()` callbacks should be canceled when closing a running Tkinter game.
+- `quit()` stops the event loop, while `destroy()` removes the window.
+- Keeping README instructions updated is part of keeping a project usable.
+- Small cleanup matters because unused variables and outdated docs can confuse future readers.
