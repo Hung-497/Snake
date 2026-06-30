@@ -21,6 +21,7 @@ class Snake:
             self.x + self.window.tile_size, 
             self.y + self.window.tile_size, 
             fill = 'yellow', 
+            outline='',
             tag = 'snake'
             )
     
@@ -32,6 +33,7 @@ class Snake:
                 x + self.window.tile_size, 
                 y + self.window.tile_size, 
                 fill = 'green', 
+                outline='',
                 tag = 'snake'
                 )
     

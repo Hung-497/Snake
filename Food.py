@@ -21,7 +21,8 @@ class Food:
             self.y, 
             self.x + self.window.tile_size, 
             self.y + self.window.tile_size, 
-            fill = 'red', 
+            fill = 'red',
+            outline='', 
             tag = 'food'
             )
     

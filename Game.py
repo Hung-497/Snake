@@ -12,11 +12,12 @@ class Game:
     and collisions, then redraws the screen.
     """
 
-    def __init__(self, window, snake, food, movement, bot_mode):
+    def __init__(self, window, snake, food, movement, bot_mode, speed_delay=1):
         self.window = window
         self.snake = snake
         self.food = food
         self.movement = movement
+        self.speed_delay = speed_delay
 
         self.bot = RuleBasedBot(self)
         self.q_bot = QLearningBot(self)
@@ -37,6 +38,10 @@ class Game:
 
         self.session_start_time = time.perf_counter()
         self.game_start_time = time.perf_counter()
+
+        self.game_closed = False
+        self.update_after_id = None
+        self.reset_after_id = None
     
     def draw(self):
         self.window.clear_canvas()
@@ -46,6 +51,9 @@ class Game:
         self.snake.draw_snake_body()
     
     def update(self):
+        if (self.game_closed):
+            return
+
         q_old_distance = None
         direction = None
 
@@ -134,17 +142,13 @@ class Game:
                 self.window.draw_game_over(self.score)
 
             # reset game
-            self.window.window.after(10, self.start_next_game)
+            self.reset_after_id = self.window.window.after(10, self.start_next_game)
             return
         
-        # Call update again
-        if self.bot_mode == "hamiltonian":
-            time_delay = 1 # milliseconds
-        else:
-            time_delay = 0
-        self.window.window.after(time_delay, self.update)
+        self.update_after_id = self.window.window.after(self.speed_delay, self.update)
     
     def run(self):
+        self.window.window.protocol("WM_DELETE_WINDOW", self.close_game)
         self.window.draw_score_label()
         self.window.create_canvas()
         self.window.center_window()
@@ -153,13 +157,30 @@ class Game:
         self.update()
         self.window.start()
 
+    def close_game(self):
+        self.game_closed = True
+
+        if (self.update_after_id is not None):
+            try:
+                self.window.window.after_cancel(self.update_after_id)
+            except:
+                pass
+
+        if (self.reset_after_id is not None):
+            try:
+                self.window.window.after_cancel(self.reset_after_id)
+            except:
+                pass
+
+        self.window.window.quit()
+        self.window.window.destroy()
+
     def reset_game_state(self):
         self.score = 0
         self.game_over = False
         self.game_won = False
 
         self.total_moves = 0
-        self.moves_for_current_food = 0
         self.game_start_time = time.perf_counter()
 
 
@@ -168,6 +189,9 @@ class Game:
         self.movement.reset()
 
     def start_next_game(self):
+        if (self.game_closed):
+            return
+
         self.reset_game_state()
         self.draw()
         self.update()
