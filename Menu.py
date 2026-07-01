@@ -319,10 +319,13 @@ class MenuApp:
         self.selected_speed_name = selected_name
 
 if __name__ == "__main__":
-    menu = MenuApp(24, 25, 25)
-    bot_mode, board_width, board_height, tile_size, speed_delay = menu.start()
+    while True:
+        menu = MenuApp(24, 25, 25)
+        bot_mode, board_width, board_height, tile_size, speed_delay = menu.start()
 
-    if bot_mode is not None:
+        if bot_mode is None:
+            break
+
         game_window = Window(board_width, board_height, tile_size)
         snake = Snake(game_window)
         food = Food(game_window, snake)
@@ -330,3 +333,6 @@ if __name__ == "__main__":
 
         game = Game(game_window, snake, food, movement, bot_mode, speed_delay)
         game.run()
+
+        if not game.return_to_menu:
+            break

@@ -397,3 +397,30 @@ Development Order:
 - `quit()` stops the event loop, while `destroy()` removes the window.
 - Keeping README instructions updated is part of keeping a project usable.
 - Small cleanup matters because unused variables and outdated docs can confuse future readers.
+
+## 2026-07-01
+
+### What I worked on
+
+- Added a text-style `Back to Menu` control on the game screen.
+- Made the game return to the CustomTkinter menu without restarting the program.
+- Updated the menu loop so a new menu opens again after returning from a game.
+- Created `RecordManager.py` to save finished game results.
+- Connected `Game.py` to `RecordManager` so each completed game writes a CSV row.
+- Saved bot mode, games played, score, best score, average score, total moves, game time, and session time.
+- Moved generated record data into a `records/` folder.
+- Added generated CSV records to `.gitignore` so local experiment data is not committed accidentally.
+
+### Problems I found
+
+- A normal Tkinter button looked too large and distracting on the game screen.
+- `pack()` is not good for bottom-right placement because it stacks widgets instead of using relative coordinates.
+- Generated CSV files can make the project root messy if they are not stored in a folder.
+- Replay data, result records, and Q-learning memory are different kinds of saved data.
+
+### What I learned
+
+- `place(relx=..., rely=..., anchor=...)` is useful for small fixed-position UI labels.
+- Game result records are like a scoreboard, while replay files are like a recording and Q-tables are like the bot brain.
+- A small manager class is useful when one file should handle saving data.
+- `.gitignore` should protect local generated files that do not need to be pushed to GitHub.

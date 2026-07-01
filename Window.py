@@ -76,6 +76,19 @@ class Window:
         )
         self.score_label.pack(fill = 'x', side = 'top')
     
+    def draw_back_button(self, callback):
+        self.back_button = tk.Label(
+            self.window,
+            text = 'Back to Menu',
+            font = ('Arial', 13),
+            fg = '#A8B3C7',
+            bg = 'black'
+        )
+        self.back_button.bind("<Button-1>", lambda event: callback())
+        self.back_button.bind("<Enter>", lambda event: self.back_button.config(fg = '#F2F7FF'))
+        self.back_button.bind("<Leave>", lambda event: self.back_button.config(fg = '#A8B3C7'))
+        self.back_button.place(relx = 0.98, rely = 0.98, anchor = 'se')  
+    
     def update_score_label(self, score, games_played, best_score):
         self.score_label.config(text = f'Score: {score} Match: {games_played} Best: {best_score}')
 

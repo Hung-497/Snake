@@ -1,6 +1,7 @@
 from RuleBasedBot import RuleBasedBot
 from QLearningBot import QLearningBot
 from HamiltonianBot import HamiltonianBot
+from RecordManager import RecordManager
 import time
 
 class Game:
@@ -18,6 +19,8 @@ class Game:
         self.food = food
         self.movement = movement
         self.speed_delay = speed_delay
+
+        self.record_manager = RecordManager()
 
         self.bot = RuleBasedBot(self)
         self.q_bot = QLearningBot(self)
@@ -42,6 +45,8 @@ class Game:
         self.game_closed = False
         self.update_after_id = None
         self.reset_after_id = None
+
+        self.return_to_menu = False
     
     def draw(self):
         self.window.clear_canvas()
@@ -121,6 +126,17 @@ class Game:
             game_time = time.perf_counter() - self.game_start_time
             session_time = time.perf_counter() - self.session_start_time
 
+            self.record_manager.save_game_result(
+                self.bot_mode,
+                self.games_played,
+                self.score,
+                self.best_score,
+                average_score,
+                self.total_moves,
+                game_time,
+                session_time
+            )
+
             print(
                 f"Game: {self.games_played}, "
                 f"Score: {self.score}, "
@@ -151,6 +167,7 @@ class Game:
         self.window.window.protocol("WM_DELETE_WINDOW", self.close_game)
         self.window.draw_score_label()
         self.window.create_canvas()
+        self.window.draw_back_button(self.back_to_menu)
         self.window.center_window()
 
         self.draw()
@@ -195,3 +212,7 @@ class Game:
         self.reset_game_state()
         self.draw()
         self.update()
+
+    def back_to_menu(self):
+        self.return_to_menu = True
+        self.close_game()
