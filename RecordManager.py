@@ -44,3 +44,17 @@ class RecordManager:
                 round(game_time, 2),
                 round(session_time, 2)
             ])
+
+    def read_game_records(self):
+        if (not os.path.isfile(self.file_name)):
+            return []
+        
+        records = []
+
+        with open(self.file_name, mode='r', newline='') as file:
+            reader = csv.DictReader(file)
+
+            for row in reader:
+                records.append(row)
+
+        return records
