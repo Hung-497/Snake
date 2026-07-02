@@ -420,3 +420,31 @@ Development Order:
 - `place(relx=..., rely=..., anchor=...)` is useful for small fixed-position UI labels.
 - Game result records are like a scoreboard, while replay files are like a recording and Q-tables are like the bot brain.
 - A small manager class is useful when one file should handle saving data.
+
+## 2026-07-02
+
+### What I worked on
+
+- Added CSV reading to `RecordManager.py` using `csv.DictReader`.
+- Connected the Logs screen in `Menu.py` to read saved game records.
+- Added a scrollable records frame so the Logs screen can show many saved games.
+- Limited the visible records to the latest 50 to keep the UI responsive.
+- Added log filter buttons for All, Rule, Q-learning, and Hamiltonian records.
+- Added summary stat cards for games played, best score, average score, and best moves.
+- Rebalanced the Logs screen layout so the title, records, Back button, and credit text fit better.
+- Added default stat values for empty filters so the Logs screen does not crash when one bot has no records yet.
+
+### Problems I found
+
+- Showing more than 1000 records as individual UI labels made the Logs screen slow.
+- Mouse wheel scrolling in `CTkScrollableFrame` did not work reliably, so I kept the scrollbar as the stable option.
+- The Logs screen became too tall after adding stats and started hiding the credit text.
+- The Hamiltonian filter crashed when there were no Hamiltonian records because the stat variables were never created.
+
+### What I learned
+
+- `csv.DictReader` reads each CSV row as a dictionary, which makes record fields easier to access.
+- UI performance can slow down when the program creates too many widgets at once.
+- Filtering records before calculating stats keeps the summary matched to the selected bot.
+- Empty lists need special handling before using `max()`, `min()`, or average calculations.
+- Layout balance depends on both `place()` positioning and the internal `pack()` spacing.

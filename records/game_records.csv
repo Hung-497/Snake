@@ -1,4 +1,4 @@
-date_time,bot_name,game_played,score,best_score,average_score,total_moves,game_time,session_time
+date_time,bot_name,games_played,score,best_score,average_score,total_moves,game_time,session_time
 2026-07-01 23:01:32,q_learning,1,6,6,6.0,7972,12.12,12.12
 2026-07-01 23:01:42,q_learning,2,7,7,6.5,6310,9.98,22.18
 2026-07-01 23:01:55,q_learning,3,6,7,6.333333333333333,7986,12.63,34.82

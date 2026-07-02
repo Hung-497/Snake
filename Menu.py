@@ -4,6 +4,7 @@ from Snake import Snake
 from Window import Window
 from Game import Game
 from Movement import Movement
+from RecordManager import RecordManager
 
 class MenuApp:
     def __init__(self, width, height, tile_size):
@@ -16,6 +17,8 @@ class MenuApp:
 
         self.selected_bot_mode = None
         self.current_frame = None
+        self.record_manager = RecordManager()
+        self.selected_log_filter = "All Bots"
 
         self.background_color = "#071A2D"
         self.button_color = "#2F80ED"
@@ -279,7 +282,166 @@ class MenuApp:
         return option_menu
 
     def open_logs(self):
-        pass
+        self.clear_screen()
+
+        self.current_frame = ctk.CTkFrame(
+            self.window,
+            fg_color="transparent"
+        )
+        self.current_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        title_label = ctk.CTkLabel(
+            self.current_frame,
+            text="Game Records",
+            font=("Arial", 42, "bold"),
+            text_color=self.text_color
+        )
+        title_label.pack(pady=(0, 20))
+
+        records = self.record_manager.read_game_records()
+
+        if (self.selected_log_filter == "All Bots"):
+            filtered_records = records
+        else:
+            filtered_records = []
+
+            for record in records:
+                if (record["bot_name"] == self.selected_log_filter):
+                    filtered_records.append(record)
+        
+        filter_frame = ctk.CTkFrame(
+            self.current_frame,
+            fg_color="transparent"
+        )
+        filter_frame.pack(pady=(0, 14))
+
+        self.create_log_filter_button(filter_frame, "All", "All Bots")
+        self.create_log_filter_button(filter_frame, "Rule", "rule")
+        self.create_log_filter_button(filter_frame, "Q-Learning", "q_learning")
+        self.create_log_filter_button(filter_frame, "Hamiltonian", "hamiltonian")
+
+        total_games = len(filtered_records)
+
+        if (total_games > 0):
+            scores = []
+            moves = []
+
+            for record in filtered_records:
+                scores.append(int(record["score"]))
+                moves.append(int(record["total_moves"]))
+            
+            best_score = max(scores)
+            average_score = sum(scores) / len(scores)
+            best_moves = min(moves)
+        else:
+            best_score = "-"
+            average_score = 0
+            best_moves = "-"
+
+        stats_frame = ctk.CTkFrame(
+            self.current_frame,
+            fg_color="transparent"
+        )
+        stats_frame.pack(pady=(0, 12))
+
+        self.create_stat_label(stats_frame, "Games", total_games)
+        self.create_stat_label(stats_frame, "Best", best_score)
+        self.create_stat_label(stats_frame, "Average", f"{average_score:.1f}")
+        self.create_stat_label(stats_frame, "Best Moves", best_moves)
+
+        records_frame = ctk.CTkScrollableFrame(
+            self.current_frame,
+            width=520,
+            height=260,
+            corner_radius=12,
+            fg_color=self.option_dropdown_color
+        )
+        records_frame.pack(pady=(0, 18))
+
+        latest_records = filtered_records[-50:]
+
+        summary_label = ctk.CTkLabel(
+            self.current_frame,
+            text=f"Showing latest {len(latest_records)} of {len(filtered_records)} records",
+            font=("Arial", 14),
+            text_color=self.muted_text_color
+        )
+        summary_label.pack(pady=(0, 10))
+
+        for record in reversed(latest_records):
+            record_text = (
+                f"{record['date_time']} | "
+                f"{record['bot_name']} | "
+                f"Score: {record['score']} | "
+                f"Moves: {record['total_moves']} | "
+                f"Time: {record['game_time']}s"
+            )
+
+            record_label = ctk.CTkLabel(
+                records_frame,
+                text=record_text,
+                font=("Arial", 13),
+                text_color=self.text_color,
+                anchor="w"
+            )
+            record_label.pack(fill="x", padx=10, pady=3)
+
+        self.Back_button = self.create_menu_button(
+            "Back",
+            self.draw_menu,
+            button_color=self.secondary_button_color,
+            button_width=170
+        )
+
+    def create_log_filter_button(self, parent, button_text, filter_value):
+        if (self.selected_log_filter == filter_value):
+            button_color = self.button_color
+        else:
+            button_color = self.secondary_button_color
+
+        button = ctk.CTkButton(
+            parent,
+            text=button_text,
+            font=("Arial", 14, "bold"),
+            width=110,
+            height=34,
+            corner_radius=10,
+            fg_color=button_color,
+            hover_color=self.button_hover_color,
+            text_color=self.text_color,
+            command=lambda: self.change_log_filter(filter_value)
+        )
+        button.pack(side="left", padx=5)
+
+        return button
+
+    def change_log_filter(self, selected_filter):
+        self.selected_log_filter = selected_filter
+        self.open_logs()
+    
+    def create_stat_label(self, parent, title, value):
+        stat_frame = ctk.CTkFrame(
+            parent,
+            fg_color=self.option_dropdown_color,
+            corner_radius=10
+        )
+        stat_frame.pack(side="left", padx=5)
+
+        title_label = ctk.CTkLabel(
+            stat_frame,
+            text=title,
+            font=("Arial", 12),
+            text_color=self.muted_text_color
+        )
+        title_label.pack(padx=12, pady=(6, 0))
+
+        value_label = ctk.CTkLabel(
+            stat_frame,
+            text=str(value),
+            font=("Arial", 18, "bold"),
+            text_color=self.text_color
+        )
+        value_label.pack(padx=12, pady=(0, 6))
 
     def start_game_with_bot(self, bot_mode):
         if (not self.is_valid_board_for_bot(bot_mode)):
