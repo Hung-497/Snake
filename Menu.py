@@ -299,15 +299,7 @@ class MenuApp:
         title_label.pack(pady=(0, 20))
 
         records = self.record_manager.read_game_records()
-
-        if (self.selected_log_filter == "All Bots"):
-            filtered_records = records
-        else:
-            filtered_records = []
-
-            for record in records:
-                if (record["bot_name"] == self.selected_log_filter):
-                    filtered_records.append(record)
+        filtered_records = self.get_filtered_records(records)
         
         filter_frame = ctk.CTkFrame(
             self.current_frame,
@@ -315,28 +307,9 @@ class MenuApp:
         )
         filter_frame.pack(pady=(0, 14))
 
-        self.create_log_filter_button(filter_frame, "All", "All Bots")
-        self.create_log_filter_button(filter_frame, "Rule", "rule")
-        self.create_log_filter_button(filter_frame, "Q-Learning", "q_learning")
-        self.create_log_filter_button(filter_frame, "Hamiltonian", "hamiltonian")
+        self.create_log_filter_buttons(filter_frame)
 
-        total_games = len(filtered_records)
-
-        if (total_games > 0):
-            scores = []
-            moves = []
-
-            for record in filtered_records:
-                scores.append(int(record["score"]))
-                moves.append(int(record["total_moves"]))
-            
-            best_score = max(scores)
-            average_score = sum(scores) / len(scores)
-            best_moves = min(moves)
-        else:
-            best_score = "-"
-            average_score = 0
-            best_moves = "-"
+        total_games, best_score, average_score, best_moves = self.get_log_stats(filtered_records)
 
         stats_frame = ctk.CTkFrame(
             self.current_frame,
@@ -349,6 +322,53 @@ class MenuApp:
         self.create_stat_label(stats_frame, "Average", f"{average_score:.1f}")
         self.create_stat_label(stats_frame, "Best Moves", best_moves)
 
+        self.create_records_section(filtered_records)
+
+        self.Back_button = self.create_menu_button(
+            "Back",
+            self.draw_menu,
+            button_color=self.secondary_button_color,
+            button_width=170
+        )
+
+    def get_filtered_records(self, records):
+        if (self.selected_log_filter == "All Bots"):
+            return records
+
+        filtered_records = []
+
+        for record in records:
+            if (record["bot_name"] == self.selected_log_filter):
+                filtered_records.append(record)
+
+        return filtered_records
+
+    def create_log_filter_buttons(self, parent):
+        self.create_log_filter_button(parent, "All", "All Bots")
+        self.create_log_filter_button(parent, "Rule", "rule")
+        self.create_log_filter_button(parent, "Q-Learning", "q_learning")
+        self.create_log_filter_button(parent, "Hamiltonian", "hamiltonian")
+
+    def get_log_stats(self, records):
+        total_games = len(records)
+
+        if (total_games == 0):
+            return 0, "-", 0, "-"
+
+        scores = []
+        moves = []
+
+        for record in records:
+            scores.append(int(record["score"]))
+            moves.append(int(record["total_moves"]))
+
+        best_score = max(scores)
+        average_score = sum(scores) / len(scores)
+        best_moves = min(moves)
+
+        return total_games, best_score, average_score, best_moves
+
+    def create_records_section(self, records):
         records_frame = ctk.CTkScrollableFrame(
             self.current_frame,
             width=520,
@@ -358,40 +378,65 @@ class MenuApp:
         )
         records_frame.pack(pady=(0, 18))
 
-        latest_records = filtered_records[-50:]
+        latest_records = records[-50:]
+
+        for record in reversed(latest_records):
+            self.create_record_card(records_frame, record)
 
         summary_label = ctk.CTkLabel(
             self.current_frame,
-            text=f"Showing latest {len(latest_records)} of {len(filtered_records)} records",
+            text=f"Showing latest {len(latest_records)} of {len(records)} records",
             font=("Arial", 14),
             text_color=self.muted_text_color
         )
         summary_label.pack(pady=(0, 10))
 
-        for record in reversed(latest_records):
-            record_text = (
-                f"{record['date_time']} | "
-                f"{record['bot_name']} | "
-                f"Score: {record['score']} | "
-                f"Moves: {record['total_moves']} | "
-                f"Time: {record['game_time']}s"
-            )
+    def create_record_card(self, parent, record):
+        board_width = record.get("board_width") or "?"
+        board_height = record.get("board_height") or "?"
+        tile_size = record.get("tile_size") or "?"
+        speed_delay = record.get("speed_delay") or "?"
 
-            record_label = ctk.CTkLabel(
-                records_frame,
-                text=record_text,
-                font=("Arial", 13),
-                text_color=self.text_color,
-                anchor="w"
-            )
-            record_label.pack(fill="x", padx=10, pady=3)
-
-        self.Back_button = self.create_menu_button(
-            "Back",
-            self.draw_menu,
-            button_color=self.secondary_button_color,
-            button_width=170
+        record_frame = ctk.CTkFrame(
+            parent,
+            fg_color=self.background_color,
+            corner_radius=8
         )
+        record_frame.pack(fill="x", padx=8, pady=5)
+
+        main_text = (
+            f"{record['date_time']} | "
+            f"{record['bot_name']} | "
+            f"Score: {record['score']} | "
+            f"Moves: {record['total_moves']} | "
+            f"Time: {record['game_time']}s"
+        )
+
+        detail_text = (
+            f"Board: {board_width} x {board_height} | "
+            f"Tile: {tile_size}px | "
+            f"Speed Delay: {speed_delay}"
+        )
+
+        main_label = ctk.CTkLabel(
+            record_frame,
+            text=main_text,
+            font=("Arial", 13, "bold"),
+            text_color=self.text_color,
+            anchor="w",
+            justify="left"
+        )
+        main_label.pack(fill="x", padx=12, pady=(8, 1))
+
+        detail_label = ctk.CTkLabel(
+            record_frame,
+            text=detail_text,
+            font=("Arial", 12),
+            text_color=self.muted_text_color,
+            anchor="w",
+            justify="left"
+        )
+        detail_label.pack(fill="x", padx=12, pady=(1, 8))
 
     def create_log_filter_button(self, parent, button_text, filter_value):
         if (self.selected_log_filter == filter_value):

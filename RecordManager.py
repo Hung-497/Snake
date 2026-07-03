@@ -14,7 +14,7 @@ class RecordManager:
         if (self.folder_name != "" and not os.path.exists(self.folder_name)):
             os.makedirs(self.folder_name, exist_ok=True)
     
-    def save_game_result(self, bot_name, games_played, score, best_score, average_score, total_moves, game_time, session_time):
+    def save_game_result(self, bot_name, games_played, score, best_score, average_score, total_moves, game_time, session_time, board_width, board_height, tile_size, speed_delay):
         file_exists = os.path.isfile(self.file_name)
 
         with open(self.file_name, mode='a', newline='') as file:
@@ -30,7 +30,11 @@ class RecordManager:
                     "average_score",
                     "total_moves",
                     "game_time",
-                    "session_time"
+                    "session_time",
+                    "board_width",
+                    "board_height",
+                    "tile_size",
+                    "speed_delay"
                 ])
             
             writer.writerow([
@@ -42,7 +46,11 @@ class RecordManager:
                 round(average_score, 2),
                 total_moves,
                 round(game_time, 2),
-                round(session_time, 2)
+                round(session_time, 2),
+                board_width,
+                board_height,
+                tile_size,
+                speed_delay
             ])
 
     def read_game_records(self):

@@ -448,3 +448,27 @@ Development Order:
 - Filtering records before calculating stats keeps the summary matched to the selected bot.
 - Empty lists need special handling before using `max()`, `min()`, or average calculations.
 - Layout balance depends on both `place()` positioning and the internal `pack()` spacing.
+
+## 2026-07-03
+
+### What I worked on
+
+- Added board width, board height, tile size, and speed delay to saved game records.
+- Updated `Game.py` so each saved result includes the settings used for that session.
+- Recreated the CSV record format so new sessions store the extra settings data.
+- Improved the Logs screen so each record is shown as a two-line card instead of one long line.
+- Organized `open_logs()` by moving filtering, stats, record section, and record card logic into smaller helper functions.
+- Kept the Logs screen limited to the latest 50 records so it stays responsive.
+
+### Problems I found
+
+- A single long record label became too wide, so the right side of the text was hidden.
+- A horizontal scrollbar would work, but it would make records harder to scan.
+- `open_logs()` was doing too many jobs in one function, which made it harder to read and update.
+- Old CSV rows can be missing newer columns, so record display needs fallback values.
+
+### What I learned
+
+- Logs are easier to read when the most important result is on the first line and settings details are on the second line.
+- Saving board and speed settings makes bot comparisons more honest because results depend on game configuration.
+- Helper functions make UI code easier to understand because each function has one clear job.
