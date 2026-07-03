@@ -134,7 +134,11 @@ class Game:
                 average_score,
                 self.total_moves,
                 game_time,
-                session_time
+                session_time,
+                self.window.width,
+                self.window.height,
+                self.window.tile_size,
+                self.speed_delay
             )
 
             print(
