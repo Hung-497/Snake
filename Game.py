@@ -2,6 +2,7 @@ from RuleBasedBot import RuleBasedBot
 from QLearningBot import QLearningBot
 from HamiltonianBot import HamiltonianBot
 from RecordManager import RecordManager
+from ReplayManager import ReplayManager
 import time
 
 class Game:
@@ -21,6 +22,7 @@ class Game:
         self.speed_delay = speed_delay
 
         self.record_manager = RecordManager()
+        self.replay_manager = ReplayManager()
 
         self.bot = RuleBasedBot(self)
         self.q_bot = QLearningBot(self)
@@ -48,6 +50,17 @@ class Game:
 
         self.return_to_menu = False
     
+    def start_replay_recording(self):
+        self.replay_manager.start_recording(
+            self.bot_mode,
+            self.window.width,
+            self.window.height,
+            self.window.tile_size,
+            self.speed_delay,
+            self.snake,
+            self.food
+        )
+    
     def draw(self):
         self.window.clear_canvas()
         self.window.update_score_label(self.score, self.games_played, self.best_score)
@@ -72,6 +85,7 @@ class Game:
 
         if (direction is not None):
             self.movement.change_direction(direction)
+            self.replay_manager.record_move(direction)
 
         ate_food, self.game_over = self.movement.move_snake(
             self.snake, 
@@ -95,6 +109,7 @@ class Game:
                 self.game_won = True
             else:
                 self.food.spawn_food()
+                self.replay_manager.record_food(self.food)
 
         if (self.bot_mode == "q_learning"):
             self.q_bot.learn_from_move(
@@ -118,13 +133,19 @@ class Game:
             average_score = sum(self.recent_scores) / len(self.recent_scores)
 
             self.total_moves_history.append(self.total_moves)
-            avg_score = sum(self.total_moves_history) / len(self.total_moves_history)
+            average_total_moves = sum(self.total_moves_history) / len(self.total_moves_history)
 
             if (len(self.total_moves_history) > 10):
                 self.total_moves_history.pop(0)
 
             game_time = time.perf_counter() - self.game_start_time
             session_time = time.perf_counter() - self.session_start_time
+
+            self.replay_manager.save_replay(
+                self.bot_mode,
+                self.score,
+                self.game_won
+            )
 
             self.record_manager.save_game_result(
                 self.bot_mode,
@@ -147,14 +168,16 @@ class Game:
                 f"Best: {self.best_score}, "
                 f"Avg: {average_score:.1f}, "
                 f"Total Moves: {self.total_moves}, "
-                f"Avg total move: {avg_score:.1f}, "
+                f"Avg total move: {average_total_moves:.1f}, "
                 f"Epsilon: {self.q_bot.epsilon:.3f}, "
                 f"Game Time: {game_time:.1f}s, "
                 f"Session Time: {session_time:.1f}s"
             )
 
             if (self.bot_mode == "q_learning"):
+                self.q_bot.game_trained += 1
                 self.q_bot.decay_epsilon()
+                self.q_bot.save_q_table()
 
             if (self.game_won):
                 self.window.draw_game_won(self.score)
@@ -173,6 +196,7 @@ class Game:
         self.window.create_canvas()
         self.window.draw_back_button(self.back_to_menu)
         self.window.center_window()
+        self.start_replay_recording()
 
         self.draw()
         self.update()
@@ -184,13 +208,13 @@ class Game:
         if (self.update_after_id is not None):
             try:
                 self.window.window.after_cancel(self.update_after_id)
-            except:
+            except Exception:
                 pass
 
         if (self.reset_after_id is not None):
             try:
                 self.window.window.after_cancel(self.reset_after_id)
-            except:
+            except Exception:
                 pass
 
         self.window.window.quit()
@@ -208,6 +232,7 @@ class Game:
         self.snake.reset()
         self.food.spawn_food()
         self.movement.reset()
+        self.start_replay_recording()
 
     def start_next_game(self):
         if (self.game_closed):

@@ -2,8 +2,9 @@
 
 ## Overview
 
-A Python Snake game built with Tkinter.  
-The project starts with a basic Snake game, then adds different AI bots.
+A Python Snake game built with Tkinter and CustomTkinter.
+The project starts with a basic Snake game, then adds different AI bots, records,
+settings, and replay playback.
 
 ## Features
 
@@ -14,7 +15,11 @@ The project starts with a basic Snake game, then adds different AI bots.
 - Safe shortcut logic
 - Tail reachability check
 - Flood fill space checking
-- Bot selection menu
+- CustomTkinter bot selection menu
+- Settings screen for speed, board size, and tile size
+- Records screen with bot filters and summary stats
+- Replay saving and playback for saved bot runs
+- Q-learning persistence with saved Q-table data
 
 ## Installation
 
@@ -47,6 +52,18 @@ Play -> Rule-based bot / Q-learning bot / Hamiltonian bot
 ```
 
 You can also adjust speed, board size, and tile size in the Settings screen before starting a game.
+
+Saved results can be viewed from:
+
+```text
+Logs -> All / Rule / Q-learning / Hamiltonian
+```
+
+Saved replays can be played from:
+
+```text
+Replay -> Rule Based Replay / Q Learning Replay / Hamiltonian Replay
+```
 
 ## Bot Results
 
@@ -94,7 +111,6 @@ _Results on the terminal_
 
 ```text
 Menu.py              # Starts the CustomTkinter menu
-main.py              # Older terminal-based bot selection entry point
 Game.py              # Main game loop and score tracking
 Window.py            # Tkinter window and drawing
 Snake.py             # Snake position and body drawing
@@ -104,6 +120,12 @@ BaseBot.py           # Shared bot helper methods
 RuleBasedBot.py      # Rule-based bot
 QLearningBot.py      # Tabular Q-learning bot
 HamiltonianBot.py    # Hamiltonian cycle bot
+RecordManager.py     # Saves and reads CSV game records
+ReplayManager.py     # Saves and loads replay JSON files
+ReplayPlayer.py      # Plays saved replay files visually
+records/             # Saved game result CSV data
+replays/             # Saved replay JSON files
+learning_data/       # Saved Q-table data
 DEVLOG.md            # Development diary
 ```
 

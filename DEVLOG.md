@@ -472,3 +472,43 @@ Development Order:
 - Logs are easier to read when the most important result is on the first line and settings details are on the second line.
 - Saving board and speed settings makes bot comparisons more honest because results depend on game configuration.
 - Helper functions make UI code easier to understand because each function has one clear job.
+
+## 2026-07-04 to 2026-07-06
+
+### What I worked on
+
+- Improved Q-learning persistence so the bot can continue learning from a saved Q-table across sessions.
+- Saved Q-learning data into a `learning_data/` folder.
+- Compared Q-learning training results using game records, best score, average score, and consistency.
+- Decided to keep tabular Q-learning as a learning prototype instead of trying to force it to beat Snake perfectly.
+- Designed the replay system separately from game records and Q-learning data.
+- Created `ReplayManager.py` to save and load replay JSON files.
+- Saved compact replay data using starting positions, food positions, move numbers, settings, and final score.
+- Added replay files for the best rule-based, Q-learning, and Hamiltonian runs.
+- Added a Replay button to the CustomTkinter menu.
+- Created `ReplayPlayer.py` to play saved replay moves back visually.
+- Connected the replay screen so I can choose Rule-based, Q-learning, or Hamiltonian replay from the menu.
+- Updated `README.md` to describe the current menu, settings, logs, replay system, and project structure.
+- Cleaned small unused replay test code before preparing the project for GitHub.
+
+### Problems I found
+
+- Q-learning can save learned values, but tabular Q-learning still has limits because it does not fully understand long-term body traps.
+- Replay data should not save every full snake body frame because that would create very large files.
+- I needed to keep three types of data separate: records for summaries, replay files for playback, and Q-tables for learning.
+- Replay needed to convert move numbers back into directions before drawing the snake.
+- The README became outdated because the project no longer uses the old terminal entry point.
+
+### Experiment results
+
+- Rule-based replay was saved successfully with score, moves, food positions, and settings.
+- Q-learning replay was saved successfully after a best run.
+- Hamiltonian replay was saved successfully and shows a completed winning game.
+- Replay files are much smaller than saving every frame because they store only moves and food positions.
+
+### What I learned
+
+- JSON is useful for replay data because it can store lists, settings, and metadata clearly.
+- Saving directions as numbers keeps replay files smaller and easier to process.
+- Separating `ReplayManager` and `ReplayPlayer` keeps saving logic away from playback logic.
+- A complete project needs not only gameplay, but also records, replay, documentation, and cleanup.

@@ -5,6 +5,8 @@ from Window import Window
 from Game import Game
 from Movement import Movement
 from RecordManager import RecordManager
+from ReplayManager import ReplayManager
+from ReplayPlayer import ReplayPlayer
 
 class MenuApp:
     def __init__(self, width, height, tile_size):
@@ -18,6 +20,7 @@ class MenuApp:
         self.selected_bot_mode = None
         self.current_frame = None
         self.record_manager = RecordManager()
+        self.replay_manager = ReplayManager()
         self.selected_log_filter = "All Bots"
 
         self.background_color = "#071A2D"
@@ -112,6 +115,7 @@ class MenuApp:
 
         self.start_button = self.create_menu_button("Play", self.open_play)
         self.settings_button = self.create_menu_button("Settings", self.open_settings)
+        self.replay_button = self.create_menu_button("Replay", self.open_replay)
         self.logs_button = self.create_menu_button("Logs", self.open_logs)
 
     def create_menu_button(self, button_text, command, button_color=None, button_width=230):
@@ -250,6 +254,64 @@ class MenuApp:
             button_width=170
         )
 
+    def open_replay(self):
+        self.clear_screen()
+
+        self.current_frame = ctk.CTkFrame(
+            self.window,
+            fg_color="transparent"
+        )
+        self.current_frame.place(relx=0.5, rely=0.45, anchor="center")
+
+        title_label = ctk.CTkLabel(
+            self.current_frame,
+            text="Choose Replay:",
+            font=("Arial", 44, "bold"),
+            text_color=self.text_color
+        )
+        title_label.pack(pady=(0, 8))
+
+        subtitle_label = ctk.CTkLabel(
+            self.current_frame,
+            text="Load the saved best replay for each bot",
+            font=("Arial", 15),
+            text_color=self.muted_text_color
+        )
+        subtitle_label.pack(pady=(0, 28))
+
+        self.create_menu_button(
+            "Rule Based Replay",
+            lambda: self.start_replay_with_bot("rule"),
+            button_width=300
+        )
+
+        self.create_menu_button(
+            "Q Learning Replay",
+            lambda: self.start_replay_with_bot("q_learning"),
+            button_width=300
+        )
+
+        self.create_menu_button(
+            "Hamiltonian Replay",
+            lambda: self.start_replay_with_bot("hamiltonian"),
+            button_width=300
+        )
+
+        self.replay_status_label = ctk.CTkLabel(
+            self.current_frame,
+            text="",
+            font=("Arial", 14),
+            text_color=self.muted_text_color
+        )
+        self.replay_status_label.pack(pady=(8, 0))
+
+        self.Back_button = self.create_menu_button(
+            "Back",
+            self.draw_menu,
+            button_color=self.secondary_button_color,
+            button_width=170
+        )
+
     def create_option_box(self, label_text, option_values, selected_value, command):
         label = ctk.CTkLabel(
             self.current_frame,
@@ -338,7 +400,12 @@ class MenuApp:
         filtered_records = []
 
         for record in records:
-            if (record["bot_name"] == self.selected_log_filter):
+            if (
+                self.selected_log_filter == "q_learning" and
+                record["bot_name"].startswith("q_learning")
+            ):
+                filtered_records.append(record)
+            elif (record["bot_name"] == self.selected_log_filter):
                 filtered_records.append(record)
 
         return filtered_records
@@ -498,6 +565,18 @@ class MenuApp:
         self.selected_bot_mode = bot_mode
         self.window.quit()
 
+    def start_replay_with_bot(self, bot_name):
+        replay_data = self.replay_manager.load_replay(bot_name)
+
+        if (replay_data is None):
+            self.replay_status_label.configure(
+                text=f"No replay found for {bot_name}"
+            )
+            return
+
+        self.selected_bot_mode = f"replay:{bot_name}"
+        self.window.quit()
+
     def clear_screen(self):
         if self.current_frame is not None:
             self.current_frame.destroy()
@@ -532,6 +611,27 @@ if __name__ == "__main__":
 
         if bot_mode is None:
             break
+
+        if (bot_mode.startswith("replay:")):
+            replay_bot_name = bot_mode.replace("replay:", "")
+            replay_manager = ReplayManager()
+            replay_data = replay_manager.load_replay(replay_bot_name)
+
+            if (replay_data is None):
+                continue
+
+            replay_window = Window(
+                replay_data["board_width"],
+                replay_data["board_height"],
+                replay_data["tile_size"]
+            )
+            replay_player = ReplayPlayer(replay_window, replay_data)
+            replay_player.run()
+
+            if not replay_player.return_to_menu:
+                break
+
+            continue
 
         game_window = Window(board_width, board_height, tile_size)
         snake = Snake(game_window)

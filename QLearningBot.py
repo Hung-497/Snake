@@ -1,3 +1,5 @@
+import json
+import os
 import random
 from BaseBot import BaseBot
 
@@ -14,14 +16,78 @@ class QLearningBot(BaseBot):
         super().__init__(game)
 
         self.q_table = {} # the AI memory, store knowledge [state][action]
+        self.q_table_file = os.path.join("learning_data", "q_table_space_state_v2.json")
         self.learning_rate = 0.1 # how fast AI learns new information
         self.discount_rate = 0.9 # how much AI cares about future rewards
         self.epsilon = 1.0 # how often AI explores random actions
-        self.min_epsilon = 0.00
+        self.min_epsilon = 0.05
         self.epsilon_decay = 0.997
+        self.game_trained = 0
         self.actions = ["Straight", "Turn_Left", "Turn_Right"]
         self.current_state = None
         self.current_action = None
+
+        self.load_q_table()
+
+    def _state_to_key(self, state):
+        key_parts = [str(value) for value in state]
+        
+        return "_".join(key_parts)
+
+    def _key_to_state(self, key):
+        values = key.split("_")
+        state = tuple(int(value) for value in values)
+
+        return state
+    
+    def save_q_table(self):
+        os.makedirs("learning_data", exist_ok=True)
+        
+        q_table_to_save = {}
+        epsilon_to_save = self.epsilon
+
+        for state, action_values in self.q_table.items():
+            state_key = self._state_to_key(state)
+            q_table_to_save[state_key] = action_values
+        
+        data_to_save = {
+            "q_table": q_table_to_save,
+            "epsilon": epsilon_to_save,
+            "game_trained": self.game_trained
+        }
+
+        with open(self.q_table_file, "w") as file:
+            json.dump(data_to_save, file, indent=4)
+        
+    def load_q_table(self):
+        if (not os.path.exists(self.q_table_file)):
+            return
+        
+        if (os.path.getsize(self.q_table_file) == 0):
+            return
+        
+        with open(self.q_table_file, "r") as file:
+            saved_data = json.load(file)
+        
+        self.q_table = {}
+        self.epsilon = saved_data.get("epsilon", self.epsilon)
+        self.game_trained = saved_data.get("game_trained", self.game_trained)
+
+        for state_key, action_values in saved_data.get("q_table", {}).items():
+            state = self._key_to_state(state_key)
+            self.q_table[state] = action_values
+    
+    def _get_action_space_level(self, state, action):
+        if (action == "Straight"):
+            return state[6]
+        
+        if (action == "Turn_Left"):
+            return state[7]
+        
+        if (action == "Turn_Right"):
+            return state[8]
+        
+        return 0
     
     def _is_danger(self, direction):
         next_x, next_y = self._get_next_position(direction)
@@ -40,7 +106,60 @@ class QLearningBot(BaseBot):
             return 1
         
         return 0    
+
+    def _space_level(self, open_space):
+        snake_size = len(self.game.snake.body) + 1
+
+        if (open_space < snake_size):
+            return 0
+        
+        if (open_space < snake_size * 2):
+            return 1    
+        
+        return 2
     
+    def _count_space_after_action(self, action):
+        direction = self._get_direction_from_action(action)
+        next_x, next_y = self._get_next_position(direction)
+
+        if (self._is_danger(direction)):
+            return 0
+        
+        blocked_positions = set(self.game.snake.body)
+
+        return self._count_reachable_space(next_x, next_y, blocked_positions)
+    
+    def _count_reachable_space(self, start_x, start_y, blocked_positions):
+        positions_to_check = [(start_x, start_y)]
+        visited_positions = {(start_x, start_y)}
+
+        while (len(positions_to_check) > 0):
+            current_x, current_y = positions_to_check.pop(0)
+
+            next_positions = [
+                (current_x, current_y - self.game.window.tile_size),  # Up
+                (current_x, current_y + self.game.window.tile_size),  # Down
+                (current_x - self.game.window.tile_size, current_y),  # Left
+                (current_x + self.game.window.tile_size, current_y)   # Right
+            ]
+
+            for next_x, next_y in next_positions:
+                next_position = (next_x, next_y)
+
+                if (next_position in visited_positions):
+                    continue
+
+                if (next_position in blocked_positions):
+                    continue
+
+                if (not self._is_inside_board(next_x, next_y)):
+                    continue
+
+                visited_positions.add(next_position)
+                positions_to_check.append(next_position)
+            
+        return len(visited_positions)
+
     def _get_state(self):
         straight_direction = self._get_direction_from_action("Straight")
         left_direction = self._get_direction_from_action("Turn_Left")
@@ -60,13 +179,24 @@ class QLearningBot(BaseBot):
         food_left = int(abs(self.game.food.x - next_left_x) + abs(self.game.food.y - next_left_y) < current_distance)
         food_right = int(abs(self.game.food.x - next_right_x) + abs(self.game.food.y - next_right_y) < current_distance)
 
+        straight_space = self._count_space_after_action("Straight")
+        left_space = self._count_space_after_action("Turn_Left")
+        right_space = self._count_space_after_action("Turn_Right")
+
+        straight_space_level = self._space_level(straight_space)
+        left_space_level = self._space_level(left_space)
+        right_space_level = self._space_level(right_space)
+
         return (
             danger_straight,
             danger_left,
             danger_right,
             food_straight,
             food_left,
-            food_right
+            food_right,
+            straight_space_level,
+            left_space_level,
+            right_space_level
         )
 
     def _get_current_direction(self):
@@ -135,21 +265,31 @@ class QLearningBot(BaseBot):
 
         return distance_x + distance_y
     
-    def _get_reward(self, game_over, ate_food, old_distance, new_distance):
+    def _get_reward(self, game_over, ate_food, old_distance, new_distance, action_space_level):
         if (game_over):
             return -100
         
         if (ate_food):
             return 100
         
-        if (new_distance < old_distance):
-            return 5
+        reward = -1
         
-        return -1 
+        if (new_distance < old_distance):
+            reward += 5
+        else: 
+            reward -= 2
+        
+        if (action_space_level == 2):
+            reward += 2
+        elif (action_space_level == 0):
+            reward -= 8
+        
+        return reward
     
     def learn_from_move(self, old_distance, ate_food, game_over):
         new_distance = self.get_food_distance() # check new distance
-        reward = self._get_reward(game_over, ate_food, old_distance, new_distance) # calculate reward
+        action_space_level = self._get_action_space_level(self.current_state, self.current_action) # check action space level
+        reward = self._get_reward(game_over, ate_food, old_distance, new_distance, action_space_level) # calculate reward
         next_state = self._get_state() # get the new state
 
         self._update_q_values(
