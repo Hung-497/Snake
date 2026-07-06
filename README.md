@@ -86,7 +86,6 @@ Replay -> Rule Based Replay / Q Learning Replay / Hamiltonian Replay
 ![Play Screen](/img/Play_Screen.png)
 
 **Settings Screen**
-
 ![Settings Screen](/img/Settings_Screen.png)
 
 **Logs Screen**
@@ -94,7 +93,6 @@ Replay -> Rule Based Replay / Q Learning Replay / Hamiltonian Replay
 ![Logs Screen](/img/Logs_Screen.png)
 
 **Replay Screen**
-
 ![Replay Screen](/img/Replay_Screen.png)
 
 ### Bot Demos
