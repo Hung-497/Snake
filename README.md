@@ -75,7 +75,29 @@ Replay -> Rule Based Replay / Q Learning Replay / Hamiltonian Replay
 
 ## Demo
 
-The demos below compare the three bot modes: rule-based, Q-learning, and Hamiltonian cycle.
+### App Screens
+
+**Main Menu**
+
+![Main Menu](/img/Main_Menu.png)
+
+**Play Screen**
+
+![Play Screen](/img/Play_Screen.png)
+
+**Settings Screen**
+
+![Settings Screen](/img/Settings_Screen.png)
+
+**Logs Screen**
+
+![Logs Screen](/img/Logs_Screen.png)
+
+**Replay Screen**
+
+![Replay Screen](/img/Replay_Screen.png)
+
+### Bot Demos
 
 1. Rule-based Bot
 
