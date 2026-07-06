@@ -489,6 +489,8 @@ Development Order:
 - Created `ReplayPlayer.py` to play saved replay moves back visually.
 - Connected the replay screen so I can choose Rule-based, Q-learning, or Hamiltonian replay from the menu.
 - Updated `README.md` to describe the current menu, settings, logs, replay system, and project structure.
+- Added app screen images to `README.md` for the main menu, play screen, settings, logs, and replay.
+- Changed the Logs summary from best moves to average moves because low moves can mean a quick loss.
 - Cleaned small unused replay test code before preparing the project for GitHub.
 
 ### Problems I found

@@ -371,7 +371,7 @@ class MenuApp:
 
         self.create_log_filter_buttons(filter_frame)
 
-        total_games, best_score, average_score, best_moves = self.get_log_stats(filtered_records)
+        total_games, best_score, average_score, average_moves = self.get_log_stats(filtered_records)
 
         stats_frame = ctk.CTkFrame(
             self.current_frame,
@@ -381,8 +381,8 @@ class MenuApp:
 
         self.create_stat_label(stats_frame, "Games", total_games)
         self.create_stat_label(stats_frame, "Best", best_score)
-        self.create_stat_label(stats_frame, "Average", f"{average_score:.1f}")
-        self.create_stat_label(stats_frame, "Best Moves", best_moves)
+        self.create_stat_label(stats_frame, "Average Score", f"{average_score:.1f}")
+        self.create_stat_label(stats_frame, "Average Moves", f"{average_moves:.1f}")
 
         self.create_records_section(filtered_records)
 
@@ -431,9 +431,9 @@ class MenuApp:
 
         best_score = max(scores)
         average_score = sum(scores) / len(scores)
-        best_moves = min(moves)
+        average_moves = sum(moves) / len(moves)
 
-        return total_games, best_score, average_score, best_moves
+        return total_games, best_score, average_score, average_moves
 
     def create_records_section(self, records):
         records_frame = ctk.CTkScrollableFrame(
