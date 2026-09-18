@@ -53,6 +53,20 @@ Play -> Rule-based bot / Q-learning bot / Hamiltonian bot
 
 You can also adjust speed, board size, and tile size in the Settings screen before starting a game.
 
+## Run Tests
+
+Install the development test dependency:
+
+```bash
+python3 -m pip install -r requirements-dev.txt
+```
+
+Run the characterization tests from the project root:
+
+```bash
+python3 -m pytest
+```
+
 Saved results can be viewed from:
 
 ```text
