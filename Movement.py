@@ -1,3 +1,6 @@
+from GameTypes import Direction
+
+
 class Movement:
     """
     Handles direction changes and snake movement.
@@ -11,18 +14,24 @@ class Movement:
         self.velocity_y = 0
     
     def change_direction(self, direction):
-        if (direction == "Up" and self.velocity_y != 1):
+        direction = Direction.from_value(direction)
+        if (direction is None):
+            return False
+
+        if (direction == Direction.UP and self.velocity_y != 1):
             self.velocity_x = 0
             self.velocity_y = -1
-        elif (direction == "Down" and self.velocity_y != -1):
+        elif (direction == Direction.DOWN and self.velocity_y != -1):
             self.velocity_x = 0
             self.velocity_y = 1
-        elif (direction == "Left" and self.velocity_x != 1):
+        elif (direction == Direction.LEFT and self.velocity_x != 1):
             self.velocity_x = -1
             self.velocity_y = 0
-        elif (direction == "Right" and self.velocity_x != -1):
+        elif (direction == Direction.RIGHT and self.velocity_x != -1):
             self.velocity_x = 1
             self.velocity_y = 0
+
+        return True
 
     def move_snake(self, snake, tile_size, food, width, height, game_over):
         ate_food = False
