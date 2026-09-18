@@ -31,7 +31,35 @@ class HamiltonianBot(BotMode):
         if (shortcut_direction is not None):
             return shortcut_direction
 
-        return cycle_direction
+        if (self.is_safe_direction(state, cycle_direction)):
+            return cycle_direction
+
+        # A shortcut can land the head just behind its own cycle position, so
+        # the next cycle tile is the cell it just came from. Rejoin the cycle
+        # at the earliest reachable tile instead of stepping into the body.
+        return self._rejoin_cycle_direction(state)
+
+    def _rejoin_cycle_direction(self, state):
+        head_index = self._get_cycle_index(self.head_position(state))
+
+        best_direction = None
+        best_distance = None
+
+        for direction in self.DIRECTIONS:
+            if (not self.is_safe_direction(state, direction)):
+                continue
+
+            tile = self._get_tile_after_direction(state, direction)
+            distance = self._get_distance_forward(
+                head_index,
+                self._get_cycle_index(tile),
+            )
+
+            if (best_distance is None or distance < best_distance):
+                best_distance = distance
+                best_direction = direction
+
+        return best_direction
 
     def _create_cycle(self):
         path = []

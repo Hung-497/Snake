@@ -217,3 +217,17 @@ def test_game_runs_every_bot_mode_through_the_common_contract(bot_mode, tmp_path
 
     assert game.total_moves > 0
     assert game.score == engine.score
+
+
+@pytest.mark.parametrize(
+    "width, height, seed",
+    [(4, 4, 3), (4, 4, 4), (4, 4, 8), (4, 4, 15), (6, 4, 18), (4, 6, 14), (6, 6, 6)],
+)
+def test_hamiltonian_clears_the_board_after_an_unfollowable_cycle_step(width, height, seed):
+    # A shortcut can land on the tile just behind the head in cycle order.
+    # Following the cycle from there would reverse into the body, so the bot
+    # has to keep itself alive instead of walking into a wall.
+    engine, _ = play_game("hamiltonian", width, height, seed)
+
+    assert engine.game_won is True
+    assert engine.score == width * height - 1
