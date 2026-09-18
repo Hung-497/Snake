@@ -1,12 +1,11 @@
 import customtkinter as ctk
-from Food import Food
-from Snake import Snake
 from Window import Window
 from Game import Game
-from Movement import Movement
 from RecordManager import RecordManager
-from ReplayManager import ReplayManager
+from ReplayManager import ReplayCompatibilityError, ReplayManager
 from ReplayPlayer import ReplayPlayer
+from GameConfig import GameConfig
+from SnakeEngine import SnakeEngine
 
 class MenuApp:
     def __init__(self, width, height, tile_size):
@@ -143,13 +142,24 @@ class MenuApp:
         self.draw_menu()
         self.window.mainloop()
 
-        board_width, board_height = self.board_size_options[self.selected_board_size_name]
-        tile_size = self.tile_size_options[self.selected_tile_size_name]
+        self.game_config = self.build_game_config()
         speed_delay = self.speed_options[self.selected_speed_name]
 
         self.window.destroy()
 
-        return self.selected_bot_mode, board_width, board_height, tile_size, speed_delay
+        return (
+            self.selected_bot_mode,
+            self.game_config.width,
+            self.game_config.height,
+            self.game_config.tile_size,
+            speed_delay,
+        )
+
+    def build_game_config(self):
+        board_width, board_height = self.board_size_options[self.selected_board_size_name]
+        tile_size = self.tile_size_options[self.selected_tile_size_name]
+
+        return GameConfig(board_width, board_height, tile_size)
 
     def open_play(self):
         self.clear_screen()
@@ -566,7 +576,11 @@ class MenuApp:
         self.window.quit()
 
     def start_replay_with_bot(self, bot_name):
-        replay_data = self.replay_manager.load_replay(bot_name)
+        try:
+            replay_data = self.replay_manager.load_replay(bot_name)
+        except ReplayCompatibilityError as error:
+            self.replay_status_label.configure(text=str(error))
+            return
 
         if (replay_data is None):
             self.replay_status_label.configure(
@@ -615,7 +629,11 @@ if __name__ == "__main__":
         if (bot_mode.startswith("replay:")):
             replay_bot_name = bot_mode.replace("replay:", "")
             replay_manager = ReplayManager()
-            replay_data = replay_manager.load_replay(replay_bot_name)
+            try:
+                replay_data = replay_manager.load_replay(replay_bot_name)
+            except ReplayCompatibilityError as error:
+                print(error)
+                continue
 
             if (replay_data is None):
                 continue
@@ -633,12 +651,16 @@ if __name__ == "__main__":
 
             continue
 
-        game_window = Window(board_width, board_height, tile_size)
-        snake = Snake(game_window)
-        food = Food(game_window, snake)
-        movement = Movement()
+        game_config = menu.game_config
+        game_window = Window(game_config.width, game_config.height, game_config.tile_size)
+        engine = SnakeEngine(game_config, start_position=None)
 
-        game = Game(game_window, snake, food, movement, bot_mode, speed_delay)
+        game = Game(
+            game_window,
+            bot_mode=bot_mode,
+            speed_delay=speed_delay,
+            engine=engine,
+        )
         game.run()
 
         if not game.return_to_menu:
