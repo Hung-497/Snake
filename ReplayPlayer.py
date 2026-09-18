@@ -1,4 +1,11 @@
-from ReplayManager import NUMBER_TO_DIRECTION
+from ReplayManager import (
+    GRID_COORDINATE_SYSTEM,
+    NUMBER_TO_DIRECTION,
+    PIXEL_COORDINATE_SYSTEM,
+    ReplayCompatibilityError,
+)
+from GameTypes import Direction
+from tkinter import TclError
 
 
 class ReplayPlayer:
@@ -8,6 +15,15 @@ class ReplayPlayer:
 
     def __init__(self, window, replay_data):
         self.window = window
+        self.coordinate_system = replay_data.get("coordinate_system", "pixel")
+        if self.coordinate_system not in {
+            GRID_COORDINATE_SYSTEM,
+            PIXEL_COORDINATE_SYSTEM,
+        }:
+            raise ReplayCompatibilityError(
+                f"Unsupported replay coordinate system: {self.coordinate_system}"
+            )
+        self._uses_grid_coordinates = self.coordinate_system == "grid"
 
         self.snake_x = replay_data["start_snake"][0]
         self.snake_y = replay_data["start_snake"][1]
@@ -15,8 +31,12 @@ class ReplayPlayer:
 
         self.foods = replay_data["foods"]
         self.food_index = 0
-        self.food_x = self.foods[self.food_index][0]
-        self.food_y = self.foods[self.food_index][1]
+        if self.foods:
+            self.food_x = self.foods[self.food_index][0]
+            self.food_y = self.foods[self.food_index][1]
+        else:
+            self.food_x = None
+            self.food_y = None
 
         self.moves = replay_data["moves"]
         self.move_index = 0
@@ -36,22 +56,27 @@ class ReplayPlayer:
         self.draw_snake_body()
 
     def draw_food(self):
+        if self.food_x is None:
+            return
+
+        food_x, food_y = self._position_to_pixels(self.food_x, self.food_y)
         self.window.canvas.create_oval(
-            self.food_x,
-            self.food_y,
-            self.food_x + self.window.tile_size,
-            self.food_y + self.window.tile_size,
+            food_x,
+            food_y,
+            food_x + self.window.tile_size,
+            food_y + self.window.tile_size,
             fill="red",
             outline="",
             tag="food"
         )
 
     def draw_snake(self):
+        snake_x, snake_y = self._position_to_pixels(self.snake_x, self.snake_y)
         self.window.canvas.create_rectangle(
-            self.snake_x,
-            self.snake_y,
-            self.snake_x + self.window.tile_size,
-            self.snake_y + self.window.tile_size,
+            snake_x,
+            snake_y,
+            snake_x + self.window.tile_size,
+            snake_y + self.window.tile_size,
             fill="yellow",
             outline="",
             tag="snake"
@@ -59,6 +84,7 @@ class ReplayPlayer:
 
     def draw_snake_body(self):
         for x, y in self.snake_body:
+            x, y = self._position_to_pixels(x, y)
             self.window.canvas.create_rectangle(
                 x,
                 y,
@@ -96,17 +122,22 @@ class ReplayPlayer:
     def move_snake(self, direction):
         next_x = self.snake_x
         next_y = self.snake_y
+        step_size = 1 if self._uses_grid_coordinates else self.window.tile_size
 
-        if (direction == "Up"):
-            next_y -= self.window.tile_size
-        elif (direction == "Down"):
-            next_y += self.window.tile_size
-        elif (direction == "Left"):
-            next_x -= self.window.tile_size
-        elif (direction == "Right"):
-            next_x += self.window.tile_size
+        if (direction == Direction.UP):
+            next_y -= step_size
+        elif (direction == Direction.DOWN):
+            next_y += step_size
+        elif (direction == Direction.LEFT):
+            next_x -= step_size
+        elif (direction == Direction.RIGHT):
+            next_x += step_size
 
-        ate_food = (next_x == self.food_x and next_y == self.food_y)
+        ate_food = (
+            self.food_x is not None
+            and next_x == self.food_x
+            and next_y == self.food_y
+        )
 
         if (ate_food):
             self.snake_body = [(self.snake_x, self.snake_y)] + self.snake_body
@@ -117,6 +148,11 @@ class ReplayPlayer:
 
         self.snake_x = next_x
         self.snake_y = next_y
+
+    def _position_to_pixels(self, x, y):
+        if self._uses_grid_coordinates:
+            return x * self.window.tile_size, y * self.window.tile_size
+        return x, y
 
     def move_to_next_food(self):
         if (self.food_index + 1 >= len(self.foods)):
@@ -153,7 +189,7 @@ class ReplayPlayer:
         if (self.update_after_id is not None):
             try:
                 self.window.window.after_cancel(self.update_after_id)
-            except Exception:
+            except TclError:
                 pass
 
         self.window.window.quit()
