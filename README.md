@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Python Snake game built with Tkinter and CustomTkinter.
+A Python Snake game built with Arcade 3.
 The project starts with a basic Snake game, then adds different AI bots, records,
 settings, and replay playback.
 
@@ -15,7 +15,7 @@ settings, and replay playback.
 - Safe shortcut logic
 - Tail reachability check
 - Flood fill space checking
-- CustomTkinter bot selection menu
+- Arcade bot selection menu
 - Settings screen for speed, board size, and tile size
 - Records screen with bot filters and summary stats
 - Replay saving and playback for saved bot runs
@@ -23,35 +23,36 @@ settings, and replay playback.
 
 ## Installation
 
-This project uses Python, Tkinter, and CustomTkinter for the menu UI.
+This project uses Python and [Arcade](https://api.arcade.academy) 3 for the whole
+app: the window, the screens, the buttons, the timing, and the drawing.
 
-Tkinter usually comes with Python. You can check it with:
-
-```bash
-python3 -m tkinter
-```
-
-If a small Tkinter window opens, Tkinter is working.
-
-Install CustomTkinter with:
+Install the dependency with:
 
 ```bash
-python3 -m pip install customtkinter
+python3 -m pip install -r requirements.txt
 ```
+
+Arcade draws with OpenGL, so it needs a normal desktop session with a graphics
+driver. It works on macOS, Windows, and Linux.
 
 ## How to Run
 
 ```bash
-cd Snake && python3 Menu.py
+cd Snake && python3 SnakeApp.py
 ```
 
-Then use the menu to choose a bot:
+The app opens in one fixed-size window and moves between screens inside it:
 
 ```text
-Play -> Rule-based bot / Q-learning bot / Hamiltonian bot
+Menu -> Play -> Rule Based / Q Learning / Hamiltonian
+     -> Settings -> speed, board size, tile size
+     -> Replay   -> watch the best saved game of a bot
+     -> Records  -> summary statistics and recent games
 ```
 
-You can also adjust speed, board size, and tile size in the Settings screen before starting a game.
+Settings are kept for as long as the app is open, so a game started afterwards
+uses the speed, board size, and tile size chosen there. Closing the window
+closes the app.
 
 ## Run Tests
 
@@ -61,7 +62,7 @@ Install the development test dependency:
 python3 -m pip install -r requirements-dev.txt
 ```
 
-Run the characterization tests from the project root:
+Run the tests from the project root:
 
 ```bash
 python3 -m pytest
@@ -70,13 +71,13 @@ python3 -m pytest
 Saved results can be viewed from:
 
 ```text
-Logs -> All / Rule / Q-learning / Hamiltonian
+Records -> All / Rule / Q-Learning / Hamiltonian
 ```
 
 Saved replays can be played from:
 
 ```text
-Replay -> Rule Based Replay / Q Learning Replay / Hamiltonian Replay
+Replay -> Rule Based / Q Learning / Hamiltonian
 ```
 
 ## Bot Results
@@ -90,6 +91,9 @@ Replay -> Rule Based Replay / Q Learning Replay / Hamiltonian Replay
 ## Demo
 
 ### App Screens
+
+These screenshots were taken before the move to Arcade, so the screens look
+different now. The actions on them are the same.
 
 **Main Menu**
 
@@ -146,22 +150,35 @@ _Results on the terminal_
 ## Project Structure
 
 ```text
-Menu.py              # Starts the CustomTkinter menu
-Game.py              # Main game loop and score tracking
-Window.py            # Tkinter window and drawing
-Snake.py             # Snake position and body drawing
-Food.py              # Food spawning and drawing
-Movement.py          # Movement and collision logic
-BaseBot.py           # Shared bot helper methods
+SnakeApp.py          # Starts the app: the Arcade window and the App Views
+AppShell.py          # Which screen is showing, and closing the app
+MenuView.py          # Menu screen
+SettingsView.py      # Settings screen
+PlayView.py          # Bot Mode choice
+GameView.py          # Watch a bot play
+ReplayView.py        # Choose a saved replay
+ReplayPlaybackView.py # Watch a saved replay
+RecordsView.py       # Records screen
+ViewStyle.py         # Shared colours and buttons
+BoardRenderer.py     # Draws the board, turning cells into pixels
+SessionSettings.py   # Speed, board size, and tile size for this session
+GameSession.py       # Repeated games, scores, records, and replays
+ReplaySession.py     # Replays a saved game
+RecordsBrowser.py    # Reads, filters, and summarises saved records
+SnakeEngine.py       # Snake rules, with no screen of its own
+GameConfig.py        # Validated board settings
+GameTypes.py         # Position and Direction
+BotMode.py           # Shared bot helper methods
+BotFactory.py        # Builds the selected bot
 RuleBasedBot.py      # Rule-based bot
 QLearningBot.py      # Tabular Q-learning bot
 HamiltonianBot.py    # Hamiltonian cycle bot
 RecordManager.py     # Saves and reads CSV game records
 ReplayManager.py     # Saves and loads replay JSON files
-ReplayPlayer.py      # Plays saved replay files visually
 records/             # Saved game result CSV data
 replays/             # Saved replay JSON files
 learning_data/       # Saved Q-table data
+docs/                # Architecture decisions and the smoke checklist
 DEVLOG.md            # Development diary
 ```
 

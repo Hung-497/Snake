@@ -4,6 +4,7 @@ import pytest
 
 from BotFactory import create_bot_mode
 from GameConfig import GameConfig
+from GameSession import GameSession
 from GameTypes import Direction
 from HamiltonianBot import HamiltonianBot
 from QLearningBot import QLearningBot
@@ -136,44 +137,6 @@ def test_each_bot_mode_owns_random_source_separate_from_the_engine(tmp_path, mon
         assert bot.random_source is not engine.random_source
 
 
-class FakeCanvas:
-    def create_rectangle(self, *args, **kwargs):
-        pass
-
-    def create_oval(self, *args, **kwargs):
-        pass
-
-    def delete(self, tag):
-        pass
-
-
-class FakeWindow:
-    width = 6
-    height = 4
-    tile_size = 20
-
-    def __init__(self):
-        self.window = self
-        self.canvas = FakeCanvas()
-        self.scheduled_callbacks = []
-
-    def clear_canvas(self):
-        pass
-
-    def update_score_label(self, score, games_played, best_score):
-        pass
-
-    def draw_game_over(self, score):
-        pass
-
-    def draw_game_won(self, score):
-        pass
-
-    def after(self, delay, callback):
-        self.scheduled_callbacks.append((delay, callback))
-        return len(self.scheduled_callbacks)
-
-
 class FakeReplayManager:
     def start_recording(self, *args, **kwargs):
         pass
@@ -194,13 +157,11 @@ class FakeRecordManager:
 
 
 @pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian"])
-def test_game_runs_every_bot_mode_through_the_common_contract(bot_mode, tmp_path, monkeypatch):
+def test_the_game_session_runs_every_bot_mode_through_the_common_contract(
+    bot_mode, tmp_path, monkeypatch
+):
+    # A working directory of its own, so a learning bot saves nothing real.
     monkeypatch.chdir(tmp_path)
-
-    from Game import Game
-
-    monkeypatch.setattr("Game.ReplayManager", FakeReplayManager)
-    monkeypatch.setattr("Game.RecordManager", FakeRecordManager)
 
     engine = SnakeEngine(
         GameConfig(width=6, height=4, tile_size=20),
@@ -208,15 +169,22 @@ def test_game_runs_every_bot_mode_through_the_common_contract(bot_mode, tmp_path
         direction=Direction.RIGHT,
         random_source=random.Random(2),
     )
-    game = Game(FakeWindow(), bot_mode=bot_mode, speed_delay=1, engine=engine)
+    session = GameSession(
+        engine,
+        bot_mode=bot_mode,
+        speed_delay=1,
+        record_manager=FakeRecordManager(),
+        replay_manager=FakeReplayManager(),
+    )
+    session.start()
 
     for _ in range(12):
-        if (game.game_over):
+        if (session.game_over):
             break
-        game.update()
+        session.advance()
 
-    assert game.total_moves > 0
-    assert game.score == engine.score
+    assert session.total_moves > 0
+    assert session.score == engine.score
 
 
 @pytest.mark.parametrize(

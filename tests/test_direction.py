@@ -1,5 +1,6 @@
+from GameConfig import GameConfig
 from GameTypes import Direction
-from Movement import Movement
+from SnakeEngine import SnakeEngine
 
 
 def test_direction_contains_the_four_canonical_values():
@@ -11,12 +12,11 @@ def test_direction_contains_the_four_canonical_values():
     ]
 
 
-def test_invalid_direction_does_not_change_movement():
-    movement = Movement()
-    movement.change_direction(Direction.RIGHT)
-    original_velocity = (movement.velocity_x, movement.velocity_y)
+def test_invalid_direction_does_not_change_the_engine():
+    engine = SnakeEngine(GameConfig(10, 10), start_position=(5, 5))
+    engine.change_direction(Direction.RIGHT)
 
-    accepted = movement.change_direction("Diagonal")
+    accepted = engine.change_direction("Diagonal")
 
     assert accepted is False
-    assert (movement.velocity_x, movement.velocity_y) == original_velocity
+    assert engine.direction == Direction.RIGHT

@@ -1,7 +1,6 @@
 import random
 from types import SimpleNamespace
 
-from Game import Game
 from GameConfig import GameConfig
 from GameTypes import Direction, Position
 from HamiltonianBot import HamiltonianBot
@@ -83,53 +82,6 @@ def test_equal_actions_have_equal_outcomes_for_different_tile_sizes():
         assert first.food_position == second.food_position
         assert first.score == second.score
         assert first.game_over == second.game_over
-
-
-def test_game_renderer_converts_cells_to_pixels_at_the_canvas_boundary():
-    class Canvas:
-        def __init__(self):
-            self.rectangles = []
-            self.ovals = []
-
-        def create_rectangle(self, *args, **kwargs):
-            self.rectangles.append(args)
-
-        def create_oval(self, *args, **kwargs):
-            self.ovals.append(args)
-
-    class Window:
-        tile_size = 20
-
-        def __init__(self):
-            self.canvas = Canvas()
-
-        def clear_canvas(self):
-            pass
-
-        def update_score_label(self, *args):
-            pass
-
-    window = Window()
-    engine = SnakeEngine(
-        GameConfig(width=4, height=3, tile_size=20),
-        start_position=(1, 1),
-        body=((0, 1),),
-        food_position=(2, 1),
-    )
-    game = Game.__new__(Game)
-    game.window = window
-    game.engine = engine
-    game.score = 0
-    game.games_played = 0
-    game.best_score = 0
-
-    game.draw()
-
-    assert window.canvas.rectangles == [
-        (20, 20, 40, 40),
-        (0, 20, 20, 40),
-    ]
-    assert window.canvas.ovals == [(40, 20, 60, 40)]
 
 
 class GridBotGame:
