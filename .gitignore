@@ -2,6 +2,12 @@ __pycache__/
 *.pyc
 .DS_Store
 
+# Local Runtime Data from play, training, and Bot Experiments
+learning_data/
+records/
+replays/
+experiments/
+
 # Local AI agent tooling and instructions, kept out of the repository
 .agents/
 .claude/

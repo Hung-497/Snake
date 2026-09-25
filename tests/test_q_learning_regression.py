@@ -11,6 +11,7 @@ def make_transition(game_over, ate_food=False):
 
 def make_bot(current_state, next_state, next_values):
     bot = QLearningBot.__new__(QLearningBot)
+    bot.evaluation_mode = False
     bot.q_table = {
         current_state: {
             "Straight": 0,

@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -10,6 +11,7 @@ import pytest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+STARTER_TABLE = PROJECT_ROOT / "starter_data" / "q_table_space_state_v2.json"
 
 
 def run_training(tmp_path, *options):
@@ -22,6 +24,24 @@ def run_training(tmp_path, *options):
         capture_output=True,
         text=True,
     )
+
+
+def test_starter_q_table_initializes_local_training_without_changing_starter(tmp_path):
+    learning_directory = tmp_path / "learning_data"
+    learning_directory.mkdir()
+    local_table = learning_directory / "q_table_space_state_v2.json"
+    shutil.copyfile(STARTER_TABLE, local_table)
+    starter_before = STARTER_TABLE.read_bytes()
+    trained_before = json.loads(local_table.read_text())["game_trained"]
+
+    result = run_training(
+        tmp_path, "--games", "1", "--width", "4", "--height", "4",
+        "--max-moves", "10",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert json.loads(local_table.read_text())["game_trained"] == trained_before + 1
+    assert STARTER_TABLE.read_bytes() == starter_before
 
 
 def test_training_resumes_saved_table_without_changing_watched_games(tmp_path):

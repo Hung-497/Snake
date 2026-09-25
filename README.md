@@ -57,6 +57,30 @@ Settings are kept for as long as the app is open, so a game started afterwards
 uses the speed, board size, and tile size chosen there. Closing the window
 closes the app.
 
+## Local Runtime Data
+
+Games save watched-game records in `records/` and best replays in `replays/`.
+Q Learning saves its progress in `learning_data/`, and Bot Experiments save
+separate reports in `experiments/`. These folders contain local Runtime Data;
+Git ignores their contents. Existing local files stay in place during this
+cleanup. A fresh clone starts with no saved records or replays.
+
+The project bundles a Starter Q-table at
+`starter_data/q_table_space_state_v2.json`. Headless training and Bot
+Experiments need a local saved Q-table. From the project root, copy the starter
+once before using either command:
+
+```bash
+mkdir -p learning_data
+cp -n starter_data/q_table_space_state_v2.json learning_data/q_table_space_state_v2.json
+```
+
+The `-n` option preserves an existing local table. On Windows, create the
+`learning_data` folder and copy the starter with File Explorer only when the
+local table does not already exist. Later training updates the local copy; the
+Starter Q-table stays unchanged. The app can also start Q Learning without a
+saved table, beginning new local progress instead of loading the starter.
+
 ## Headless Q Learning Training
 
 Run training from the project root without opening the app window:
@@ -121,10 +145,10 @@ list; elapsed time can vary between otherwise identical runs.
 
 ## Run Tests
 
-Install the development test dependency:
+Install the app and development test dependencies:
 
 ```bash
-python3 -m pip install -r requirements-dev.txt
+python3 -m pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 Run the tests from the project root:
@@ -132,6 +156,9 @@ Run the tests from the project root:
 ```bash
 python3 -m pytest
 ```
+
+GitHub Actions runs this same test command on Python 3.13 for pull requests
+and pushes to `main`.
 
 Saved results can be viewed from:
 
@@ -230,6 +257,8 @@ assets/              # Bundled fonts
 records/             # Saved game result CSV data
 replays/             # Saved replay JSON files
 learning_data/       # Saved Q-table data
+starter_data/        # Bundled Starter Q-table
+experiments/         # Saved Bot Experiment reports
 docs/                # Architecture decisions and the smoke checklist
 DEVLOG.md            # Development diary
 ```
