@@ -16,7 +16,7 @@ python3 SnakeApp.py
 |---|---|---|
 | 1 | Window creation | One window opens, titled "Snake Game", 900 x 960 pixels. |
 | 2 | Centering | The window appears in the middle of the screen. |
-| 3 | Not resizable | Dragging an edge or corner does not change the window size. |
+| 3 | Resizing | Dragging an edge or corner resizes the window, but not below its minimum size. The board scales to fit, and every screen stays usable. |
 | 4 | Menu controls | Play, Settings, Replay and Records all respond to a click and to hover. |
 | 5 | Settings | Each dropdown opens, a choice sticks, and Back returns to the Menu. |
 | 6 | Retained settings | Reopening Settings still shows the choices made a moment ago. |
@@ -24,7 +24,7 @@ python3 SnakeApp.py
 | 8 | Repeated games | With a Bot Mode, a finished game briefly shows its result, then the next game starts by itself. |
 | 9 | Unsupported board | With an odd-by-odd board, Hamiltonian stays on Play and explains why. |
 | 10 | Records | Summary statistics appear, each filter changes them, and Newer/Older page through the list. |
-| 11 | Replay | A saved replay plays and ends on "Replay Finished". A bot with no saved replay shows a message instead. |
+| 11 | Replay | A saved replay plays and ends on "Replay Finished". A Player with no saved replay shows a message instead. |
 | 12 | Navigation | Back returns to the Menu from every screen, in the same window. |
 | 13 | Clean shutdown | Closing the window ends the process with no error and no leftover window. |
 | 14 | Play Yourself | Play shows "Play Yourself" above the Bot Modes. It opens a game on every board size, labelled "Human". |

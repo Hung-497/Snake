@@ -9,3 +9,7 @@ Cell-to-cell animation was ruled out by the speed settings rather than by taste.
 - The Game Engine, the game session and the replay session stay free of animation state, so they keep running and keep being tested without a display.
 - Board effects suppress themselves at the fastest speed, where a flash on every finished game would strobe several times a second.
 - The cross-fade is drawn as an overlay rather than by rendering two App Views at once, so the shell that owns App View flow is unchanged and its tests still need no display.
+
+## Update: Human Play
+
+Human Play moves the snake every 150, 100 or 70 milliseconds, several frames per step, so the speed argument above only holds for Bot Modes. The decision stands: the snake is still not animated between cells in Human Play, and adding that animation would need a new decision. Board effects stay on at every Human Play speed; only the 1 millisecond bot speed turns them off.
