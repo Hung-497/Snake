@@ -2,7 +2,8 @@ import arcade
 import arcade.gui
 from arcade.types import Color
 
-from BoardRenderer import HUD_HEIGHT, BoardRenderer
+from BoardRenderer import BoardRenderer
+from WindowLayout import HUD_HEIGHT
 from GameSession import GameSession
 from PlayView import BOT_MODE_LABELS
 from SnakeEngine import SnakeEngine
