@@ -97,7 +97,7 @@ def create_app():
     shell.register_view("replay", lambda: ReplayView(shell))
     shell.register_view(
         "replay_playback",
-        lambda session, bot_mode: ReplayPlaybackView(shell, session, bot_mode),
+        lambda session, player: ReplayPlaybackView(shell, session, player),
     )
     window.shell = shell
 
