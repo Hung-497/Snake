@@ -17,6 +17,7 @@ settings, and replay playback.
 - Flood fill space checking
 - Arcade bot selection menu
 - Settings screen for speed, board size, and tile size
+- Resizable window with a board that scales to fit
 - Records screen with bot filters and summary stats
 - Replay saving and playback for saved bot runs
 - Q-learning persistence with saved Q-table data
@@ -41,7 +42,9 @@ driver. It works on macOS, Windows, and Linux.
 cd Snake && python3 SnakeApp.py
 ```
 
-The app opens in one fixed-size window and moves between screens inside it:
+The app opens at 900 x 960 in one resizable window and moves between screens
+inside it. The board uses the chosen Tile Size when it fits, or smaller whole
+tiles when the window is narrow. Window size is not saved between runs.
 
 ```text
 Menu -> Play -> Rule Based / Q Learning / Hamiltonian
@@ -159,8 +162,10 @@ GameView.py          # Watch a bot play
 ReplayView.py        # Choose a saved replay
 ReplayPlaybackView.py # Watch a saved replay
 RecordsView.py       # Records screen
-ViewStyle.py         # Shared colours and buttons
-BoardRenderer.py     # Draws the board, turning cells into pixels
+Theme.py             # Shared colours, type sizes, spacing, and controls
+WindowLayout.py      # Window minimum, board position, and compact layout
+MotionRules.py       # Display-free timing rules for visual effects
+BoardRenderer.py     # Draws the board at positions from WindowLayout
 SessionSettings.py   # Speed, board size, and tile size for this session
 GameSession.py       # Repeated games, scores, records, and replays
 ReplaySession.py     # Replays a saved game

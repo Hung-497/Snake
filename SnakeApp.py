@@ -1,19 +1,21 @@
 import arcade
+from arcade.types import Color
 
 from AppShell import AppShell
 from GameView import GameView
 from MenuView import MenuView
+from MotionRules import ViewFade
 from PlayView import PlayView
 from RecordsView import RecordsView
 from ReplayPlaybackView import ReplayPlaybackView
 from ReplayView import ReplayView
 from SessionSettings import SessionSettings
 from SettingsView import SettingsView
+import Theme
+from WindowLayout import minimum_window_size
 
 
-# The window is fixed size, so it has to fit every board the settings allow.
-# The largest board is 30 x 30 tiles at 30 pixels each, which is 900 x 900
-# pixels, and the extra height leaves room for the Game App View's score row.
+# A known starting size; the user can resize the window during this run.
 WINDOW_WIDTH = 900
 WINDOW_HEIGHT = 960
 WINDOW_TITLE = "Snake Game"
@@ -33,12 +35,42 @@ class SnakeWindow(arcade.Window):
             width=WINDOW_WIDTH,
             height=WINDOW_HEIGHT,
             title=WINDOW_TITLE,
-            resizable=False,
+            resizable=True,
         )
         self.center_window()
         self.shell = None
+        self.view_fade = ViewFade()
+
+    def show_view(self, new_view):
+        if self.current_view is None:
+            super().show_view(new_view)
+            return
+
+        self.view_fade.start(new_view)
+
+    def on_update(self, delta_time):
+        next_view = self.view_fade.advance_by(delta_time)
+        if next_view is not None:
+            super().show_view(next_view)
+
+    def on_draw(self):
+        alpha = self.view_fade.alpha
+        if alpha > 0:
+            surface = Theme.SURFACE
+            arcade.draw_lbwh_rectangle_filled(
+                0, 0, self.width, self.height,
+                Color(surface.r, surface.g, surface.b, alpha),
+            )
+
+    def update_board_minimum(self, game_config):
+        """Make the resize drag stop before the board becomes unreadable."""
+        width, height = minimum_window_size(
+            game_config.width, game_config.height, game_config.tile_size
+        )
+        self.set_minimum_size(width, height)
 
     def on_close(self):
+        self.view_fade.clear()
         if self.shell is None:
             super().on_close()
             return
@@ -55,6 +87,7 @@ def create_app():
     # One settings object for the whole session, so choices are kept when the
     # user leaves Settings and opens it again.
     settings = SessionSettings()
+    window.update_board_minimum(settings.build_game_config())
 
     shell.register_view("menu", lambda: MenuView(shell))
     shell.register_view("settings", lambda: SettingsView(shell, settings))

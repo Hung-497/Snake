@@ -8,7 +8,14 @@ becomes a pixel, so everything about that lives here.
 
 import pytest
 
-from WindowLayout import HUD_HEIGHT, layout_board
+from WindowLayout import (
+    HUD_HEIGHT,
+    layout_board,
+    layout_step,
+    minimum_window_size,
+    record_rows_per_page,
+    view_label_positions,
+)
 
 
 WINDOW_WIDTH = 900
@@ -71,6 +78,43 @@ def test_the_board_stays_centred_when_the_window_changes():
 
     assert narrow.left == (700 - narrow.width) / 2
     assert wide.left == (1100 - wide.width) / 2
+
+
+def test_a_large_board_uses_the_largest_whole_tile_size_that_fits():
+    layout = layout_board(700, 700, 30, 30, 30)
+
+    assert layout.tile_size == 21
+    assert (layout.width, layout.height) == (630, 630)
+
+
+def test_window_minimum_respects_a_floor_and_the_board_needed():
+    assert minimum_window_size(30, 30, 30) == (700, 700)
+    assert minimum_window_size(50, 50, 30) == (800, 860)
+
+
+def test_score_and_result_labels_follow_a_resized_window():
+    positions = view_label_positions(700, 700, result_score_gap=60)
+
+    assert positions["score"] == (350, 644)
+    assert positions["bot_mode"] == (16, 675)
+    assert positions["result"] == (350, 350)
+    assert positions["result_score"] == (350, 290)
+
+
+def test_score_uses_a_separate_hud_row_at_the_minimum_window_size():
+    positions = view_label_positions(700, 700, result_score_gap=60)
+
+    assert positions["bot_mode"][1] - positions["score"][1] >= 28
+
+
+def test_layout_uses_compact_type_below_the_width_threshold():
+    assert layout_step(799) == "compact"
+    assert layout_step(800) == "regular"
+
+
+def test_taller_windows_show_more_record_rows():
+    assert record_rows_per_page(700) == 6
+    assert record_rows_per_page(960) == 11
 
 
 @pytest.mark.parametrize("board", [(16, 16), (24, 25), (30, 30), (25, 25)])

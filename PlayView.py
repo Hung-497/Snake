@@ -1,15 +1,8 @@
 import arcade.gui
 
 from BotFactory import supports_board
-from ViewStyle import (
-    BACKGROUND_COLOR,
-    SECONDARY_BUTTON_COLOR,
-    WARNING_TEXT_COLOR,
-    center_in_view,
-    create_button,
-    create_muted_label,
-    create_title_label,
-)
+import Theme
+from WindowLayout import layout_step
 
 
 # The name the Bot Mode factory uses -> the name shown to the user.
@@ -34,41 +27,59 @@ class PlayView(arcade.gui.UIView):
         super().__init__()
         self.shell = shell
         self.settings = settings
-        self.background_color = BACKGROUND_COLOR
+        self.background_color = Theme.SURFACE
+        self.message_text = ""
+        self.current_layout_step = layout_step(self.window.width)
+        self.build_ui()
 
-        play_box = arcade.gui.UIBoxLayout(space_between=9)
-        play_box.add(create_title_label("Choose Bot Mode:", font_size=46))
-        play_box.add(arcade.gui.UISpace(height=20, color=BACKGROUND_COLOR))
+    def build_ui(self):
+        self.ui.clear()
+        sizes = Theme.type_sizes(self.window.width)
+        play_box = arcade.gui.UIBoxLayout(space_between=Theme.SPACE_TIGHT)
+        play_box.add(Theme.create_label("Choose Bot Mode:",
+                                         font_size=sizes.display, semibold=True))
+        play_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
 
         for bot_mode, button_text in BOT_MODE_LABELS.items():
-            play_box.add(create_button(button_text, self.start_game(bot_mode)))
+            play_box.add(Theme.create_primary_button(button_text, self.start_game(bot_mode),
+                                                     font_size=sizes.heading))
 
-        self.message_label = create_muted_label("", font_size=15)
-        self.message_label.update_font(font_color=WARNING_TEXT_COLOR)
-        play_box.add(arcade.gui.UISpace(height=10, color=BACKGROUND_COLOR))
+        self.message_label = Theme.create_label(self.message_text,
+                                                font_size=sizes.body, color=Theme.WARNING)
+        play_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
         play_box.add(self.message_label)
 
-        play_box.add(arcade.gui.UISpace(height=8, color=BACKGROUND_COLOR))
+        play_box.add(Theme.create_spacer(Theme.SPACE_TIGHT))
         play_box.add(
-            create_button(
+            Theme.create_secondary_button(
                 "Back",
                 lambda: self.shell.show_view("menu"),
-                button_color=SECONDARY_BUTTON_COLOR,
-                button_width=170,
+                button_width=Theme.BACK_BUTTON_WIDTH,
+                font_size=sizes.heading,
             )
         )
 
-        center_in_view(self.ui, play_box)
+        Theme.center_focusable(self.ui, play_box)
 
     def start_game(self, bot_mode):
         def start():
             game_config = self.settings.build_game_config()
 
             if (not supports_board(bot_mode, game_config.width, game_config.height)):
-                self.message_label.text = UNSUPPORTED_BOARD_MESSAGE
+                self.message_text = UNSUPPORTED_BOARD_MESSAGE
+                self.message_label.text = self.message_text
                 return
 
+            self.message_text = ""
             self.message_label.text = ""
             self.shell.show_view("game", bot_mode=bot_mode)
 
         return start
+
+    def on_resize(self, width, height):
+        if layout_step(width) != self.current_layout_step:
+            self.current_layout_step = layout_step(width)
+            self.build_ui()
+
+    def on_update(self, delta_time):
+        self.ui.on_update(delta_time)

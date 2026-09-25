@@ -3,15 +3,8 @@ import arcade.gui
 from PlayView import BOT_MODE_LABELS
 from ReplayManager import ReplayManager
 from ReplaySession import load_replay_session
-from ViewStyle import (
-    BACKGROUND_COLOR,
-    SECONDARY_BUTTON_COLOR,
-    WARNING_TEXT_COLOR,
-    center_in_view,
-    create_button,
-    create_muted_label,
-    create_title_label,
-)
+import Theme
+from WindowLayout import layout_step
 
 
 class ReplayView(arcade.gui.UIView):
@@ -26,42 +19,61 @@ class ReplayView(arcade.gui.UIView):
         super().__init__()
         self.shell = shell
         self.replay_manager = ReplayManager() if replay_manager is None else replay_manager
-        self.background_color = BACKGROUND_COLOR
+        self.background_color = Theme.SURFACE
+        self.message_text = ""
+        self.current_layout_step = layout_step(self.window.width)
+        self.build_ui()
 
-        replay_box = arcade.gui.UIBoxLayout(space_between=9)
-        replay_box.add(create_title_label("Watch a Replay", font_size=46))
-        replay_box.add(create_muted_label("The best saved game for each Bot Mode"))
-        replay_box.add(arcade.gui.UISpace(height=20, color=BACKGROUND_COLOR))
+    def build_ui(self):
+        self.ui.clear()
+        sizes = Theme.type_sizes(self.window.width)
+        replay_box = arcade.gui.UIBoxLayout(space_between=Theme.SPACE_TIGHT)
+        replay_box.add(Theme.create_label("Watch a Replay",
+                                           font_size=sizes.display, semibold=True))
+        replay_box.add(Theme.create_label("The best saved game for each Bot Mode",
+                                           font_size=sizes.body, color=Theme.TEXT_MUTED))
+        replay_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
 
         for bot_mode, button_text in BOT_MODE_LABELS.items():
-            replay_box.add(create_button(button_text, self.watch_replay(bot_mode)))
+            replay_box.add(Theme.create_primary_button(button_text, self.watch_replay(bot_mode),
+                                                       font_size=sizes.heading))
 
-        self.message_label = create_muted_label("", font_size=15)
-        self.message_label.update_font(font_color=WARNING_TEXT_COLOR)
-        replay_box.add(arcade.gui.UISpace(height=10, color=BACKGROUND_COLOR))
+        self.message_label = Theme.create_label(self.message_text,
+                                                font_size=sizes.body, color=Theme.WARNING)
+        replay_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
         replay_box.add(self.message_label)
 
-        replay_box.add(arcade.gui.UISpace(height=8, color=BACKGROUND_COLOR))
+        replay_box.add(Theme.create_spacer(Theme.SPACE_TIGHT))
         replay_box.add(
-            create_button(
+            Theme.create_secondary_button(
                 "Back",
                 lambda: self.shell.show_view("menu"),
-                button_color=SECONDARY_BUTTON_COLOR,
-                button_width=170,
+                button_width=Theme.BACK_BUTTON_WIDTH,
+                font_size=sizes.heading,
             )
         )
 
-        center_in_view(self.ui, replay_box)
+        Theme.center_focusable(self.ui, replay_box)
 
     def watch_replay(self, bot_mode):
         def watch():
             session, message = load_replay_session(self.replay_manager, bot_mode)
 
             if (session is None):
+                self.message_text = message
                 self.message_label.text = message
                 return
 
+            self.message_text = ""
             self.message_label.text = ""
             self.shell.show_view("replay_playback", session=session, bot_mode=bot_mode)
 
         return watch
+
+    def on_resize(self, width, height):
+        if layout_step(width) != self.current_layout_step:
+            self.current_layout_step = layout_step(width)
+            self.build_ui()
+
+    def on_update(self, delta_time):
+        self.ui.on_update(delta_time)

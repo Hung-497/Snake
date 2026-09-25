@@ -36,6 +36,12 @@ class RecordsBrowser:
         # A new filter shows a different set of records, so start again at the newest.
         self.page_index = 0
 
+    def set_page_size(self, page_size):
+        """Keep the first visible record nearby when the window height changes."""
+        first_record_index = self.page_index * self.page_size
+        self.page_size = page_size
+        self.page_index = min(first_record_index // page_size, self.page_count - 1)
+
     def filtered_records(self):
         """The stored records this filter selects, oldest first, as stored."""
         if (self.selected_filter == ALL_BOTS):

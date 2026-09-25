@@ -167,6 +167,20 @@ def test_paging_stops_at_the_ends():
     assert browser.page_number == 2
 
 
+def test_resizing_a_page_keeps_the_current_records_reachable():
+    browser = make_browser([make_record(score=number) for number in range(50)], page_size=10)
+    for _ in range(4):
+        browser.show_older_records()
+
+    browser.set_page_size(20)
+
+    assert browser.page_count == 3
+    assert browser.page_number == 3
+    assert [record["score"] for record in browser.visible_records()] == [
+        str(number) for number in range(9, -1, -1)
+    ]
+
+
 def test_changing_the_filter_returns_to_the_newest_page():
     browser = make_browser([make_record(score=number) for number in range(25)], page_size=10)
 

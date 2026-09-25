@@ -3,16 +3,18 @@ The app's design tokens, and the widgets that use them.
 
 Everything visual is named by role here — surface, primary, text — rather than
 by appearance, so changing the look means changing a token instead of hunting
-through every App View. ViewStyle.py holds the older palette and is still used
-by the App Views that have not moved across yet.
+through every App View.
 """
 
 import os
+from dataclasses import dataclass
 
 import arcade
 import arcade.gui
 from arcade.gui.experimental.focus import FocusMode, UIFocusGroup
 from arcade.types import Color
+
+from WindowLayout import layout_step
 
 
 # --- Fonts -----------------------------------------------------------------
@@ -64,6 +66,17 @@ TEXT_MUTED = Color.from_hex_string("#8FA3BF")
 TEXT_DISABLED = Color.from_hex_string("#54657E")
 WARNING = Color.from_hex_string("#FF9B9B")
 
+# The Board Area has its own roles so Game and Replay use the same palette.
+BOARD_BACKGROUND = Color.from_hex_string("#0D2035")
+BOARD_GRID = Color.from_hex_string("#1C344B")
+BOARD_FRAME = Color.from_hex_string("#52718E")
+BOARD_FLASH = Color.from_hex_string("#D6F29B")
+SNAKE_BODY = Color.from_hex_string("#2EAA82")
+SNAKE_HEAD = Color.from_hex_string("#D6F29B")
+FOOD = Color.from_hex_string("#FF7575")
+BOARD_GRID_WIDTH = 1
+BOARD_FRAME_WIDTH = 2
+
 
 # --- Type scale ------------------------------------------------------------
 TYPE_DISPLAY = 44
@@ -73,6 +86,38 @@ TYPE_BODY = 15
 TYPE_CAPTION = 12
 
 
+@dataclass(frozen=True)
+class TypeSizes:
+    display: int
+    title: int
+    heading: int
+    body: int
+    caption: int
+    game_score: int
+    bot_mode: int
+    game_result: int
+    game_result_score: int
+    replay_result: int
+    replay_result_score: int
+
+
+REGULAR_TYPE_SIZES = TypeSizes(44, 28, 20, 15, 12, 18, 14, 54, 40, 44, 36)
+COMPACT_TYPE_SIZES = TypeSizes(34, 24, 18, 14, 11, 16, 12, 40, 30, 30, 28)
+
+
+def type_sizes(window_width):
+    """Return the shared type scale for the window's layout step."""
+    return (COMPACT_TYPE_SIZES if layout_step(window_width) == "compact"
+            else REGULAR_TYPE_SIZES)
+
+
+def fit_text_to_width(label, preferred_font_size, available_width):
+    """Keep a result overlay inside its Board Area, including small boards."""
+    label.font_size = preferred_font_size
+    while label.text and label.content_width > available_width and label.font_size > 1:
+        label.font_size -= 1
+
+
 # --- Spacing ---------------------------------------------------------------
 # Everything is a multiple of one base unit, so the rhythm stays even.
 SPACE_UNIT = 4
@@ -80,11 +125,21 @@ SPACE_TIGHT = SPACE_UNIT * 2
 SPACE_CONTROL = SPACE_UNIT * 3
 SPACE_INNER = SPACE_UNIT * 4
 SPACE_SECTION = SPACE_UNIT * 6
+SPACE_WIDE = SPACE_UNIT * 8
 
 
 # --- Controls --------------------------------------------------------------
 BUTTON_WIDTH = 260
 BUTTON_HEIGHT = 52
+BACK_BUTTON_WIDTH = 170
+OPTION_WIDTH = 280
+OPTION_HEIGHT = 42
+FILTER_BUTTON_WIDTH = 150
+FILTER_BUTTON_HEIGHT = 38
+PAGE_BUTTON_WIDTH = 120
+PAGE_BUTTON_HEIGHT = 34
+HUD_BUTTON_WIDTH = 150
+HUD_BUTTON_HEIGHT = 38
 # How long a button takes to settle into its new colour. Short enough to feel
 # immediate, long enough to read as a response rather than a jump.
 STATE_EASE_SECONDS = 0.09
@@ -201,6 +256,20 @@ def create_secondary_button(button_text, on_click, **kwargs):
         press_color=SECONDARY_PRESS,
         **kwargs,
     )
+
+
+def create_dropdown_style(base_color=SECONDARY, hover_color=SECONDARY_HOVER,
+                          press_color=SECONDARY_PRESS, font_size=TYPE_BODY):
+    """Give dropdown buttons the same four clear states as Menu controls."""
+    style = arcade.gui.UIFlatButton.UIStyle
+    shared = dict(font_size=font_size, font_name=FONT_SEMIBOLD, border=None,
+                  border_width=0)
+    return {
+        "normal": style(bg=base_color, font_color=TEXT, **shared),
+        "hover": style(bg=hover_color, font_color=TEXT, **shared),
+        "press": style(bg=press_color, font_color=TEXT, **shared),
+        "disabled": style(bg=DISABLED, font_color=TEXT_DISABLED, **shared),
+    }
 
 
 def create_label(text, font_size=TYPE_BODY, color=TEXT, semibold=False):

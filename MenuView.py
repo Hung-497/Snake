@@ -1,6 +1,7 @@
 import arcade.gui
 
 import Theme
+from WindowLayout import layout_step
 
 
 # Button label -> the App View that button opens, and whether it is the main
@@ -25,16 +26,21 @@ class MenuView(arcade.gui.UIView):
         super().__init__()
         self.shell = shell
         self.background_color = Theme.SURFACE
+        self.current_layout_step = layout_step(self.window.width)
+        self.build_ui()
 
+    def build_ui(self):
+        self.ui.clear()
+        sizes = Theme.type_sizes(self.window.width)
         menu_box = arcade.gui.UIBoxLayout(space_between=Theme.SPACE_UNIT)
         menu_box.add(
-            Theme.create_label("Snake Game", font_size=Theme.TYPE_DISPLAY, semibold=True)
+            Theme.create_label("Snake Game", font_size=sizes.display, semibold=True)
         )
         menu_box.add(Theme.create_spacer(Theme.SPACE_TIGHT))
         menu_box.add(
             Theme.create_label(
                 "Choose a bot, adjust settings, and compare results",
-                font_size=Theme.TYPE_BODY,
+                font_size=sizes.body,
                 color=Theme.TEXT_MUTED,
             )
         )
@@ -44,13 +50,19 @@ class MenuView(arcade.gui.UIView):
             create_button = (
                 Theme.create_primary_button if is_primary else Theme.create_secondary_button
             )
-            menu_box.add(create_button(button_text, self.open_view(view_name)))
+            menu_box.add(create_button(button_text, self.open_view(view_name),
+                                       font_size=sizes.heading))
             menu_box.add(Theme.create_spacer(Theme.SPACE_TIGHT))
 
         Theme.center_focusable(self.ui, menu_box)
 
     def open_view(self, view_name):
         return lambda: self.shell.show_view(view_name)
+
+    def on_resize(self, width, height):
+        if layout_step(width) != self.current_layout_step:
+            self.current_layout_step = layout_step(width)
+            self.build_ui()
 
     def on_update(self, delta_time):
         # Arcade does not forward frame updates to widgets by itself, and the
