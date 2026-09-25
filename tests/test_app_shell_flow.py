@@ -126,8 +126,8 @@ def test_a_view_can_be_opened_with_a_choice_the_user_made():
     assert window.shown_views == ["game-view:rule"]
 
 
-@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian"])
-def test_every_bot_mode_can_open_the_game_app_view(bot_mode):
+@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "human"])
+def test_every_player_can_open_the_game_app_view(bot_mode):
     window = FakeWindow()
     shell = AppShell(window, {"game": lambda bot_mode: f"game-view:{bot_mode}"})
 

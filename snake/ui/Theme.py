@@ -136,7 +136,9 @@ BUTTON_HEIGHT = 52
 BACK_BUTTON_WIDTH = 170
 OPTION_WIDTH = 280
 OPTION_HEIGHT = 42
-FILTER_BUTTON_WIDTH = 150
+# Five filter buttons (All Players, three Bot Modes, Human) must fit the
+# 700 px minimum window width, gaps and side gutters included.
+FILTER_BUTTON_WIDTH = 124
 FILTER_BUTTON_HEIGHT = 38
 PAGE_BUTTON_WIDTH = 120
 PAGE_BUTTON_HEIGHT = 34

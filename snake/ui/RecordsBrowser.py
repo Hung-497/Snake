@@ -1,14 +1,14 @@
 from snake.storage.RecordManager import RecordManager
 
 
-ALL_BOTS = "All Bots"
+ALL_PLAYERS = "All Players"
 
 
 class RecordsBrowser:
     """
     Reads saved game records and prepares them for the Records App View.
 
-    The browser filters by Bot Mode, summarises what is left, and hands back
+    The browser filters by Player, summarises what is left, and hands back
     one page of records at a time, newest first. It never writes anything: the
     CSV file and its format stay entirely RecordManager's responsibility.
     """
@@ -23,7 +23,7 @@ class RecordsBrowser:
         self.page_size = self.PAGE_SIZE if page_size is None else page_size
 
         self.records = []
-        self.selected_filter = ALL_BOTS
+        self.selected_filter = ALL_PLAYERS
         self.page_index = 0
 
     def load(self):
@@ -44,18 +44,18 @@ class RecordsBrowser:
 
     def filtered_records(self):
         """The stored records this filter selects, oldest first, as stored."""
-        if (self.selected_filter == ALL_BOTS):
+        if (self.selected_filter == ALL_PLAYERS):
             return list(self.records)
 
         selected_records = []
 
         for record in self.records:
-            bot_name = record["bot_name"]
+            player = record["player"]
 
             # Q Learning has saved records under names like "q_learning_v2".
-            if (self.selected_filter == "q_learning" and bot_name.startswith("q_learning")):
+            if (self.selected_filter == "q_learning" and player.startswith("q_learning")):
                 selected_records.append(record)
-            elif (bot_name == self.selected_filter):
+            elif (player == self.selected_filter):
                 selected_records.append(record)
 
         return selected_records

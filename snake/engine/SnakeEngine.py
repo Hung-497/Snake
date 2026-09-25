@@ -155,6 +155,23 @@ class SnakeEngine:
         self._direction = new_direction
         return True
 
+    def choose_start_direction(self, direction):
+        """
+        Pick the direction a game starts in, before its first move.
+
+        Unlike change_direction, this may turn the snake around when it has
+        no body yet, because there is nothing behind the head to run into.
+        """
+        if self._snake_body:
+            return self.change_direction(direction)
+
+        new_direction = Direction.from_value(direction)
+        if new_direction is None:
+            return False
+
+        self._direction = new_direction
+        return True
+
     def preview(self, direction=None):
         """Report what a move would do without committing anything."""
         return self._calculate_transition(direction)

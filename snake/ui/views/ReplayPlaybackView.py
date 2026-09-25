@@ -4,7 +4,7 @@ import arcade.gui
 from snake.ui import Theme
 from snake.ui.BoardRenderer import BoardRenderer
 from snake.ui.WindowLayout import view_label_positions
-from snake.ui.views.PlayView import BOT_MODE_LABELS
+from snake.ui.PlayerLabels import player_label
 
 
 class ReplayPlaybackView(arcade.gui.UIView):
@@ -52,7 +52,7 @@ class ReplayPlaybackView(arcade.gui.UIView):
             anchor_x="center",
         )
         self.bot_mode_label = arcade.Text(
-            f"{BOT_MODE_LABELS.get(bot_mode, bot_mode)} replay",
+            f"{player_label(bot_mode)} replay",
             x=positions["bot_mode"][0],
             y=positions["bot_mode"][1],
             color=Theme.TEXT_MUTED,

@@ -41,7 +41,7 @@ class ReplayManager:
 
     def start_recording(
         self,
-        bot_name,
+        player,
         board_width,
         board_height,
         tile_size,
@@ -66,7 +66,7 @@ class ReplayManager:
             )
 
         self.replay_data = {
-            "bot_name": bot_name,
+            "player": player,
             "board_width": board_width,
             "board_height": board_height,
             "tile_size": tile_size,
@@ -121,32 +121,32 @@ class ReplayManager:
         
         self.replay_data["final_score"] = score
 
-    def save_replay(self, bot_name, score, game_won=False):
+    def save_replay(self, player, score, game_won=False):
         if (self.replay_data is None):
             return
 
         self.record_final_score(score)
 
-        file_path = self.get_replay_file_path(bot_name)
+        file_path = self.get_replay_file_path(player)
 
-        if (bot_name == "hamiltonian" and not game_won):
+        if (player == "hamiltonian" and not game_won):
             return
         
-        if (bot_name != "hamiltonian" and not self.should_replace_replay(file_path, score)):
+        if (player != "hamiltonian" and not self.should_replace_replay(file_path, score)):
             return
         
         with open(file_path, "w") as file:
             json.dump(self.replay_data, file, indent=4)
     
-    def get_replay_file_path(self, bot_name):
-        if (bot_name == "rule"):
+    def get_replay_file_path(self, player):
+        if (player == "rule"):
             file_name = "rule_best.json"
-        elif (bot_name == "q_learning"):
+        elif (player == "q_learning"):
             file_name = "q_learning_best.json"
-        elif (bot_name == "hamiltonian"):
+        elif (player == "hamiltonian"):
             file_name = "hamiltonian_best.json"
         else:
-            file_name = f"{bot_name}_best.json"
+            file_name = f"{player}_best.json"
 
         return os.path.join(self.folder_name, file_name)
     
@@ -161,8 +161,8 @@ class ReplayManager:
 
         return score > old_score
 
-    def load_replay(self, bot_name):
-        file_path = self.get_replay_file_path(bot_name)
+    def load_replay(self, player):
+        file_path = self.get_replay_file_path(player)
 
         if (not os.path.exists(file_path)):
             return None

@@ -1,6 +1,7 @@
 import arcade.gui
 
-from snake.ui.views.PlayView import BOT_MODE_LABELS
+from snake.sessions.HumanPlayer import HUMAN_PLAY
+from snake.ui.PlayerLabels import BOT_MODE_LABELS, player_label
 from snake.storage.ReplayManager import ReplayManager
 from snake.sessions.ReplaySession import load_replay_session
 from snake.ui import Theme
@@ -9,7 +10,7 @@ from snake.ui.WindowLayout import layout_step
 
 class ReplayView(arcade.gui.UIView):
     """
-    The Replay App View: choose which Bot Mode's saved replay to watch.
+    The Replay App View: choose which Player's saved replay to watch.
 
     A replay that is missing or cannot be trusted keeps the user here with an
     explanation, so nothing unreadable is ever drawn as if it were a game.
@@ -30,13 +31,18 @@ class ReplayView(arcade.gui.UIView):
         replay_box = arcade.gui.UIBoxLayout(space_between=Theme.SPACE_TIGHT)
         replay_box.add(Theme.create_label("Watch a Replay",
                                            font_size=sizes.display, semibold=True))
-        replay_box.add(Theme.create_label("The best saved game for each Bot Mode",
+        replay_box.add(Theme.create_label("The best saved game for each Player",
                                            font_size=sizes.body, color=Theme.TEXT_MUTED))
         replay_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
 
         for bot_mode, button_text in BOT_MODE_LABELS.items():
             replay_box.add(Theme.create_primary_button(button_text, self.watch_replay(bot_mode),
                                                        font_size=sizes.heading))
+
+        # Human Play is a Player but not a Bot Mode, so it has its own button.
+        replay_box.add(Theme.create_primary_button(player_label(HUMAN_PLAY),
+                                                   self.watch_replay(HUMAN_PLAY),
+                                                   font_size=sizes.heading))
 
         self.message_label = Theme.create_label(self.message_text,
                                                 font_size=sizes.body, color=Theme.WARNING)

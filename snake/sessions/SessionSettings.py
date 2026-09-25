@@ -1,4 +1,5 @@
 from snake.engine.GameConfig import GameConfig
+from snake.sessions.HumanPlayer import HUMAN_PLAY
 
 
 class SessionSettings:
@@ -29,6 +30,13 @@ class SessionSettings:
             "Slow": 10,
             "Normal": 5,
             "Fast": 1,
+        }
+        # A person cannot react to a move every few milliseconds, so Human
+        # Play uses its own, slower delay for each of the same speed names.
+        self.human_speed_options = {
+            "Slow": 150,
+            "Normal": 100,
+            "Fast": 70,
         }
 
         self.selected_board_size_name = "Medium 24 x 25"
@@ -70,3 +78,10 @@ class SessionSettings:
     @property
     def speed_delay(self):
         return self.speed_options[self.selected_speed_name]
+
+    def speed_delay_for(self, player):
+        """The delay between moves for this Player at the chosen speed."""
+        if (player == HUMAN_PLAY):
+            return self.human_speed_options[self.selected_speed_name]
+
+        return self.speed_delay

@@ -1,5 +1,5 @@
 """
-Which boards each Bot Mode can play on.
+Which boards each Player can play on.
 
 The Hamiltonian Bot Mode follows a cycle that visits every cell, and such a
 cycle only exists when at least one board side is even. Asking before starting
@@ -11,9 +11,9 @@ import pytest
 from snake.bots.BotFactory import supports_board
 
 
-@pytest.mark.parametrize("bot_mode", ["rule", "q_learning"])
+@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "human"])
 @pytest.mark.parametrize("board", [(25, 25), (24, 25), (16, 16)])
-def test_the_other_bot_modes_play_on_any_board(bot_mode, board):
+def test_the_other_players_play_on_any_board(bot_mode, board):
     board_width, board_height = board
 
     assert supports_board(bot_mode, board_width, board_height)

@@ -6,21 +6,46 @@ from snake.ui.BoardRenderer import BoardRenderer
 from snake.ui.WindowLayout import view_label_positions
 from snake.sessions.GameSession import GameSession
 from snake.ui.MotionRules import board_effects_enabled, end_flash_alpha, food_pulse_scale
-from snake.ui.views.PlayView import BOT_MODE_LABELS
+from snake.ui.PlayerLabels import player_label
+from snake.engine.GameTypes import Direction
 from snake.engine.SnakeEngine import SnakeEngine
 
 
 GAME_OVER_COLOR = Theme.WARNING
 GAME_WON_COLOR = Theme.SNAKE_HEAD
 
+# Human Play keys -> the direction the snake should turn.
+DIRECTION_KEYS = {
+    arcade.key.UP: Direction.UP,
+    arcade.key.W: Direction.UP,
+    arcade.key.DOWN: Direction.DOWN,
+    arcade.key.S: Direction.DOWN,
+    arcade.key.LEFT: Direction.LEFT,
+    arcade.key.A: Direction.LEFT,
+    arcade.key.RIGHT: Direction.RIGHT,
+    arcade.key.D: Direction.RIGHT,
+}
+# How far below the result score line the Human Play prompt sits.
+PROMPT_GAP = 60
+RESTART_KEYS = (arcade.key.SPACE, arcade.key.RETURN)
+PAUSE_KEYS = (arcade.key.P, arcade.key.SPACE)
+
+# The prompt Human Play shows for each session status.
+HUMAN_PROMPTS = {
+    "waiting_to_start": "Press an arrow key to start",
+    "paused": "Paused \u00b7 P or Space to resume",
+    "showing_result": "Space / Enter to play again \u00b7 Esc for menu",
+}
+
 
 class GameView(arcade.gui.UIView):
     """
-    The Game App View: watch a Bot Mode play repeated games.
+    The Game App View: watch a Bot Mode play repeated games, or play them
+    yourself with Human Play.
 
-    This view only draws and keeps time. Every Snake rule stays in the Game
-    Engine, and the score, match count, records and replays belong to the
-    GameSession it drives.
+    This view only draws, keeps time and passes key presses on. Every Snake
+    rule stays in the Game Engine, and the score, match count, records and
+    replays belong to the GameSession it drives.
     """
 
     def __init__(self, shell, settings, bot_mode):
@@ -31,9 +56,10 @@ class GameView(arcade.gui.UIView):
 
         game_config = settings.build_game_config()
         engine = SnakeEngine(game_config, start_position=None)
-        self.session = GameSession(engine, bot_mode, settings.speed_delay)
+        speed_delay = settings.speed_delay_for(bot_mode)
+        self.session = GameSession(engine, bot_mode, speed_delay)
         self.session.start()
-        self.effects_enabled = board_effects_enabled(settings.speed_delay)
+        self.effects_enabled = board_effects_enabled(speed_delay)
         self.motion_seconds = 0.0
         self.flash_started_at = None
 
@@ -68,7 +94,7 @@ class GameView(arcade.gui.UIView):
             anchor_x="center",
         )
         self.bot_mode_label = arcade.Text(
-            BOT_MODE_LABELS.get(bot_mode, bot_mode),
+            player_label(bot_mode),
             x=positions["bot_mode"][0],
             y=positions["bot_mode"][1],
             color=Theme.TEXT_MUTED,
@@ -93,10 +119,39 @@ class GameView(arcade.gui.UIView):
             font_name=Theme.FONT_SEMIBOLD,
             anchor_x="center",
         )
+        self.prompt_label = arcade.Text(
+            "",
+            x=positions["result_score"][0],
+            y=positions["result_score"][1] - PROMPT_GAP,
+            color=Theme.TEXT_MUTED,
+            font_size=sizes.body,
+            font_name=Theme.FONT_REGULAR,
+            anchor_x="center",
+        )
 
     def back_to_menu(self):
         self.session.stop()
         self.shell.show_view("menu")
+
+    def on_key_press(self, symbol, modifiers):
+        # Bot Modes need no keys; the Back to Menu button still works for them.
+        if (not self.session.is_human_play):
+            return
+
+        if (symbol == arcade.key.ESCAPE):
+            self.back_to_menu()
+        elif (symbol in DIRECTION_KEYS):
+            self.session.press_direction(DIRECTION_KEYS[symbol])
+        elif (self.session.status == "showing_result"):
+            if (symbol in RESTART_KEYS):
+                self.session.restart()
+        elif (symbol in PAUSE_KEYS):
+            self.session.toggle_pause()
+
+    def on_deactivate(self):
+        # Arcade calls this when the window loses focus, e.g. switching apps.
+        if (self.session.is_human_play):
+            self.session.focus_lost()
 
     def on_hide_view(self):
         # Leaving or closing the Game App View must not leave games running.
@@ -125,6 +180,9 @@ class GameView(arcade.gui.UIView):
         self.result_label.font_size = sizes.game_result
         self.result_score_label.x, self.result_score_label.y = positions["result_score"]
         self.result_score_label.font_size = sizes.game_result_score
+        self.prompt_label.x = positions["result_score"][0]
+        self.prompt_label.y = positions["result_score"][1] - PROMPT_GAP
+        self.prompt_label.font_size = sizes.body
         self.fit_result_labels()
 
     def fit_result_labels(self):
@@ -137,6 +195,7 @@ class GameView(arcade.gui.UIView):
         Theme.fit_text_to_width(self.result_label, sizes.game_result, available_width)
         Theme.fit_text_to_width(self.result_score_label, sizes.game_result_score,
                                 available_width)
+        Theme.fit_text_to_width(self.prompt_label, sizes.body, available_width)
 
     def on_draw_before_ui(self):
         state = self.session.state
@@ -164,6 +223,9 @@ class GameView(arcade.gui.UIView):
         if (self.session.result_text is not None):
             self.draw_result()
 
+        if (self.session.is_human_play):
+            self.draw_human_prompt()
+
     def draw_score_line(self):
         self.score_label.text = (
             f"Score: {self.session.score}  "
@@ -187,3 +249,13 @@ class GameView(arcade.gui.UIView):
 
         self.result_label.draw()
         self.result_score_label.draw()
+
+    def draw_human_prompt(self):
+        prompt_text = HUMAN_PROMPTS.get(self.session.status, "")
+        if (not prompt_text):
+            return
+
+        if self.prompt_label.text != prompt_text:
+            self.prompt_label.text = prompt_text
+            self.fit_result_labels()
+        self.prompt_label.draw()
