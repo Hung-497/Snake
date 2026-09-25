@@ -61,9 +61,9 @@ class ReplayView(arcade.gui.UIView):
 
         Theme.center_focusable(self.ui, replay_box)
 
-    def watch_replay(self, bot_mode):
+    def watch_replay(self, player):
         def watch():
-            session, message = load_replay_session(self.replay_manager, bot_mode)
+            session, message = load_replay_session(self.replay_manager, player)
 
             if (session is None):
                 self.message_text = message
@@ -72,7 +72,7 @@ class ReplayView(arcade.gui.UIView):
 
             self.message_text = ""
             self.message_label.text = ""
-            self.shell.show_view("replay_playback", session=session, bot_mode=bot_mode)
+            self.shell.show_view("replay_playback", session=session, player=player)
 
         return watch
 

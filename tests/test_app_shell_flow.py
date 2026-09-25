@@ -148,7 +148,7 @@ def test_the_app_moves_among_every_app_view_and_then_closes_cleanly():
             "game": lambda bot_mode: f"game-view:{bot_mode}",
             "records": lambda: "records-view",
             "replay": lambda: "replay-view",
-            "replay_playback": lambda session, bot_mode: f"replay-playback-view:{bot_mode}",
+            "replay_playback": lambda session, player: f"replay-playback-view:{player}",
         },
     )
 
@@ -158,7 +158,7 @@ def test_the_app_moves_among_every_app_view_and_then_closes_cleanly():
     shell.show_view("records")
     shell.show_view("menu")
     shell.show_view("replay")
-    shell.show_view("replay_playback", session="saved-game", bot_mode="rule")
+    shell.show_view("replay_playback", session="saved-game", player="rule")
     shell.show_view("menu")
     shell.show_view("play")
     shell.show_view("game", bot_mode="hamiltonian")
