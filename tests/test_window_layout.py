@@ -10,10 +10,13 @@ import pytest
 
 from snake.ui.WindowLayout import (
     HUD_HEIGHT,
+    compare_chart_height,
     layout_board,
     layout_step,
     minimum_window_size,
     record_rows_per_page,
+    trend_chart_height,
+    trend_legend_rows,
     view_label_positions,
 )
 
@@ -113,8 +116,8 @@ def test_layout_uses_compact_type_below_the_width_threshold():
 
 
 def test_taller_windows_show_more_record_rows():
-    assert record_rows_per_page(700) == 6
-    assert record_rows_per_page(960) == 11
+    assert record_rows_per_page(700) == 4
+    assert record_rows_per_page(960) == 9
 
 
 @pytest.mark.parametrize("board", [(16, 16), (24, 25), (30, 30), (25, 25)])
@@ -125,3 +128,33 @@ def test_every_supported_board_is_centred(board):
 
     assert layout.left == (WINDOW_WIDTH - layout.width) / 2
     assert layout.bottom == (WINDOW_HEIGHT - HUD_HEIGHT - layout.height) / 2
+
+
+def test_the_compare_bar_chart_gets_the_height_left_under_the_table():
+    assert compare_chart_height(700, player_rows=4) == 200
+    assert compare_chart_height(960, player_rows=4) == 300    # never taller than this
+
+
+def test_each_extra_player_row_takes_height_from_the_compare_bar_chart():
+    assert compare_chart_height(700, player_rows=7) == 119    # 3 more rows of 27 px
+
+
+def test_the_compare_bar_chart_is_left_out_when_too_little_height_is_left():
+    # 8 rows would leave 92 px: too short to read, so the table keeps the room.
+    assert compare_chart_height(700, player_rows=8) is None
+    assert compare_chart_height(960, player_rows=8) == 300
+
+
+def test_the_trend_chart_gets_the_height_left_under_the_tabs():
+    assert trend_chart_height(700, legend_rows=1) == 320
+    assert trend_chart_height(960, legend_rows=1) == 400      # never taller than this
+    assert trend_chart_height(400, legend_rows=1) == 160      # never shorter than this
+
+
+@pytest.mark.parametrize("players, rows", [(1, 1), (4, 1), (5, 2), (8, 2), (9, 3)])
+def test_the_trends_legend_wraps_after_4_players(players, rows):
+    assert trend_legend_rows(players) == rows
+
+
+def test_each_extra_legend_row_takes_height_from_the_trend_chart():
+    assert trend_chart_height(700, legend_rows=3) == 266      # 2 more rows of 27 px

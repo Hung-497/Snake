@@ -97,9 +97,11 @@ class FakeBot:
 class FakeRecordManager:
     def __init__(self):
         self.saved_results = []
+        self.saved_outcomes = []
 
-    def save_game_result(self, *result):
+    def save_game_result(self, *result, outcome=""):
         self.saved_results.append(result)
+        self.saved_outcomes.append(outcome)
 
 
 class FakeReplayManager:
@@ -566,3 +568,22 @@ def test_a_human_game_replays_along_the_path_it_was_played(tmp_path):
         replay.advance()
 
     assert replay.snake_position == (2, 0)
+
+
+@pytest.mark.parametrize("game_won, outcome", [(True, "won"), (False, "died")])
+def test_a_finished_bot_game_records_its_outcome(game_won, outcome):
+    session = make_session(engine=FakeEngine(moves_until_game_over=1, game_won=game_won))
+
+    session.advance()
+
+    assert session.record_manager.saved_outcomes == [outcome]
+
+
+@pytest.mark.parametrize("game_won, outcome", [(True, "won"), (False, "died")])
+def test_a_finished_human_game_records_its_outcome(game_won, outcome):
+    session = make_human_session(engine=FakeEngine(moves_until_game_over=1, game_won=game_won))
+    session.press_direction(Direction.UP)
+
+    session.advance_by(0.1)
+
+    assert session.record_manager.saved_outcomes == [outcome]

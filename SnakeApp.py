@@ -93,7 +93,7 @@ def create_app():
     shell.register_view("settings", lambda: SettingsView(shell, settings))
     shell.register_view("play", lambda: PlayView(shell, settings))
     shell.register_view("game", lambda bot_mode: GameView(shell, settings, bot_mode))
-    shell.register_view("records", lambda: RecordsView(shell))
+    shell.register_view("records", lambda: RecordsView(shell, settings))
     shell.register_view("replay", lambda: ReplayView(shell))
     shell.register_view(
         "replay_playback",
