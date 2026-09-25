@@ -57,6 +57,68 @@ Settings are kept for as long as the app is open, so a game started afterwards
 uses the speed, board size, and tile size chosen there. Closing the window
 closes the app.
 
+## Headless Q Learning Training
+
+Run training from the project root without opening the app window:
+
+```bash
+python3 -m snake.sessions.TrainQLearning --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
+```
+
+This resumes the existing saved Q-table and saves learning progress back to it
+after each game. A missing or malformed table stops the command with an error;
+training does not start a new table. The command prints score and learning
+progress in the terminal. It does not add watched-game records or replays.
+
+`--games` is required. The default board is 24 × 25, the default Tile Size is
+25, the default seed is 0, and the default move limit is 5000 per game.
+
+## Bot Experiments
+
+Compare Rule Based, Q Learning, and Hamiltonian without opening the app:
+
+```bash
+python3 -m snake.sessions.RunExperiment --games 10 --width 24 --height 25 --seed 7 --max-moves 5000
+```
+
+The command defaults to one game. It uses the same board and seeds for each Bot
+Mode: with `--seed 7 --games 10`, the per-game seeds are 7 through 16. Each game
+gets fresh Game Engine and bot random sources. The Game Engine uses the listed
+seed; the bot uses that seed plus one. Use the same command, code, and
+Q-table again to repeat the gameplay results. Each run saves a new JSON file in
+`experiments/` and prints its path; older results are kept.
+
+Q Learning uses Evaluation Mode: it reads the saved Q-table without exploring,
+learning, or saving changes. Use `--q-table path/to/table.json` to select a
+different table. Missing or malformed tables, invalid settings, and boards
+unsupported by Hamiltonian stop before play. Hamiltonian needs both board
+dimensions to be at least two and at least one even dimension. Training Mode
+uses the separate command above and does change the saved Q-table.
+
+The JSON keeps every game's seed, score, moves, and outcome (`won`, `collision`,
+or `move_limit`). A move limit is never counted as a win or a collision. On a
+large board, the move limit may end a surviving Hamiltonian game before the
+snake fills every cell. Each Bot Mode also has:
+
+- Mean, median, and best score; population score standard deviation. Lower
+  standard deviation means more consistent scores within that workload.
+- Wins and win rate (a fraction in JSON, shown as a percentage in the terminal),
+  plus collision and move-limit counts.
+- Total, mean, median, minimum, and maximum moves, and games per second.
+
+The result records creation time, Python version, Git commit, a hash of the
+current `snake/` Python sources, board settings, game count, base and per-game
+seeds, move limit, and the selected Q-table's path, hash, and learning settings.
+It also states the timing basis. Games per second measures wall time for each
+Bot Mode's actual gameplay. It excludes engine and bot setup, Q-table loading,
+the initial Q-table check, and JSON writing. Throughput varies
+by machine and Python version, so compare it under the same environment.
+
+These experiments use one fixed Q-table and one board configuration per run.
+They do not train a new policy, measure statistical confidence, or save watched
+game records and replays. Scores are comparable across bots for the same seed
+list; elapsed time can vary between otherwise identical runs.
+
 ## Run Tests
 
 Install the development test dependency:

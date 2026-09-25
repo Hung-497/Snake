@@ -29,6 +29,10 @@ def supports_board(bot_mode, board_width, board_height):
     plays on any board.
     """
     if (bot_mode == "hamiltonian"):
-        return board_width % 2 == 0 or board_height % 2 == 0
+        return (
+            board_width >= 2
+            and board_height >= 2
+            and (board_width % 2 == 0 or board_height % 2 == 0)
+        )
 
     return True

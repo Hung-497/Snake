@@ -14,11 +14,18 @@ class QLearningBot(BotMode):
     state.
     """
 
-    def __init__(self, engine, random_source=None):
+    def __init__(
+        self, engine, random_source=None, require_saved_table=False,
+        evaluation_mode=False, q_table_file=None,
+    ):
         super().__init__(engine, random_source)
 
+        self.evaluation_mode = evaluation_mode
         self.q_table = {} # the AI memory, store knowledge [state][action]
-        self.q_table_file = os.path.join("learning_data", "q_table_space_state_v2.json")
+        self.q_table_file = (
+            q_table_file if q_table_file is not None
+            else os.path.join("learning_data", "q_table_space_state_v2.json")
+        )
         self.learning_rate = 0.1 # how fast AI learns new information
         self.discount_rate = 0.9 # how much AI cares about future rewards
         self.epsilon = 1.0 # how often AI explores random actions
@@ -30,7 +37,11 @@ class QLearningBot(BotMode):
         self.current_action = None
         self.distance_before_move = 0
 
-        self.load_q_table()
+        loaded = self.load_q_table()
+        if (require_saved_table or evaluation_mode) and not loaded:
+            raise ValueError(
+                f"Saved Q-table is missing or malformed: {self.q_table_file}"
+            )
 
     def choose_action(self, state):
         self.current_state = self._get_state(state)
@@ -40,6 +51,9 @@ class QLearningBot(BotMode):
         return self._get_direction_from_action(state, self.current_action)
 
     def observe(self, transition):
+        if self.evaluation_mode:
+            return
+
         state_after_move = self.engine.state
 
         new_distance = self.get_food_distance(state_after_move)
@@ -65,6 +79,9 @@ class QLearningBot(BotMode):
         ) # update q-table memory
 
     def on_game_end(self, result):
+        if self.evaluation_mode:
+            return
+
         self.game_trained += 1
         self.decay_epsilon()
         self.save_q_table()
@@ -81,6 +98,9 @@ class QLearningBot(BotMode):
         return state
 
     def save_q_table(self):
+        if self.evaluation_mode:
+            return
+
         os.makedirs("learning_data", exist_ok=True)
 
         q_table_to_save = {}
@@ -102,22 +122,22 @@ class QLearningBot(BotMode):
     def load_q_table(self):
         try:
             if (not os.path.exists(self.q_table_file)):
-                return
+                return False
 
             if (os.path.getsize(self.q_table_file) == 0):
-                return
+                return False
 
             with open(self.q_table_file, "r") as file:
                 saved_data = json.load(file)
         except (OSError, ValueError, UnicodeError):
-            return
+            return False
 
         if (not isinstance(saved_data, dict)):
-            return
+            return False
 
         required_keys = {"q_table", "epsilon", "game_trained"}
         if (not required_keys.issubset(saved_data)):
-            return
+            return False
 
         epsilon = saved_data["epsilon"]
         game_trained = saved_data["game_trained"]
@@ -128,15 +148,16 @@ class QLearningBot(BotMode):
             or type(game_trained) is not int
             or game_trained < 0
         ):
-            return
+            return False
 
         loaded_q_table = self._parse_q_table(saved_data["q_table"])
         if (loaded_q_table is None):
-            return
+            return False
 
         self.q_table = loaded_q_table
         self.epsilon = epsilon
         self.game_trained = game_trained
+        return True
 
     def _is_valid_number(self, value):
         if (type(value) is int):
@@ -398,21 +419,24 @@ class QLearningBot(BotMode):
         return safe_actions
 
     def _pick_action(self, state, state_key):
-        self._make_state_if_needed(state_key)
+        if not self.evaluation_mode:
+            self._make_state_if_needed(state_key)
 
         safe_actions = self._get_safe_actions(state)
 
         if (len(safe_actions) == 0):
             return self.random_source.choice(self.actions)
 
-        if (self.random_source.random() < self.epsilon):
+        if (not self.evaluation_mode and self.random_source.random() < self.epsilon):
             return self.random_source.choice(safe_actions)
 
         best_action = safe_actions[0]
-        best_value = self.q_table[state_key][best_action]
+        # An unseen state has equal zero values during evaluation.
+        action_values = self.q_table.get(state_key, {})
+        best_value = action_values.get(best_action, 0)
 
         for action in safe_actions:
-            value = self.q_table[state_key][action]
+            value = action_values.get(action, 0)
 
             if (value > best_value):
                 best_value = value
