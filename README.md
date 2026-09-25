@@ -154,32 +154,17 @@ _Results on the terminal_
 
 ```text
 SnakeApp.py          # Starts the app: the Arcade window and the App Views
-AppShell.py          # Which screen is showing, and closing the app
-MenuView.py          # Menu screen
-SettingsView.py      # Settings screen
-PlayView.py          # Bot Mode choice
-GameView.py          # Watch a bot play
-ReplayView.py        # Choose a saved replay
-ReplayPlaybackView.py # Watch a saved replay
-RecordsView.py       # Records screen
-Theme.py             # Shared colours, type sizes, spacing, and controls
-WindowLayout.py      # Window minimum, board position, and compact layout
-MotionRules.py       # Display-free timing rules for visual effects
-BoardRenderer.py     # Draws the board at positions from WindowLayout
-SessionSettings.py   # Speed, board size, and tile size for this session
-GameSession.py       # Repeated games, scores, records, and replays
-ReplaySession.py     # Replays a saved game
-RecordsBrowser.py    # Reads, filters, and summarises saved records
-SnakeEngine.py       # Snake rules, with no screen of its own
-GameConfig.py        # Validated board settings
-GameTypes.py         # Position and Direction
-BotMode.py           # Shared bot helper methods
-BotFactory.py        # Builds the selected bot
-RuleBasedBot.py      # Rule-based bot
-QLearningBot.py      # Tabular Q-learning bot
-HamiltonianBot.py    # Hamiltonian cycle bot
-RecordManager.py     # Saves and reads CSV game records
-ReplayManager.py     # Saves and loads replay JSON files
+snake/
+  engine/            # GameConfig, GameTypes, SnakeEngine: board rules and state
+  bots/              # BotMode, BotFactory, and the three Bot Modes
+  sessions/          # GameSession, ReplaySession, SessionSettings
+  storage/           # RecordManager and ReplayManager
+  ui/                # AppShell, Theme, WindowLayout, MotionRules, BoardRenderer,
+                     # and RecordsBrowser
+    views/           # Menu, Settings, Play, Game, Replay, ReplayPlayback,
+                     # and Records App Views
+tests/               # Behavior and regression tests
+assets/              # Bundled fonts
 records/             # Saved game result CSV data
 replays/             # Saved replay JSON files
 learning_data/       # Saved Q-table data

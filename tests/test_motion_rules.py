@@ -1,6 +1,6 @@
 """Display-free checks for the board effects' timing rules."""
 
-from MotionRules import ViewFade, board_effects_enabled, end_flash_alpha, food_pulse_scale
+from snake.ui.MotionRules import ViewFade, board_effects_enabled, end_flash_alpha, food_pulse_scale
 
 
 def test_board_effects_stop_at_fast_speed():

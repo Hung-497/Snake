@@ -1,8 +1,8 @@
 import arcade.gui
 
-from BotFactory import supports_board
-import Theme
-from WindowLayout import layout_step
+from snake.bots.BotFactory import supports_board
+from snake.ui import Theme
+from snake.ui.WindowLayout import layout_step
 
 
 # The name the Bot Mode factory uses -> the name shown to the user.

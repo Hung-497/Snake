@@ -1,8 +1,8 @@
 import arcade.gui
 
-from RecordsBrowser import ALL_BOTS, RecordsBrowser
-import Theme
-from WindowLayout import layout_step, record_rows_per_page
+from snake.ui.RecordsBrowser import ALL_BOTS, RecordsBrowser
+from snake.ui import Theme
+from snake.ui.WindowLayout import layout_step, record_rows_per_page
 
 
 # Button label -> the filter value the browser uses.

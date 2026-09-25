@@ -8,8 +8,8 @@ need no graphical display and never depend on Arcade's own behaviour.
 
 import pytest
 
-from AppShell import AppShell
-from SessionSettings import SessionSettings
+from snake.ui.AppShell import AppShell
+from snake.sessions.SessionSettings import SessionSettings
 
 
 class FakeWindow:

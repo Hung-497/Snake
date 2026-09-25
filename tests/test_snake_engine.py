@@ -1,8 +1,8 @@
 import pytest
 
-from GameConfig import GameConfig
-from GameTypes import Direction
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 CONFIG = GameConfig(width=4, height=4, tile_size=25)

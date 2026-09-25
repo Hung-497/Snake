@@ -1,10 +1,10 @@
 import arcade
 import arcade.gui
 
-import Theme
-from BoardRenderer import BoardRenderer
-from WindowLayout import view_label_positions
-from PlayView import BOT_MODE_LABELS
+from snake.ui import Theme
+from snake.ui.BoardRenderer import BoardRenderer
+from snake.ui.WindowLayout import view_label_positions
+from snake.ui.views.PlayView import BOT_MODE_LABELS
 
 
 class ReplayPlaybackView(arcade.gui.UIView):

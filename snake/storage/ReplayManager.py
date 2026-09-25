@@ -1,6 +1,6 @@
 import os
 import json
-from GameTypes import Direction
+from snake.engine.GameTypes import Direction
 
 
 REPLAY_SCHEMA_VERSION = 2

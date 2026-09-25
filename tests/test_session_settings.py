@@ -7,7 +7,7 @@ graphical display.
 
 import pytest
 
-from SessionSettings import SessionSettings
+from snake.sessions.SessionSettings import SessionSettings
 
 
 def test_defaults_match_the_choices_the_menu_started_with():

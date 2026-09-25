@@ -1,13 +1,13 @@
 import arcade
 import arcade.gui
 
-import Theme
-from BoardRenderer import BoardRenderer
-from WindowLayout import view_label_positions
-from GameSession import GameSession
-from MotionRules import board_effects_enabled, end_flash_alpha, food_pulse_scale
-from PlayView import BOT_MODE_LABELS
-from SnakeEngine import SnakeEngine
+from snake.ui import Theme
+from snake.ui.BoardRenderer import BoardRenderer
+from snake.ui.WindowLayout import view_label_positions
+from snake.sessions.GameSession import GameSession
+from snake.ui.MotionRules import board_effects_enabled, end_flash_alpha, food_pulse_scale
+from snake.ui.views.PlayView import BOT_MODE_LABELS
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 GAME_OVER_COLOR = Theme.WARNING

@@ -8,8 +8,8 @@ already normalised to grid cells by ReplayManager before it gets here.
 
 import pytest
 
-from ReplayManager import ReplayCompatibilityError
-from ReplaySession import ReplaySession, load_replay_session
+from snake.storage.ReplayManager import ReplayCompatibilityError
+from snake.sessions.ReplaySession import ReplaySession, load_replay_session
 
 
 # 4 is RIGHT and 3 is DOWN in the saved move numbers.

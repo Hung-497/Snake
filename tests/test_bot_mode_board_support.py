@@ -8,7 +8,7 @@ keeps an unsupported game out of the Game App View.
 
 import pytest
 
-from BotFactory import supports_board
+from snake.bots.BotFactory import supports_board
 
 
 @pytest.mark.parametrize("bot_mode", ["rule", "q_learning"])

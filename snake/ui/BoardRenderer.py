@@ -1,8 +1,8 @@
 import arcade
 from arcade.types import Color
 
-import Theme
-from WindowLayout import HUD_HEIGHT, layout_board
+from snake.ui import Theme
+from snake.ui.WindowLayout import HUD_HEIGHT, layout_board
 
 
 class BoardRenderer:

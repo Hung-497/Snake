@@ -1,0 +1,1 @@
+"""Automated Snake players."""

@@ -1,7 +1,7 @@
 import arcade.gui
 
-import Theme
-from WindowLayout import layout_step
+from snake.ui import Theme
+from snake.ui.WindowLayout import layout_step
 
 
 class SettingsView(arcade.gui.UIView):

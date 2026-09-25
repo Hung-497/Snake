@@ -1,5 +1,5 @@
-from GameTypes import Direction
-from ReplayManager import (
+from snake.engine.GameTypes import Direction
+from snake.storage.ReplayManager import (
     GRID_COORDINATE_SYSTEM,
     NUMBER_TO_DIRECTION,
     ReplayCompatibilityError,

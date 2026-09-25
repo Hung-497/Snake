@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 import random
 
-from GameConfig import GameConfig
-from GameTypes import Direction, Position
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction, Position
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,4 @@
-from RecordManager import RecordManager
+from snake.storage.RecordManager import RecordManager
 
 
 ALL_BOTS = "All Bots"

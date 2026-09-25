@@ -1,7 +1,7 @@
 import random
 
-from GameTypes import Direction
-from SnakeEngine import OPPOSITE_DIRECTION
+from snake.engine.GameTypes import Direction
+from snake.engine.SnakeEngine import OPPOSITE_DIRECTION
 
 
 class BotMode:

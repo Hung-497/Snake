@@ -8,7 +8,7 @@ records are stored; the browser only reads what RecordManager returns.
 
 import pytest
 
-from RecordsBrowser import ALL_BOTS, RecordsBrowser
+from snake.ui.RecordsBrowser import ALL_BOTS, RecordsBrowser
 
 
 class FakeRecordManager:

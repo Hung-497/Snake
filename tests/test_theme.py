@@ -1,13 +1,22 @@
 """
-Tests for the parts of the theme that are arithmetic rather than appearance.
+Tests for theme arithmetic and bundled font discovery.
 
 Colour, size and spacing tokens are deliberately not asserted here: checking
 that a token holds a particular value only proves it was typed twice. What is
 worth testing is the mixing used to ease a control between its states.
 """
 
-from Theme import blend_color
+from pathlib import Path
+
 from arcade.types import Color
+
+from snake.ui.Theme import FONT_DIR, blend_color
+
+
+def test_bundled_fonts_are_found_after_theme_move():
+    font_directory = Path(FONT_DIR)
+    assert (font_directory / "Inter-Regular.ttf").is_file()
+    assert (font_directory / "Inter-SemiBold.ttf").is_file()
 
 
 BLACK = Color(0, 0, 0, 255)

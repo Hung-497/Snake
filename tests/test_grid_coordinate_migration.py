@@ -1,13 +1,13 @@
 import random
 from types import SimpleNamespace
 
-from GameConfig import GameConfig
-from GameTypes import Direction, Position
-from HamiltonianBot import HamiltonianBot
-from QLearningBot import QLearningBot
-from ReplayManager import ReplayManager
-from RuleBasedBot import RuleBasedBot
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction, Position
+from snake.bots.HamiltonianBot import HamiltonianBot
+from snake.bots.QLearningBot import QLearningBot
+from snake.storage.ReplayManager import ReplayManager
+from snake.bots.RuleBasedBot import RuleBasedBot
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 def test_engine_public_state_uses_board_cells():

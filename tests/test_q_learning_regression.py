@@ -2,7 +2,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from QLearningBot import QLearningBot
+from snake.bots.QLearningBot import QLearningBot
 
 
 def make_transition(game_over, ate_food=False):

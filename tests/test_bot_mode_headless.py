@@ -2,14 +2,14 @@ import random
 
 import pytest
 
-from BotFactory import create_bot_mode
-from GameConfig import GameConfig
-from GameSession import GameSession
-from GameTypes import Direction
-from HamiltonianBot import HamiltonianBot
-from QLearningBot import QLearningBot
-from RuleBasedBot import RuleBasedBot
-from SnakeEngine import SnakeEngine
+from snake.bots.BotFactory import create_bot_mode
+from snake.engine.GameConfig import GameConfig
+from snake.sessions.GameSession import GameSession
+from snake.engine.GameTypes import Direction
+from snake.bots.HamiltonianBot import HamiltonianBot
+from snake.bots.QLearningBot import QLearningBot
+from snake.bots.RuleBasedBot import RuleBasedBot
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 MOVE_LIMIT = 5000

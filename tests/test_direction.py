@@ -1,6 +1,6 @@
-from GameConfig import GameConfig
-from GameTypes import Direction
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 def test_direction_contains_the_four_canonical_values():

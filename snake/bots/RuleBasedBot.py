@@ -1,4 +1,4 @@
-from BotMode import BotMode
+from snake.bots.BotMode import BotMode
 
 
 class RuleBasedBot(BotMode):

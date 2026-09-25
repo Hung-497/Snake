@@ -8,10 +8,10 @@ rules, which belong to the Game Engine, and they never check drawing.
 
 import pytest
 
-from GameTypes import Direction
-from GameConfig import GameConfig
-from SnakeEngine import EngineState, SnakeEngine
-from GameSession import GameSession
+from snake.engine.GameTypes import Direction
+from snake.engine.GameConfig import GameConfig
+from snake.engine.SnakeEngine import EngineState, SnakeEngine
+from snake.sessions.GameSession import GameSession
 
 
 class FakeEngine:

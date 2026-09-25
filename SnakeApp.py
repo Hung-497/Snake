@@ -1,18 +1,18 @@
 import arcade
 from arcade.types import Color
 
-from AppShell import AppShell
-from GameView import GameView
-from MenuView import MenuView
-from MotionRules import ViewFade
-from PlayView import PlayView
-from RecordsView import RecordsView
-from ReplayPlaybackView import ReplayPlaybackView
-from ReplayView import ReplayView
-from SessionSettings import SessionSettings
-from SettingsView import SettingsView
-import Theme
-from WindowLayout import minimum_window_size
+from snake.ui.AppShell import AppShell
+from snake.ui.views.GameView import GameView
+from snake.ui.views.MenuView import MenuView
+from snake.ui.MotionRules import ViewFade
+from snake.ui.views.PlayView import PlayView
+from snake.ui.views.RecordsView import RecordsView
+from snake.ui.views.ReplayPlaybackView import ReplayPlaybackView
+from snake.ui.views.ReplayView import ReplayView
+from snake.sessions.SessionSettings import SessionSettings
+from snake.ui.views.SettingsView import SettingsView
+from snake.ui import Theme
+from snake.ui.WindowLayout import minimum_window_size
 
 
 # A known starting size; the user can resize the window during this run.

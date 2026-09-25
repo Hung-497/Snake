@@ -1,5 +1,5 @@
-from BotMode import BotMode
-from GameTypes import Direction
+from snake.bots.BotMode import BotMode
+from snake.engine.GameTypes import Direction
 
 class HamiltonianBot(BotMode):
     """

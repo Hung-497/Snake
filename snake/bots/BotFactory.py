@@ -1,6 +1,6 @@
-from HamiltonianBot import HamiltonianBot
-from QLearningBot import QLearningBot
-from RuleBasedBot import RuleBasedBot
+from snake.bots.HamiltonianBot import HamiltonianBot
+from snake.bots.QLearningBot import QLearningBot
+from snake.bots.RuleBasedBot import RuleBasedBot
 
 
 BOT_MODE_CLASSES = {

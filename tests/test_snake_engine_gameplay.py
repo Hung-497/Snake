@@ -1,8 +1,8 @@
 import random
 
-from GameConfig import GameConfig
-from GameTypes import Direction
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 def test_engine_places_food_on_a_free_cell():

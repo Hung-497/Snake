@@ -1,7 +1,7 @@
 import arcade.gui
 
-import Theme
-from WindowLayout import layout_step
+from snake.ui import Theme
+from snake.ui.WindowLayout import layout_step
 
 
 # Button label -> the App View that button opens, and whether it is the main

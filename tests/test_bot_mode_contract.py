@@ -3,11 +3,11 @@ import random
 import json
 import os
 
-from GameConfig import GameConfig
-from GameTypes import Direction
-from QLearningBot import QLearningBot
-from RuleBasedBot import RuleBasedBot
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction
+from snake.bots.QLearningBot import QLearningBot
+from snake.bots.RuleBasedBot import RuleBasedBot
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 def make_engine(width=4, height=4, start_position=(1, 1), body=(), direction=Direction.RIGHT, food_position=(3, 1)):

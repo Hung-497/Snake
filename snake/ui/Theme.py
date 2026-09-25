@@ -14,14 +14,16 @@ import arcade.gui
 from arcade.gui.experimental.focus import FocusMode, UIFocusGroup
 from arcade.types import Color
 
-from WindowLayout import layout_step
+from snake.ui.WindowLayout import layout_step
 
 
 # --- Fonts -----------------------------------------------------------------
 # Inter is bundled with the project so macOS, Windows and Linux all render the
 # same text. Asking for a system font instead means each platform substitutes
 # whatever it happens to have.
-FONT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fonts")
+# Theme lives under snake/ui; bundled fonts stay at the repository root.
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+FONT_DIR = os.path.join(PROJECT_ROOT, "assets", "fonts")
 FONT_REGULAR = "Inter"
 # The bold face registers under its own family name, so it is chosen by name
 # rather than by asking for bold.

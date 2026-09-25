@@ -2,7 +2,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from GameConfig import GameConfig
+from snake.engine.GameConfig import GameConfig
 
 
 def test_game_config_can_be_created_without_a_window():

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from QLearningBot import QLearningBot
+from snake.bots.QLearningBot import QLearningBot
 
 
 VALID_STATE = "0_0_0_0_1_0_2_2_2"

@@ -2,8 +2,8 @@ import json
 import math
 import os
 
-from BotMode import BotMode
-from GameTypes import Direction
+from snake.bots.BotMode import BotMode
+from snake.engine.GameTypes import Direction
 
 class QLearningBot(BotMode):
     """

@@ -1,8 +1,8 @@
 import time
 
-from BotFactory import create_bot_mode
-from RecordManager import RecordManager
-from ReplayManager import ReplayManager
+from snake.bots.BotFactory import create_bot_mode
+from snake.storage.RecordManager import RecordManager
+from snake.storage.ReplayManager import ReplayManager
 
 
 class GameSession:

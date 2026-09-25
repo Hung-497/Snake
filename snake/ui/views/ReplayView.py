@@ -1,10 +1,10 @@
 import arcade.gui
 
-from PlayView import BOT_MODE_LABELS
-from ReplayManager import ReplayManager
-from ReplaySession import load_replay_session
-import Theme
-from WindowLayout import layout_step
+from snake.ui.views.PlayView import BOT_MODE_LABELS
+from snake.storage.ReplayManager import ReplayManager
+from snake.sessions.ReplaySession import load_replay_session
+from snake.ui import Theme
+from snake.ui.WindowLayout import layout_step
 
 
 class ReplayView(arcade.gui.UIView):

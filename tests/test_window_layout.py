@@ -8,7 +8,7 @@ becomes a pixel, so everything about that lives here.
 
 import pytest
 
-from WindowLayout import (
+from snake.ui.WindowLayout import (
     HUD_HEIGHT,
     layout_board,
     layout_step,

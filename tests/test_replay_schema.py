@@ -2,10 +2,10 @@ import json
 
 import pytest
 
-from GameConfig import GameConfig
-from GameTypes import Direction
-from ReplayManager import ReplayCompatibilityError, ReplayManager
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction
+from snake.storage.ReplayManager import ReplayCompatibilityError, ReplayManager
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 def make_engine():

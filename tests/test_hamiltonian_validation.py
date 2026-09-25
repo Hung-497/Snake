@@ -1,9 +1,9 @@
 import pytest
 
-from GameConfig import GameConfig
-from GameTypes import Direction
-from HamiltonianBot import HamiltonianBot
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction
+from snake.bots.HamiltonianBot import HamiltonianBot
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 def make_engine(width, height):

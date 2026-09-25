@@ -1,4 +1,4 @@
-from GameConfig import GameConfig
+from snake.engine.GameConfig import GameConfig
 
 
 class SessionSettings:

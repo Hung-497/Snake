@@ -2,9 +2,9 @@ import random
 
 import pytest
 
-from GameConfig import GameConfig
-from GameTypes import Direction, Position
-from SnakeEngine import SnakeEngine
+from snake.engine.GameConfig import GameConfig
+from snake.engine.GameTypes import Direction, Position
+from snake.engine.SnakeEngine import SnakeEngine
 
 
 def make_engine(width, height, start_position, direction, food_position, body=()):
