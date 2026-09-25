@@ -102,6 +102,7 @@ def make_grid_q_learning_bot(engine):
     bot = QLearningBot.__new__(QLearningBot)
     bot.engine = engine
     bot.random_source = random.Random(1)
+    bot.evaluation_mode = False
     bot.q_table = {}
     bot.actions = ["Straight", "Turn_Left", "Turn_Right"]
     bot.epsilon = 0
