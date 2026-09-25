@@ -102,3 +102,16 @@ def test_an_unknown_option_is_rejected(select_name, unknown_option):
 
     with pytest.raises(ValueError):
         getattr(settings, select_name)(unknown_option)
+
+
+@pytest.mark.parametrize(
+    "speed_delay, speed_name",
+    [(10, "Slow"), (5, "Normal"), (1, "Fast"), (150, "Slow"), (100, "Normal"), (70, "Fast")],
+)
+def test_a_recorded_delay_maps_back_to_its_speed_name(speed_delay, speed_name):
+    # Bot Modes and Human Play use different delays for the same speed name.
+    assert SessionSettings().speed_name_for_delay(speed_delay) == speed_name
+
+
+def test_a_delay_the_app_does_not_offer_has_no_speed_name():
+    assert SessionSettings().speed_name_for_delay(42) is None

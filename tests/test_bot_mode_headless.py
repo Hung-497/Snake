@@ -152,7 +152,7 @@ class FakeReplayManager:
 
 
 class FakeRecordManager:
-    def save_game_result(self, *args):
+    def save_game_result(self, *args, **kwargs):
         pass
 
 

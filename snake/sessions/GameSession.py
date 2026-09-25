@@ -272,6 +272,7 @@ class GameSession:
             self.engine.board_height,
             self.engine.tile_size,
             self.speed_delay,
+            outcome="won" if self.game_won else "died",
         )
 
         print(

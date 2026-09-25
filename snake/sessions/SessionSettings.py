@@ -79,6 +79,19 @@ class SessionSettings:
     def speed_delay(self):
         return self.speed_options[self.selected_speed_name]
 
+    def speed_name_for_delay(self, speed_delay):
+        """
+        The speed name a recorded delay was played at, or None if the app
+        does not offer that delay. The Bot Mode and Human Play delays never
+        overlap, so each delay has at most one name.
+        """
+        for delays in (self.speed_options, self.human_speed_options):
+            for speed_name, delay in delays.items():
+                if (delay == speed_delay):
+                    return speed_name
+
+        return None
+
     def speed_delay_for(self, player):
         """The delay between moves for this Player at the chosen speed."""
         if (player == HUMAN_PLAY):

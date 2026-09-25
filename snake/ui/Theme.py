@@ -76,6 +76,19 @@ BOARD_FLASH = Color.from_hex_string("#D6F29B")
 SNAKE_BODY = Color.from_hex_string("#2EAA82")
 SNAKE_HEAD = Color.from_hex_string("#D6F29B")
 FOOD = Color.from_hex_string("#FF7575")
+
+# Each Player keeps one colour on every Records Analytics table and chart.
+PLAYER_COLORS = {
+    "rule": Color.from_hex_string("#F2B84B"),
+    "q_learning": Color.from_hex_string("#60A5FA"),
+    "hamiltonian": Color.from_hex_string("#34D399"),
+    "human": Color.from_hex_string("#C084FC"),
+}
+
+
+def player_color(player):
+    """The Player's chart colour; a Player the app does not know is muted."""
+    return PLAYER_COLORS.get(player, TEXT_MUTED)
 BOARD_GRID_WIDTH = 1
 BOARD_FRAME_WIDTH = 2
 
@@ -140,6 +153,9 @@ OPTION_HEIGHT = 42
 # 700 px minimum window width, gaps and side gutters included.
 FILTER_BUTTON_WIDTH = 124
 FILTER_BUTTON_HEIGHT = 38
+# The Records Board and Speed dropdowns share one row at the 700 px minimum width.
+BOARD_DROPDOWN_WIDTH = 210
+SPEED_DROPDOWN_WIDTH = 150
 PAGE_BUTTON_WIDTH = 120
 PAGE_BUTTON_HEIGHT = 34
 HUD_BUTTON_WIDTH = 150
