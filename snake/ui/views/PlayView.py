@@ -1,23 +1,17 @@
 import arcade.gui
 
 from snake.bots.BotFactory import supports_board
+from snake.sessions.HumanPlayer import HUMAN_PLAY
 from snake.ui import Theme
+from snake.ui.PlayerLabels import BOT_MODE_LABELS
 from snake.ui.WindowLayout import layout_step
-
-
-# The name the Bot Mode factory uses -> the name shown to the user.
-BOT_MODE_LABELS = {
-    "rule": "Rule Based",
-    "q_learning": "Q Learning",
-    "hamiltonian": "Hamiltonian",
-}
 
 UNSUPPORTED_BOARD_MESSAGE = "Hamiltonian Bot needs at least one even board side."
 
 
 class PlayView(arcade.gui.UIView):
     """
-    The Play App View: pick the Bot Mode that will play the games.
+    The Play App View: play yourself, or pick the Bot Mode that will play.
 
     A Bot Mode that cannot play the board chosen in Settings never reaches the
     Game App View; this view explains why instead.
@@ -36,9 +30,14 @@ class PlayView(arcade.gui.UIView):
         self.ui.clear()
         sizes = Theme.type_sizes(self.window.width)
         play_box = arcade.gui.UIBoxLayout(space_between=Theme.SPACE_TIGHT)
-        play_box.add(Theme.create_label("Choose Bot Mode:",
+        play_box.add(Theme.create_label("Choose a Player:",
                                          font_size=sizes.display, semibold=True))
         play_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
+
+        # Human Play is a Player but not a Bot Mode, so it has its own button.
+        play_box.add(Theme.create_primary_button("Play Yourself", self.start_game(HUMAN_PLAY),
+                                                 font_size=sizes.heading))
+        play_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
 
         for bot_mode, button_text in BOT_MODE_LABELS.items():
             play_box.add(Theme.create_primary_button(button_text, self.start_game(bot_mode),

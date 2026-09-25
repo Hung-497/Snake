@@ -23,6 +23,7 @@ def test_new_replays_declare_grid_schema_and_store_cell_positions(tmp_path):
     manager.start_recording("rule", 4, 3, 20, 1, engine=make_engine())
     manager.record_move(Direction.RIGHT)
 
+    assert manager.replay_data["player"] == "rule"
     assert manager.replay_data["schema_version"] == 2
     assert manager.replay_data["coordinate_system"] == "grid"
     assert manager.replay_data["start_snake"] == [1, 1]
@@ -98,3 +99,31 @@ def test_misaligned_legacy_pixel_replay_is_not_silently_read_as_grid(tmp_path):
 
     with pytest.raises(ReplayCompatibilityError, match="pixel"):
         manager.load_replay("rule")
+
+
+def save_human_game(manager, score):
+    manager.start_recording("human", 4, 3, 20, 100, engine=make_engine())
+    manager.record_move(Direction.RIGHT)
+    manager.save_replay("human", score)
+
+
+def test_a_human_replay_is_saved_as_the_best_human_game(tmp_path):
+    manager = ReplayManager(folder_name=str(tmp_path))
+
+    save_human_game(manager, score=3)
+
+    assert (tmp_path / "human_best.json").exists()
+    replay = manager.load_replay("human")
+    assert replay["final_score"] == 3
+    assert replay["speed_delay"] == 100
+
+
+def test_only_a_higher_scoring_human_game_replaces_the_saved_replay(tmp_path):
+    manager = ReplayManager(folder_name=str(tmp_path))
+    save_human_game(manager, score=5)
+
+    save_human_game(manager, score=2)
+    assert manager.load_replay("human")["final_score"] == 5
+
+    save_human_game(manager, score=8)
+    assert manager.load_replay("human")["final_score"] == 8

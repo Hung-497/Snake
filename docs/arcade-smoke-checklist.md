@@ -21,12 +21,17 @@ python3 SnakeApp.py
 | 5 | Settings | Each dropdown opens, a choice sticks, and Back returns to the Menu. |
 | 6 | Retained settings | Reopening Settings still shows the choices made a moment ago. |
 | 7 | Game rendering | The board, the yellow head, the green body, the red food, and the score line all draw. |
-| 8 | Repeated games | A finished game briefly shows its result, then the next game starts by itself. |
+| 8 | Repeated games | With a Bot Mode, a finished game briefly shows its result, then the next game starts by itself. |
 | 9 | Unsupported board | With an odd-by-odd board, Hamiltonian stays on Play and explains why. |
 | 10 | Records | Summary statistics appear, each filter changes them, and Newer/Older page through the list. |
 | 11 | Replay | A saved replay plays and ends on "Replay Finished". A bot with no saved replay shows a message instead. |
 | 12 | Navigation | Back returns to the Menu from every screen, in the same window. |
 | 13 | Clean shutdown | Closing the window ends the process with no error and no leftover window. |
+| 14 | Play Yourself | Play shows "Play Yourself" above the Bot Modes. It opens a game on every board size, labelled "Human". |
+| 15 | Human Play start and steering | The snake stays still with "Press an arrow key to start" until an arrow or WASD key is pressed. Arrow keys and WASD both steer, a quick double turn (like Up then Left) makes both turns, and a key that would reverse the snake is ignored. The speed is playable on Slow, Normal and Fast. |
+| 16 | Human Play result and leaving | A finished game keeps its result and score on screen until Space or Enter starts a new game, which waits for an arrow key again. Esc returns to the Menu at any time, and leaving mid-game adds no record. |
+| 17 | Human Play pause | P or Space pauses a game in play and shows "Paused"; pressing either again resumes with no jump. Arrow keys do nothing while paused. Switching to another app pauses the game, and it stays paused on return. |
+| 18 | Human records and replay | Records has a "Human" filter that shows only Human Play games, and the five filters fit at the smallest window width. Replay has a "Human" button that plays the best Human Play game at the speed it was played, or shows a message if none is saved. |
 
 ## Results
 

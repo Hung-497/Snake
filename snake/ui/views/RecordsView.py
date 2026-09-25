@@ -1,16 +1,19 @@
 import arcade.gui
 
-from snake.ui.RecordsBrowser import ALL_BOTS, RecordsBrowser
+from snake.sessions.HumanPlayer import HUMAN_PLAY
+from snake.ui.RecordsBrowser import ALL_PLAYERS, RecordsBrowser
 from snake.ui import Theme
+from snake.ui.PlayerLabels import player_label
 from snake.ui.WindowLayout import layout_step, record_rows_per_page
 
 
 # Button label -> the filter value the browser uses.
 FILTER_CHOICES = (
-    ("All", ALL_BOTS),
+    ("All Players", ALL_PLAYERS),
     ("Rule", "rule"),
     ("Q-Learning", "q_learning"),
     ("Hamiltonian", "hamiltonian"),
+    ("Human", HUMAN_PLAY),
 )
 
 NOTHING_TO_SHOW = "-"
@@ -154,7 +157,7 @@ class RecordsView(arcade.gui.UIView):
         row.add(
             Theme.create_label(
                 f"{record['date_time']} | "
-                f"{record['bot_name']} | "
+                f"{player_label(record['player'])} | "
                 f"Score: {record['score']} | "
                 f"Moves: {record['total_moves']}" + time_detail,
                 font_size=self.sizes.caption,

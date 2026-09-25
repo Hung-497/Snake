@@ -4,7 +4,7 @@ from datetime import datetime
 
 class RecordManager:
     """
-    Saves game results so we can compare the performance of different bots and strategies.
+    Saves game results so we can compare how each Player performs.
     """
 
     def __init__(self, file_name="records/game_records.csv"):
@@ -14,7 +14,7 @@ class RecordManager:
         if (self.folder_name != "" and not os.path.exists(self.folder_name)):
             os.makedirs(self.folder_name, exist_ok=True)
     
-    def save_game_result(self, bot_name, games_played, score, best_score, average_score, total_moves, game_time, session_time, board_width, board_height, tile_size, speed_delay):
+    def save_game_result(self, player, games_played, score, best_score, average_score, total_moves, game_time, session_time, board_width, board_height, tile_size, speed_delay):
         file_exists = os.path.isfile(self.file_name)
 
         with open(self.file_name, mode='a', newline='') as file:
@@ -23,7 +23,7 @@ class RecordManager:
             if (not file_exists):
                 writer.writerow([
                     "date_time",
-                    "bot_name",
+                    "player",
                     "games_played",
                     "score",
                     "best_score",
@@ -39,7 +39,7 @@ class RecordManager:
             
             writer.writerow([
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                bot_name,
+                player,
                 games_played,
                 score,
                 best_score,
@@ -63,6 +63,10 @@ class RecordManager:
             reader = csv.DictReader(file)
 
             for row in reader:
+                # Files saved before Human Play named this column bot_name.
+                if ("bot_name" in row and "player" not in row):
+                    row["player"] = row.pop("bot_name")
+
                 records.append(row)
 
         return records

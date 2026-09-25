@@ -6,7 +6,7 @@ from snake.storage.ReplayManager import (
 )
 
 
-def load_replay_session(replay_manager, bot_name):
+def load_replay_session(replay_manager, player):
     """
     Try to open a saved replay for a Bot Mode.
 
@@ -16,12 +16,12 @@ def load_replay_session(replay_manager, bot_name):
     if it were fine.
     """
     try:
-        replay_data = replay_manager.load_replay(bot_name)
+        replay_data = replay_manager.load_replay(player)
     except ReplayCompatibilityError as error:
         return None, str(error)
 
     if (replay_data is None):
-        return None, f"No replay saved for {bot_name} yet."
+        return None, f"No replay saved for {player} yet."
 
     try:
         return ReplaySession(replay_data), None

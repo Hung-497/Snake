@@ -72,6 +72,23 @@ def test_choosing_a_speed_changes_the_speed_delay():
     assert settings.speed_delay == 10
 
 
+@pytest.mark.parametrize("speed_name, human_delay", [("Slow", 150), ("Normal", 100), ("Fast", 70)])
+def test_human_play_uses_a_speed_a_person_can_play(speed_name, human_delay):
+    settings = SessionSettings()
+
+    settings.select_speed(speed_name)
+
+    assert settings.speed_delay_for("human") == human_delay
+
+
+def test_bot_modes_keep_their_own_speed_delay():
+    settings = SessionSettings()
+
+    settings.select_speed("Normal")
+
+    assert settings.speed_delay_for("rule") == 5
+
+
 @pytest.mark.parametrize(
     "select_name, unknown_option",
     [

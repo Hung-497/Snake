@@ -104,3 +104,22 @@ def test_reset_restores_the_initial_playable_state():
     assert engine.state.snake_body == ()
     assert engine.state.direction is Direction.RIGHT
     assert engine.game_over is False
+
+
+def test_a_snake_with_no_body_can_start_by_turning_around():
+    # Nothing is behind the head yet, so facing the other way is safe.
+    engine = make_engine(direction=Direction.RIGHT)
+
+    assert engine.choose_start_direction(Direction.LEFT) is True
+    engine.step()
+
+    assert engine.direction is Direction.LEFT
+    assert engine.snake_position == (0, 25)
+    assert engine.game_over is False
+
+
+def test_a_snake_with_a_body_still_cannot_start_by_turning_around():
+    engine = make_engine(position=(50, 25), body=((25, 25),), direction=Direction.RIGHT)
+
+    assert engine.choose_start_direction(Direction.LEFT) is False
+    assert engine.direction is Direction.RIGHT
