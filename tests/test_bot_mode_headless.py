@@ -10,6 +10,7 @@ from snake.bots.HamiltonianBot import HamiltonianBot
 from snake.bots.QLearningBot import QLearningBot
 from snake.bots.RuleBasedBot import RuleBasedBot
 from snake.engine.SnakeEngine import SnakeEngine
+from snake.ui.PlayerLabels import BOT_MODE_LABELS
 
 
 MOVE_LIMIT = 5000
@@ -44,7 +45,7 @@ def play_game(bot_mode, width, height, seed, q_table_file=None):
     return engine, moves
 
 
-@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian"])
+@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "search_based"])
 def test_every_bot_mode_completes_a_game_without_a_window(bot_mode, tmp_path):
     engine, moves = play_game(
         bot_mode,
@@ -59,7 +60,7 @@ def test_every_bot_mode_completes_a_game_without_a_window(bot_mode, tmp_path):
     assert engine.score >= 0
 
 
-@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian"])
+@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "search_based"])
 def test_bot_modes_replay_the_same_game_from_the_same_seed(bot_mode, tmp_path):
     first, first_moves = play_game(
         bot_mode, 6, 4, seed=7, q_table_file=str(tmp_path / "a.json")
@@ -92,6 +93,22 @@ def test_factory_builds_only_the_selected_bot_mode():
     assert isinstance(create_bot_mode("hamiltonian", engine), HamiltonianBot)
     assert create_bot_mode(None, engine) is None
     assert create_bot_mode("replay:rule", engine) is None
+
+
+def test_search_based_can_start_a_game_and_choose_a_legal_move():
+    engine = SnakeEngine(
+        GameConfig(width=4, height=4, tile_size=20),
+        start_position=(1, 1),
+        body=((0, 1),),
+        direction=Direction.RIGHT,
+        food_position=(3, 3),
+    )
+
+    bot = create_bot_mode("search_based", engine)
+    action = bot.choose_action(engine.state)
+
+    assert BOT_MODE_LABELS["search_based"] == "Search-Based"
+    assert engine.preview(action).moved is True
 
 
 def test_unselected_bot_modes_cause_no_side_effects(tmp_path, monkeypatch):
@@ -131,7 +148,7 @@ def test_each_bot_mode_owns_random_source_separate_from_the_engine(tmp_path, mon
         random_source=random.Random(1),
     )
 
-    for bot_mode in ("rule", "q_learning", "hamiltonian"):
+    for bot_mode in ("rule", "q_learning", "hamiltonian", "search_based"):
         bot = create_bot_mode(bot_mode, engine)
 
         assert bot.random_source is not engine.random_source
@@ -156,7 +173,7 @@ class FakeRecordManager:
         pass
 
 
-@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian"])
+@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "search_based"])
 def test_the_game_session_runs_every_bot_mode_through_the_common_contract(
     bot_mode, tmp_path, monkeypatch
 ):
@@ -185,6 +202,27 @@ def test_the_game_session_runs_every_bot_mode_through_the_common_contract(
 
     assert session.total_moves > 0
     assert session.score == engine.score
+
+
+def test_search_based_limits_moves_in_one_fast_game_update():
+    engine = SnakeEngine(
+        GameConfig(width=30, height=30, tile_size=20),
+        start_position=(0, 0),
+        food_position=(29, 29),
+    )
+    session = GameSession(
+        engine,
+        bot_mode="search_based",
+        speed_delay=1,
+        record_manager=FakeRecordManager(),
+        replay_manager=FakeReplayManager(),
+    )
+    session.start()
+
+    moves = session.advance_by(1.0)
+
+    assert 1 <= moves <= 4
+    assert session.advance_by(0.0) == 0
 
 
 @pytest.mark.parametrize(

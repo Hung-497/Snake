@@ -106,10 +106,11 @@ def test_only_the_most_recent_records_are_kept():
 @pytest.mark.parametrize(
     "selected_filter, expected_players",
     [
-        (ALL_PLAYERS, ["rule", "q_learning", "q_learning_v2", "hamiltonian", "human"]),
+        (ALL_PLAYERS, ["rule", "q_learning", "q_learning_v2", "hamiltonian", "search_based", "human"]),
         ("rule", ["rule"]),
         ("q_learning", ["q_learning", "q_learning_v2"]),
         ("hamiltonian", ["hamiltonian"]),
+        ("search_based", ["search_based"]),
         ("human", ["human"]),
     ],
 )
@@ -119,12 +120,32 @@ def test_each_filter_selects_the_records_it_should(selected_filter, expected_pla
         make_record(player="q_learning"),
         make_record(player="q_learning_v2"),
         make_record(player="hamiltonian"),
+        make_record(player="search_based"),
         make_record(player="human"),
     ])
 
     browser.select_filter(selected_filter)
 
     assert [record["player"] for record in browser.filtered_records()] == expected_players
+
+
+def test_search_based_appears_in_comparison_and_trends_for_matching_conditions():
+    browser = make_browser([
+        make_record(player="rule", score=2, outcome="died"),
+        make_record(player="search_based", score=4, outcome="won"),
+        make_record(player="search_based", score=6, outcome="died"),
+        make_record(player="search_based", score=20, board=(4, 4), outcome="won"),
+    ])
+
+    rows = {row["player"]: row for row in browser.player_statistics()}
+    trends = {row["player"]: row for row in browser.player_trends()}
+    assert rows["search_based"]["games"] == 2
+    assert rows["search_based"]["average_score"] == 5
+    assert rows["search_based"]["win_rate"] == 0.5
+    assert "search_based" in trends
+
+    browser.select_filter("search_based")
+    assert browser.summary()["total_games"] == 2
 
 
 def test_a_filter_summary_only_counts_the_records_it_selected():

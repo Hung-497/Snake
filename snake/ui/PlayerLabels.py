@@ -15,6 +15,7 @@ BOT_MODE_LABELS = {
     "rule": "Rule Based",
     "q_learning": "Q Learning",
     "hamiltonian": "Hamiltonian",
+    "search_based": "Search-Based",
 }
 
 # Every Player the app can show, keyed by the name saved in records and replays.

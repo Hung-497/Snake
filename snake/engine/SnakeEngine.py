@@ -174,54 +174,58 @@ class SnakeEngine:
 
     def preview(self, direction=None):
         """Report what a move would do without committing anything."""
-        return self._calculate_transition(direction)
+        return self.preview_from(self.state, direction)
 
-    def _resolve_direction(self, direction):
+    def preview_from(self, state, direction=None):
+        """Preview a move from a future state without changing the live game."""
+        return self._calculate_transition(state, direction)
+
+    def _resolve_direction(self, current_direction, direction):
         if direction is None:
-            return self._direction
+            return current_direction
 
         requested = Direction.from_value(direction)
         if requested is None:
             raise ValueError("direction must be a Direction")
 
         # A reversal is refused, so the move still uses the current heading.
-        if OPPOSITE_DIRECTION[requested] == self._direction:
-            return self._direction
+        if OPPOSITE_DIRECTION[requested] == current_direction:
+            return current_direction
 
         return requested
 
-    def _calculate_transition(self, direction=None):
-        resolved_direction = self._resolve_direction(direction)
-        current_body = tuple(self._snake_body)
+    def _calculate_transition(self, state, direction=None):
+        resolved_direction = self._resolve_direction(state.direction, direction)
+        current_body = tuple(state.snake_body)
 
         def blocked(collision):
             return Transition(
                 direction=resolved_direction,
-                position=self._snake_position,
+                position=state.snake_position,
                 body=current_body,
                 moved=False,
                 ate_food=False,
                 score_change=0,
-                score=self._score,
+                score=state.score,
                 collision=collision,
-                game_over=self._game_over or collision,
-                game_won=self._game_won,
+                game_over=state.game_over or collision,
+                game_won=state.game_won,
             )
 
-        if self._game_over:
+        if state.game_over:
             return blocked(False)
 
-        next_position = self._position_after(self._snake_position, resolved_direction)
+        next_position = self._position_after(state.snake_position, resolved_direction)
 
         if not self._is_inside_board(next_position):
             return blocked(True)
 
-        ate_food = next_position == self._food_position
+        ate_food = next_position == state.food_position
         body_to_check = current_body if ate_food else current_body[:-1]
         if next_position in body_to_check:
             return blocked(True)
 
-        previous_head = self._snake_position
+        previous_head = state.snake_position
         if ate_food:
             next_body = (previous_head, *current_body)
         elif len(current_body) > 0:
@@ -230,7 +234,7 @@ class SnakeEngine:
             next_body = ()
 
         occupied_tiles = len(next_body) + 1
-        total_tiles = self.board_width * self.board_height
+        total_tiles = state.board_width * state.board_height
         game_won = ate_food and occupied_tiles == total_tiles
 
         return Transition(
@@ -240,14 +244,14 @@ class SnakeEngine:
             moved=True,
             ate_food=ate_food,
             score_change=1 if ate_food else 0,
-            score=self._score + (1 if ate_food else 0),
+            score=state.score + (1 if ate_food else 0),
             collision=False,
             game_over=game_won,
             game_won=game_won,
         )
 
     def step(self):
-        transition = self._calculate_transition()
+        transition = self.preview()
 
         if not transition.moved:
             self._game_over = transition.game_over

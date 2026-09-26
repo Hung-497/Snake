@@ -1,13 +1,20 @@
 from snake.bots.HamiltonianBot import HamiltonianBot
 from snake.bots.QLearningBot import QLearningBot
 from snake.bots.RuleBasedBot import RuleBasedBot
+from snake.bots.SearchBasedBot import SearchBasedBot
 
 
 BOT_MODE_CLASSES = {
     "rule": RuleBasedBot,
     "q_learning": QLearningBot,
     "hamiltonian": HamiltonianBot,
+    "search_based": SearchBasedBot,
 }
+
+
+def normal_experiment_modes():
+    """Normal Bot Modes need no optional library and join default experiments."""
+    return tuple(BOT_MODE_CLASSES)
 
 
 def create_bot_mode(bot_mode, engine, random_source=None):
@@ -25,9 +32,12 @@ def supports_board(bot_mode, board_width, board_height):
     Can this Bot Mode play on this board?
 
     The Hamiltonian Bot Mode follows a cycle through every cell, and such a
-    cycle only exists when at least one side is even. Every other Bot Mode
-    plays on any board.
+    cycle only exists when at least one side is even. Learning bots need a
+    free cell for food when a game starts.
     """
+    if bot_mode in ("q_learning", "dqn") and board_width * board_height < 2:
+        return False
+
     if (bot_mode == "hamiltonian"):
         return (
             board_width >= 2

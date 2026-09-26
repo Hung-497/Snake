@@ -22,6 +22,7 @@ FILTER_CHOICES = (
     ("Rule", "rule"),
     ("Q-Learning", "q_learning"),
     ("Hamiltonian", "hamiltonian"),
+    ("Search-Based", "search_based"),
     ("Human", HUMAN_PLAY),
 )
 
@@ -183,7 +184,7 @@ class RecordsView(arcade.gui.UIView):
                 create_button(
                     tab_text,
                     self.change_tab(tab),
-                    button_width=Theme.FILTER_BUTTON_WIDTH,
+                    button_width=Theme.filter_button_width(self.window.width),
                     button_height=Theme.FILTER_BUTTON_HEIGHT,
                     font_size=self.sizes.body,
                 )
@@ -342,9 +343,9 @@ class RecordsView(arcade.gui.UIView):
                 create_button(
                     button_text,
                     self.change_filter(filter_value),
-                    button_width=Theme.FILTER_BUTTON_WIDTH,
+                    button_width=Theme.filter_button_width(self.window.width),
                     button_height=Theme.FILTER_BUTTON_HEIGHT,
-                    font_size=self.sizes.body,
+                    font_size=self.sizes.caption,
                 )
             )
 

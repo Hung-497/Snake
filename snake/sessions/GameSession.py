@@ -115,9 +115,14 @@ class GameSession:
         self.time_since_last_move += elapsed_seconds
         moves_made = 0
 
-        # A bot can catch up after a slow frame, but a person cannot react to
-        # a burst of moves, so Human Play makes at most one move per update.
+        # Most bots can catch up after a slow frame. A costly bot can request
+        # fewer moves, and Human Play makes at most one move per update.
         moves_limit = 1 if self.is_human_play else self.MOVES_PER_UPDATE_LIMIT
+        if not self.is_human_play:
+            moves_limit = min(
+                moves_limit,
+                getattr(self.bot, "MAX_MOVES_PER_UPDATE", moves_limit),
+            )
 
         while (self.time_since_last_move >= self.move_interval):
             if (moves_made >= moves_limit):
@@ -131,8 +136,12 @@ class GameSession:
                 # The game just ended, so stop moving and let the result show.
                 break
 
-        # Drop the time a slow frame left over, so later updates do not catch up.
-        if (self.is_human_play and self.time_since_last_move >= self.move_interval):
+        # A bot with a smaller frame limit also drops stale time. Otherwise
+        # expensive decisions could keep the window busy catching up forever.
+        if (
+            (self.is_human_play or moves_limit < self.MOVES_PER_UPDATE_LIMIT)
+            and self.time_since_last_move >= self.move_interval
+        ):
             self.time_since_last_move = 0.0
 
         return moves_made
