@@ -10,7 +10,7 @@ from pathlib import Path
 
 from arcade.types import Color
 
-from snake.ui.Theme import FONT_DIR, blend_color
+from snake.ui.Theme import FONT_DIR, SPACE_TIGHT, blend_color, filter_button_width
 
 
 def test_bundled_fonts_are_found_after_theme_move():
@@ -57,3 +57,11 @@ def test_each_channel_moves_independently():
     mixed = blend_color(orange, blue, 0.5)
 
     assert (mixed.r, mixed.g, mixed.b) == (128, 128, 128)
+
+
+def test_six_player_filters_fit_when_compact_and_widen_after_resize():
+    compact_width = filter_button_width(700)
+    regular_width = filter_button_width(900)
+
+    assert compact_width * 6 + SPACE_TIGHT * 5 <= 700
+    assert regular_width > compact_width

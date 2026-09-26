@@ -1,4 +1,4 @@
-"""Compare all three Bot Modes in repeatable headless games."""
+"""Compare selected Bot Modes in repeatable headless games."""
 
 import argparse
 from datetime import datetime, timezone
@@ -12,18 +12,19 @@ import subprocess
 import time
 import uuid
 
-from snake.bots.BotFactory import create_bot_mode, supports_board
+from snake.bots.BotFactory import create_bot_mode, normal_experiment_modes, supports_board
 from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.engine.SnakeEngine import SnakeEngine
 from snake.sessions.TrainQLearning import play_game
 
 
-BOT_MODES = ("rule", "q_learning", "hamiltonian")
 BOT_NAMES = {
     "rule": "Rule Based",
     "q_learning": "Q Learning",
     "hamiltonian": "Hamiltonian",
+    "search_based": "Search-Based",
+    "dqn": "DQN",
 }
 
 
@@ -107,6 +108,11 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-moves", type=int, default=5000)
     parser.add_argument("--q-table", help="Q-table to evaluate (defaults to the saved table)")
+    parser.add_argument("--dqn-model", help="Saved DQN evaluation model for explicit DQN selection")
+    parser.add_argument(
+        "--bots", nargs="+", choices=(*normal_experiment_modes(), "dqn"),
+        metavar="BOT_MODE", help="Bot Modes to compare (defaults to all normal modes)",
+    )
     options = parser.parse_args(argv)
 
     if options.games <= 0:
@@ -119,23 +125,51 @@ def main(argv=None):
     except ValueError as error:
         parser.error(str(error))
 
-    if not supports_board("hamiltonian", config.width, config.height):
-        parser.error("Hamiltonian Bot does not support this board")
+    bot_modes = tuple(options.bots or normal_experiment_modes())
+    if len(set(bot_modes)) != len(bot_modes):
+        parser.error("--bots must not repeat a Bot Mode")
+    for bot_mode in bot_modes:
+        if not supports_board(bot_mode, config.width, config.height):
+            name = BOT_NAMES.get(bot_mode, bot_mode.replace("_", " ").title())
+            parser.error(f"{name} Bot does not support this board")
 
     seeds = [options.seed + game_number for game_number in range(options.games)]
-    # Check the selected table before any Bot Mode starts playing.
-    try:
-        q_reference_bot = QLearningBot(
-            make_engine(config, seeds[0]),
-            random_source=random.Random(seeds[0] + 1),
-            evaluation_mode=True,
-            q_table_file=options.q_table,
-        )
-    except ValueError as error:
-        parser.error(str(error))
+    q_reference_bot = None
+    if "q_learning" in bot_modes:
+        # Check the selected table before any Bot Mode starts playing.
+        try:
+            q_reference_bot = QLearningBot(
+                make_engine(config, seeds[0]),
+                random_source=random.Random(seeds[0] + 1),
+                evaluation_mode=True,
+                q_table_file=options.q_table,
+            )
+        except ValueError as error:
+            parser.error(str(error))
+
+    dqn_model = None
+    dqn_model_identity = None
+    if "dqn" in bot_modes:
+        if not options.dqn_model:
+            parser.error("DQN selection requires --dqn-model")
+        try:
+            # PyTorch remains optional until DQN is explicitly selected.
+            import torch
+            from snake.bots.DQNBot import DQNBot
+            from snake.storage.DQNArtifacts import load_artifact, model_identity
+        except ImportError as error:
+            parser.error(f"DQN requires optional PyTorch: {error}")
+        try:
+            dqn_model = load_artifact(options.dqn_model, "dqn_evaluation_model")
+        except ValueError as error:
+            parser.error(str(error))
+        dqn_model_identity = model_identity(options.dqn_model, dqn_model)
+        torch.set_num_threads(1)
+        torch.use_deterministic_algorithms(True)
 
     results = {}
-    for bot_mode in BOT_MODES:
+    for bot_mode in bot_modes:
+        name = BOT_NAMES.get(bot_mode, bot_mode.replace("_", " ").title())
         elapsed_seconds = 0.0
         games = []
         for game_seed in seeds:
@@ -147,6 +181,14 @@ def main(argv=None):
                     evaluation_mode=True,
                     q_table_file=options.q_table,
                 )
+            elif bot_mode == "dqn":
+                bot = DQNBot(
+                    engine,
+                    random_source=random.Random(game_seed + 1),
+                    settings=dqn_model["metadata"]["learning_settings"],
+                    evaluation_mode=True,
+                )
+                bot.network.load_state_dict(dqn_model["online_weights"])
             else:
                 bot = create_bot_mode(
                     bot_mode, engine, random_source=random.Random(game_seed + 1)
@@ -168,6 +210,11 @@ def main(argv=None):
                 "moves": moves,
                 "outcome": outcome,
             })
+            print(
+                f"{name} game {len(games)}/{options.games}: "
+                f"score {engine.score}, moves {moves}, {outcome}",
+                flush=True,
+            )
 
         results[bot_mode] = {
             "games": games,
@@ -175,7 +222,7 @@ def main(argv=None):
         }
 
     report = {
-        "schema_version": 2,
+        "schema_version": 3,
         "created_at": datetime.now(timezone.utc).isoformat(),
         "code": code_identity(),
         "python_version": platform.python_version(),
@@ -193,9 +240,15 @@ def main(argv=None):
         "seeds": seeds,
         "bot_seed_offset": 1,
         "max_moves": options.max_moves,
-        "q_learning": q_learning_identity(q_reference_bot),
+        "selected_bot_modes": list(bot_modes),
         "bots": results,
     }
+    if q_reference_bot is not None:
+        report["q_learning"] = q_learning_identity(q_reference_bot)
+    if dqn_model is not None:
+        report["dqn"] = dqn_model_identity
+        report["training_board"] = dqn_model["metadata"]["training_board"]
+        report["evaluation_board"] = dict(report["board"])
 
     output_directory = Path("experiments")
     output_directory.mkdir(exist_ok=True)
@@ -204,10 +257,11 @@ def main(argv=None):
         json.dump(report, result_file, indent=2)
         result_file.write("\n")
 
-    for bot_mode in BOT_MODES:
+    for bot_mode in bot_modes:
         summary = results[bot_mode]["summary"]
+        name = BOT_NAMES.get(bot_mode, bot_mode.replace("_", " ").title())
         print(
-            f"{BOT_NAMES[bot_mode]}: "
+            f"{name}: "
             f"mean {summary['mean_score']:.2f}, "
             f"median {summary['median_score']:.2f}, "
             f"best {summary['best_score']}, "

@@ -6,6 +6,8 @@ these tests need no graphical display. They deliberately do not check Snake
 rules, which belong to the Game Engine, and they never check drawing.
 """
 
+import random
+
 import pytest
 
 from snake.engine.GameTypes import Direction
@@ -124,12 +126,12 @@ class FakeReplayManager:
         self.saved_replays.append((bot_name, score, game_won))
 
 
-def make_session(engine=None, bot=None, speed_delay=10, **kwargs):
+def make_session(engine=None, bot=None, speed_delay=10, bot_mode="rule", **kwargs):
     engine = FakeEngine() if engine is None else engine
     bot = FakeBot() if bot is None else bot
     session = GameSession(
         engine,
-        bot_mode="rule",
+        bot_mode=bot_mode,
         speed_delay=speed_delay,
         record_manager=FakeRecordManager(),
         replay_manager=FakeReplayManager(),
@@ -184,6 +186,43 @@ def test_a_finished_game_is_recorded_and_the_bot_is_told():
     assert saved_result[0] == "rule"       # bot name
     assert saved_result[2] == 2            # score
     assert "on_game_end" in bot.calls
+
+
+def test_a_finished_search_based_game_keeps_its_player_conditions_and_outcome():
+    session = make_session(
+        engine=FakeEngine(moves_until_game_over=1),
+        bot_mode="search_based",
+    )
+
+    session.advance()
+
+    result = session.record_manager.saved_results[0]
+    assert result[0] == "search_based"
+    assert result[2] == 1
+    assert result[8:12] == (10, 10, 25, 10)
+    assert session.record_manager.saved_outcomes == ["died"]
+    assert session.replay_manager.saved_replays == [("search_based", 1, False)]
+
+
+def test_watched_search_based_game_moves_past_a_repeated_survival_route():
+    engine = SnakeEngine(
+        GameConfig(width=24, height=25, tile_size=25),
+        start_position=None,
+        random_source=random.Random(14),
+    )
+    session = GameSession(
+        engine,
+        bot_mode="search_based",
+        speed_delay=1,
+        record_manager=FakeRecordManager(),
+        replay_manager=FakeReplayManager(),
+    )
+    session.start()
+
+    for _ in range(120):
+        session.advance()
+
+    assert session.score >= 6
 
 
 def test_a_won_game_is_reported_as_a_win():

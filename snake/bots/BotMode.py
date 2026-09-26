@@ -12,6 +12,9 @@ class BotMode:
     snake, food, and movement objects.
     """
 
+    # The session may ask a costly bot for fewer decisions in one frame.
+    MAX_MOVES_PER_UPDATE = 50
+
     DIRECTIONS = (
         Direction.UP,
         Direction.DOWN,

@@ -11,7 +11,7 @@ import pytest
 from snake.bots.BotFactory import supports_board
 
 
-@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "human"])
+@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "search_based", "human"])
 @pytest.mark.parametrize("board", [(25, 25), (24, 25), (16, 16)])
 def test_the_other_players_play_on_any_board(bot_mode, board):
     board_width, board_height = board

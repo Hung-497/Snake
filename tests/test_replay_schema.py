@@ -6,6 +6,7 @@ from snake.engine.GameConfig import GameConfig
 from snake.engine.GameTypes import Direction
 from snake.storage.ReplayManager import ReplayCompatibilityError, ReplayManager
 from snake.engine.SnakeEngine import SnakeEngine
+from snake.sessions.ReplaySession import load_replay_session
 
 
 def make_engine():
@@ -127,3 +128,21 @@ def test_only_a_higher_scoring_human_game_replaces_the_saved_replay(tmp_path):
 
     save_human_game(manager, score=8)
     assert manager.load_replay("human")["final_score"] == 8
+
+
+def test_search_based_best_replay_can_be_loaded_and_played(tmp_path):
+    manager = ReplayManager(folder_name=str(tmp_path))
+    manager.start_recording("search_based", 4, 3, 20, 10, engine=make_engine())
+    manager.record_move(Direction.RIGHT)
+    manager.save_replay("search_based", score=1)
+
+    manager.start_recording("search_based", 4, 3, 20, 10, engine=make_engine())
+    manager.record_move(Direction.RIGHT)
+    manager.save_replay("search_based", score=0)
+
+    session, message = load_replay_session(manager, "search_based")
+    assert message is None
+    assert (tmp_path / "search_based_best.json").exists()
+    assert session.final_score == 1
+    session.advance()
+    assert session.score == 1

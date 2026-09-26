@@ -11,6 +11,8 @@ import sys
 
 import pytest
 
+from snake.bots.BotFactory import normal_experiment_modes
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -25,6 +27,98 @@ def run_experiment(tmp_path, *options):
         capture_output=True,
         text=True,
     )
+
+
+def test_explicit_rule_only_experiment_needs_no_q_table(tmp_path):
+    result = run_experiment(
+        tmp_path, "--bots", "rule", "--width", "3", "--height", "3",
+        "--max-moves", "5",
+    )
+
+    assert result.returncode == 0, result.stderr
+    report_path = next((tmp_path / "experiments").glob("*.json"))
+    report = json.loads(report_path.read_text())
+    assert report["schema_version"] == 3
+    assert report["selected_bot_modes"] == ["rule"]
+    assert set(report["bots"]) == {"rule"}
+    assert "q_learning" not in report
+    assert not (tmp_path / "learning_data").exists()
+
+
+def test_search_based_only_experiment_runs_without_other_bot_requirements(tmp_path):
+    result = run_experiment(
+        tmp_path, "--bots", "search_based", "--width", "3", "--height", "3",
+        "--games", "2", "--seed", "7", "--max-moves", "5",
+    )
+
+    assert result.returncode == 0, result.stderr
+    report = json.loads(next((tmp_path / "experiments").glob("*.json")).read_text())
+    assert report["selected_bot_modes"] == ["search_based"]
+    assert list(report["bots"]) == ["search_based"]
+    assert [game["seed"] for game in report["bots"]["search_based"]["games"]] == [7, 8]
+    assert "mean_score" in report["bots"]["search_based"]["summary"]
+    assert "Search-Based:" in result.stdout
+    assert "Search-Based game 1/2:" in result.stdout
+    assert "q_learning" not in report
+    assert not (tmp_path / "learning_data").exists()
+    assert not (tmp_path / "records").exists()
+    assert not (tmp_path / "replays").exists()
+
+
+def test_search_based_reaches_distant_food_instead_of_circling_until_move_limit(tmp_path):
+    result = run_experiment(
+        tmp_path, "--bots", "search_based", "--width", "24", "--height", "25",
+        "--games", "1", "--seed", "7", "--max-moves", "120",
+    )
+
+    assert result.returncode == 0, result.stderr
+    report = json.loads(next((tmp_path / "experiments").glob("*.json")).read_text())
+    assert report["bots"]["search_based"]["games"][0]["score"] >= 2
+
+
+def test_search_based_does_not_repeat_a_survival_loop_on_another_seed(tmp_path):
+    result = run_experiment(
+        tmp_path, "--bots", "search_based", "--width", "24", "--height", "25",
+        "--games", "1", "--seed", "14", "--max-moves", "120",
+    )
+
+    assert result.returncode == 0, result.stderr
+    report = json.loads(next((tmp_path / "experiments").glob("*.json")).read_text())
+    assert report["bots"]["search_based"]["games"][0]["score"] >= 6
+
+
+def test_selected_bots_share_seeds_and_keep_the_requested_order(tmp_path):
+    result = run_experiment(
+        tmp_path, "--bots", "hamiltonian", "rule", "--games", "2",
+        "--width", "4", "--height", "4", "--seed", "7", "--max-moves", "5",
+    )
+
+    assert result.returncode == 0, result.stderr
+    report_path = next((tmp_path / "experiments").glob("*.json"))
+    report = json.loads(report_path.read_text())
+    assert report["selected_bot_modes"] == ["hamiltonian", "rule"]
+    assert list(report["bots"]) == ["hamiltonian", "rule"]
+    for bot in report["bots"].values():
+        assert [game["seed"] for game in bot["games"]] == [7, 8]
+
+
+@pytest.mark.parametrize("selection,error_text", [
+    (("hamiltonian",), "Hamiltonian"),
+    (("q_learning",), "Q-table"),
+    (("unknown",), "invalid choice"),
+    (("rule", "rule"), "must not repeat"),
+])
+def test_invalid_selected_comparison_stops_before_any_report(
+    tmp_path, selection, error_text,
+):
+    result = run_experiment(
+        tmp_path, "--bots", *selection, "--width", "3", "--height", "3",
+        "--max-moves", "5",
+    )
+
+    assert result.returncode != 0
+    assert error_text in result.stderr
+    assert not (tmp_path / "experiments").exists()
 
 
 def test_one_game_experiment_saves_result_without_changing_game_data(tmp_path):
@@ -54,13 +148,14 @@ def test_one_game_experiment_saves_result_without_changing_game_data(tmp_path):
     result_paths = list((tmp_path / "experiments").glob("*.json"))
     assert len(result_paths) == 1
     saved = json.loads(result_paths[0].read_text())
-    assert saved["schema_version"] == 2
+    assert saved["schema_version"] == 3
     assert saved["board"] == {"width": 4, "height": 4, "tile_size": 25}
     assert saved["game_count"] == 1
     assert saved["base_seed"] == 7
     assert saved["seeds"] == [7]
     assert saved["max_moves"] == 20
-    assert set(saved["bots"]) == {"rule", "q_learning", "hamiltonian"}
+    assert saved["selected_bot_modes"] == list(normal_experiment_modes())
+    assert set(saved["bots"]) == {"rule", "q_learning", "hamiltonian", "search_based"}
     for bot_result in saved["bots"].values():
         assert len(bot_result["games"]) == 1
         game = bot_result["games"][0]
@@ -142,7 +237,7 @@ def test_repeated_experiments_keep_both_results(tmp_path):
     first_report = json.loads(result_paths[0].read_text())
     second_report = json.loads(result_paths[1].read_text())
     assert first_report["seeds"] == second_report["seeds"] == [7, 8, 9]
-    for bot_mode in ("rule", "q_learning", "hamiltonian"):
+    for bot_mode in ("rule", "q_learning", "hamiltonian", "search_based"):
         assert first_report["bots"][bot_mode]["games"] == second_report["bots"][bot_mode]["games"]
     assert not (tmp_path / "learning_data").exists()
 
@@ -232,5 +327,6 @@ def test_report_summarizes_known_games_and_identifies_the_workload(tmp_path):
     assert "Rule Based:" in result.stdout
     assert "Q Learning:" in result.stdout
     assert "Hamiltonian:" in result.stdout
+    assert "Search-Based:" in result.stdout
     assert str(report_path.relative_to(tmp_path)) in result.stdout
     assert table_path.read_text() == original_table

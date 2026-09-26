@@ -1,3 +1,4 @@
+from dataclasses import replace
 import random
 
 import pytest
@@ -58,6 +59,43 @@ def test_preview_reports_an_ordinary_move_without_changing_state():
     assert transition.collision is False
     assert transition.game_over is False
     assert engine.state == state_before
+
+
+def test_preview_from_a_future_state_uses_engine_rules_without_changing_the_game():
+    engine = make_engine(
+        4, 2, (1, 0), Direction.RIGHT, (3, 0), body=((0, 0),)
+    )
+    live_state = engine.state
+    future_state = replace(
+        live_state,
+        snake_position=Position(2, 0),
+        snake_body=(Position(1, 0),),
+    )
+
+    transition = engine.preview_from(future_state, Direction.RIGHT)
+
+    assert transition.moved is True
+    assert transition.ate_food is True
+    assert transition.position == Position(3, 0)
+    assert transition.body == (Position(2, 0), Position(1, 0))
+    assert engine.state == live_state
+
+
+def test_preview_from_uses_the_future_heading_for_reversal_prevention():
+    engine = make_engine(4, 3, (1, 1), Direction.RIGHT, (3, 2))
+    live_state = engine.state
+    future_state = replace(
+        live_state,
+        snake_position=Position(2, 1),
+        snake_body=(Position(3, 1),),
+        direction=Direction.UP,
+    )
+
+    transition = engine.preview_from(future_state, Direction.DOWN)
+
+    assert transition.direction is Direction.UP
+    assert transition.position == Position(2, 0)
+    assert engine.state == live_state
 
 
 @pytest.mark.parametrize("scenario", sorted(SCENARIOS))

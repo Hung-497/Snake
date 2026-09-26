@@ -82,6 +82,7 @@ PLAYER_COLORS = {
     "rule": Color.from_hex_string("#F2B84B"),
     "q_learning": Color.from_hex_string("#60A5FA"),
     "hamiltonian": Color.from_hex_string("#34D399"),
+    "search_based": Color.from_hex_string("#F472B6"),
     "human": Color.from_hex_string("#C084FC"),
 }
 
@@ -149,8 +150,10 @@ BUTTON_HEIGHT = 52
 BACK_BUTTON_WIDTH = 170
 OPTION_WIDTH = 280
 OPTION_HEIGHT = 42
-# Five filter buttons (All Players, three Bot Modes, Human) must fit the
-# 700 px minimum window width, gaps and side gutters included.
+# Six filter buttons (All Players, four Bot Modes, Human) must fit the
+# 700 px minimum window width. Wider windows also use larger text, so their
+# buttons grow to keep the longest label readable after a resize.
+COMPACT_FILTER_BUTTON_WIDTH = 102
 FILTER_BUTTON_WIDTH = 124
 FILTER_BUTTON_HEIGHT = 38
 # The Records Board and Speed dropdowns share one row at the 700 px minimum width.
@@ -163,6 +166,14 @@ HUD_BUTTON_HEIGHT = 38
 # How long a button takes to settle into its new colour. Short enough to feel
 # immediate, long enough to read as a response rather than a jump.
 STATE_EASE_SECONDS = 0.09
+
+
+def filter_button_width(window_width):
+    """Keep record controls compact only while the compact type scale is active."""
+    if layout_step(window_width) == "compact":
+        return COMPACT_FILTER_BUTTON_WIDTH
+
+    return FILTER_BUTTON_WIDTH
 
 
 def blend_color(from_color, to_color, amount):
