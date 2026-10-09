@@ -110,7 +110,8 @@ class DQNBot(LearningBot):
         )
         # Terminal moves have no future value, as in tabular Q Learning.
         next_features = torch.tensor(
-            [experience[3] if experience[3] is not None else (0,) * 9
+            [experience[3] if experience[3] is not None
+             else (0,) * FEATURE_COUNTS[self.feature_set]
              for experience in batch],
             dtype=torch.float32,
         )
