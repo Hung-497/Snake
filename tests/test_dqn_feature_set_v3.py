@@ -116,3 +116,17 @@ def test_unknown_feature_set_in_a_model_is_rejected(tmp_path):
     assert result.returncode != 0
     assert "Feature Set" in result.stderr
     assert not (tmp_path / "experiments").exists()
+
+
+def test_v3_training_learns_from_batches_that_include_game_over_moves(tmp_path):
+    # A tiny board ends every game, and small batches make learning start early and
+    # sample moves that ended a game, whose next state is a zero placeholder.
+    result = train(
+        tmp_path, "--games", "6", "--features", "v3", "--batch-size", "2",
+        "--width", "3", "--height", "3", "--max-moves", "200", "--seed", "7",
+    )
+
+    assert result.returncode == 0, result.stderr
+    checkpoint = torch.load(only_run(tmp_path) / "checkpoint.pt", weights_only=True)
+    assert checkpoint["state"]["optimizer_steps"] > 0
+    assert any(experience[3] is None for experience in checkpoint["state"]["replay"])
