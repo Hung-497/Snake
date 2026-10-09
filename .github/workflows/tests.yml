@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # Installs uv; the Python version comes from .python-version (3.13).
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
       # --locked fails if uv.lock is out of date with pyproject.toml.
       - run: uv sync --locked
       - run: uv run pytest
