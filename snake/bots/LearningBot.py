@@ -88,11 +88,17 @@ class LearningBot(BotMode):
             return 1
         return 2
 
+    def _plenty_of_space(self, state):
+        """The open space that already gives the highest space level."""
+        return (len(self.body_positions(state)) + 1) * 2
+
     def _count_reachable_space(self, state, start_position, blocked_positions):
-        positions_to_check = [start_position]
+        # Counting past "plenty" cannot change the space level, so stop there.
+        stop_at = self._plenty_of_space(state)
+        positions_to_check = deque([start_position])
         visited_positions = {start_position}
-        while positions_to_check:
-            current_position = positions_to_check.pop(0)
+        while positions_to_check and len(visited_positions) < stop_at:
+            current_position = positions_to_check.popleft()
             for direction in self.DIRECTIONS:
                 next_position = self.position_after(current_position, direction)
                 if next_position in visited_positions:
@@ -120,13 +126,25 @@ class LearningBot(BotMode):
         v3: the same nine with tail-aware open space, then three
         tail-reachable features.
         """
+        # Training asks for the same board twice in a row (to learn from a
+        # move, then to choose the next one), so reuse the last answer.
+        board = (
+            state.board_width, state.board_height, state.snake_position,
+            state.snake_body, state.direction, state.food_position,
+        )
+        if board == getattr(self, "_last_board", None):
+            return self._last_features
+
         if self.feature_set == "v3":
-            return self._features_v3(state)
-        return self._features_v2(state)
+            features = self._features_v3(state)
+        else:
+            features = self._features_v2(state)
+        self._last_board = board
+        self._last_features = features
+        return features
 
     def _features_v3(self, state):
-        v2_features = self._features_v2(state)
-        dangers_and_food = v2_features[:6]
+        dangers_and_food = self._dangers_and_food(state)
         space_levels = []
         tail_reachable = []
         for action in self.actions:
@@ -144,7 +162,7 @@ class LearningBot(BotMode):
             tail_reachable.append(
                 self._can_reach_tail(state, new_head, body_after_move)
             )
-        return tuple(dangers_and_food) + tuple(space_levels) + tuple(tail_reachable)
+        return dangers_and_food + tuple(space_levels) + tuple(tail_reachable)
 
     def _head_after_action(self, state, action):
         direction = self.action_direction(state, action)
@@ -174,9 +192,11 @@ class LearningBot(BotMode):
             position: len(body_after_move) - index
             for index, position in enumerate(body_after_move)
         }
+        # Counting past "plenty" cannot change the space level, so stop there.
+        stop_at = self._plenty_of_space(state)
         visited_positions = {new_head}
         positions_to_check = deque([(new_head, 0)])
-        while positions_to_check:
+        while positions_to_check and len(visited_positions) < stop_at:
             current_position, moves = positions_to_check.popleft()
             for direction in self.DIRECTIONS:
                 next_position = self.position_after(current_position, direction)
@@ -216,6 +236,14 @@ class LearningBot(BotMode):
         return 0
 
     def _features_v2(self, state):
+        space_levels = [
+            self._space_level(state, self._count_space_after_action(state, action))
+            for action in self.actions
+        ]
+        return self._dangers_and_food(state) + tuple(space_levels)
+
+    def _dangers_and_food(self, state):
+        """The six danger and food-progress features shared by v2 and v3."""
         directions = [self.action_direction(state, action) for action in self.actions]
         dangers = [self._is_danger(state, direction) for direction in directions]
         head = self.head_position(state)
@@ -228,11 +256,7 @@ class LearningBot(BotMode):
             int(abs(food_x - x) + abs(food_y - y) < current_distance)
             for x, y in next_positions
         ]
-        space_levels = [
-            self._space_level(state, self._count_space_after_action(state, action))
-            for action in self.actions
-        ]
-        return tuple(dangers + food_progress + space_levels)
+        return tuple(dangers + food_progress)
 
     def _get_state(self, state):
         return self.features(state)
