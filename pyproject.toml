@@ -1,0 +1,27 @@
+[project]
+name = "snake"
+version = "0.1.0"
+description = "A Python Snake game built with Arcade 3."
+requires-python = ">=3.13"
+dependencies = [
+    "arcade~=3.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+# Install only for headless DQN training and evaluation.
+dqn = [
+    "numpy>=2.4,<3",
+    "torch>=2.14,<3",
+]
+
+[tool.pytest.ini_options]
+# Put the project root on sys.path so tests can `import snake`
+# when run as `uv run pytest` (not only `python -m pytest`).
+pythonpath = ["."]
+
+[tool.uv]
+# This is an app, not a package to install or publish.
+package = false

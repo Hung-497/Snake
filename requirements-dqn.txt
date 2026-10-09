@@ -1,3 +1,0 @@
-# Install only for headless DQN training and evaluation.
-numpy>=2.4,<3
-torch>=2.14,<3
