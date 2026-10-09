@@ -12,16 +12,19 @@ import subprocess
 import time
 import uuid
 
-from snake.bots.BotFactory import create_bot_mode, normal_experiment_modes, supports_board
+from snake.bots.BotFactory import (
+    OPT_IN_EXPERIMENT_MODES, create_bot_mode, normal_experiment_modes, supports_board,
+)
 from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.engine.SnakeEngine import SnakeEngine
-from snake.sessions.TrainQLearning import play_game
+from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE, play_game
 
 
 BOT_NAMES = {
     "rule": "Rule Based",
     "q_learning": "Q Learning",
+    "q_learning_v3": "Q Learning v3",
     "hamiltonian": "Hamiltonian",
     "search_based": "Search-Based",
     "dqn": "DQN",
@@ -87,6 +90,7 @@ def code_identity():
 def q_learning_identity(bot):
     """Identify the policy file and settings used for Evaluation Mode."""
     return {
+        "feature_set": bot.feature_set,
         "table_path": str(bot.q_table_file),
         "table_sha256": hashlib.sha256(Path(bot.q_table_file).read_bytes()).hexdigest(),
         "epsilon": bot.epsilon,
@@ -108,9 +112,12 @@ def main(argv=None):
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-moves", type=int, default=5000)
     parser.add_argument("--q-table", help="Q-table to evaluate (defaults to the saved table)")
+    parser.add_argument(
+        "--q-table-v3", help="Q Learning v3 table to evaluate (defaults to the saved v3 table)",
+    )
     parser.add_argument("--dqn-model", help="Saved DQN evaluation model for explicit DQN selection")
     parser.add_argument(
-        "--bots", nargs="+", choices=(*normal_experiment_modes(), "dqn"),
+        "--bots", nargs="+", choices=(*normal_experiment_modes(), *OPT_IN_EXPERIMENT_MODES, "dqn"),
         metavar="BOT_MODE", help="Bot Modes to compare (defaults to all normal modes)",
     )
     options = parser.parse_args(argv)
@@ -134,15 +141,28 @@ def main(argv=None):
             parser.error(f"{name} Bot does not support this board")
 
     seeds = [options.seed + game_number for game_number in range(options.games)]
-    q_reference_bot = None
-    if "q_learning" in bot_modes:
+    q_table_by_bot_mode = {
+        "q_learning": options.q_table,
+        "q_learning_v3": options.q_table_v3,
+    }
+
+    def make_q_learning_bot(bot_mode, engine, bot_seed):
+        return QLearningBot(
+            engine,
+            random_source=random.Random(bot_seed),
+            evaluation_mode=True,
+            q_table_file=q_table_by_bot_mode[bot_mode],
+            feature_set=FEATURE_SET_BY_BOT_MODE[bot_mode],
+        )
+
+    q_reference_bots = {}
+    for bot_mode in bot_modes:
+        if bot_mode not in FEATURE_SET_BY_BOT_MODE:
+            continue
         # Check the selected table before any Bot Mode starts playing.
         try:
-            q_reference_bot = QLearningBot(
-                make_engine(config, seeds[0]),
-                random_source=random.Random(seeds[0] + 1),
-                evaluation_mode=True,
-                q_table_file=options.q_table,
+            q_reference_bots[bot_mode] = make_q_learning_bot(
+                bot_mode, make_engine(config, seeds[0]), seeds[0] + 1,
             )
         except ValueError as error:
             parser.error(str(error))
@@ -156,7 +176,9 @@ def main(argv=None):
             # PyTorch remains optional until DQN is explicitly selected.
             import torch
             from snake.bots.DQNBot import DQNBot
-            from snake.storage.DQNArtifacts import load_artifact, model_identity
+            from snake.storage.DQNArtifacts import (
+                artifact_feature_set, load_artifact, model_identity,
+            )
         except ImportError as error:
             parser.error(f"DQN requires optional PyTorch: {error}")
         try:
@@ -174,19 +196,17 @@ def main(argv=None):
         games = []
         for game_seed in seeds:
             engine = make_engine(config, game_seed)
-            if bot_mode == "q_learning":
-                bot = QLearningBot(
-                    engine,
-                    random_source=random.Random(game_seed + 1),
-                    evaluation_mode=True,
-                    q_table_file=options.q_table,
-                )
+            if bot_mode in FEATURE_SET_BY_BOT_MODE:
+                bot = make_q_learning_bot(bot_mode, engine, game_seed + 1)
             elif bot_mode == "dqn":
                 bot = DQNBot(
                     engine,
                     random_source=random.Random(game_seed + 1),
                     settings=dqn_model["metadata"]["learning_settings"],
                     evaluation_mode=True,
+                    feature_set=artifact_feature_set(
+                        dqn_model["metadata"], options.dqn_model
+                    ),
                 )
                 bot.network.load_state_dict(dqn_model["online_weights"])
             else:
@@ -243,8 +263,8 @@ def main(argv=None):
         "selected_bot_modes": list(bot_modes),
         "bots": results,
     }
-    if q_reference_bot is not None:
-        report["q_learning"] = q_learning_identity(q_reference_bot)
+    for bot_mode, q_reference_bot in q_reference_bots.items():
+        report[bot_mode] = q_learning_identity(q_reference_bot)
     if dqn_model is not None:
         report["dqn"] = dqn_model_identity
         report["training_board"] = dqn_model["metadata"]["training_board"]

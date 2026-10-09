@@ -23,6 +23,7 @@ FILTER_CHOICES = (
     ("Q-Learning", "q_learning"),
     ("Hamiltonian", "hamiltonian"),
     ("Search-Based", "search_based"),
+    ("Q-Learning v3", "q_learning_v3"),
     ("Human", HUMAN_PLAY),
 )
 

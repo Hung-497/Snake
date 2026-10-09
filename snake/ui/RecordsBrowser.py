@@ -255,8 +255,11 @@ def has_readable_numbers(record):
 
 
 def player_group(player):
-    """The Player a saved name counts as: Q Learning saved names like "q_learning_v2"."""
-    if (player.startswith("q_learning")):
+    """The Player a saved name counts as: Q Learning saved names like "q_learning_v2".
+
+    Q Learning v3 is its own Bot Mode, so its records stay separate.
+    """
+    if (player.startswith("q_learning") and player != "q_learning_v3"):
         return "q_learning"
 
     return player

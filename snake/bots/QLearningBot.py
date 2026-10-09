@@ -2,7 +2,7 @@ import json
 import math
 import os
 
-from snake.bots.LearningBot import LearningBot
+from snake.bots.LearningBot import FEATURE_COUNTS, LearningBot
 
 
 class QLearningBot(LearningBot):
@@ -16,15 +16,17 @@ class QLearningBot(LearningBot):
 
     def __init__(
         self, engine, random_source=None, require_saved_table=False,
-        evaluation_mode=False, q_table_file=None,
+        evaluation_mode=False, q_table_file=None, feature_set="v2",
     ):
-        super().__init__(engine, random_source)
+        super().__init__(engine, random_source, feature_set=feature_set)
 
         self.evaluation_mode = evaluation_mode
         self.q_table = {} # the AI memory, store knowledge [state][action]
         self.q_table_file = (
             q_table_file if q_table_file is not None
-            else os.path.join("learning_data", "q_table_space_state_v2.json")
+            else os.path.join(
+                "learning_data", f"q_table_space_state_{self.feature_set}.json"
+            )
         )
         self.learning_rate = 0.1 # how fast AI learns new information
         self.game_trained = 0
@@ -34,9 +36,7 @@ class QLearningBot(LearningBot):
 
         loaded = self.load_q_table()
         if (require_saved_table or evaluation_mode) and not loaded:
-            raise ValueError(
-                f"Saved Q-table is missing or malformed: {self.q_table_file}"
-            )
+            raise ValueError(self._load_error_message())
 
     def choose_action(self, state):
         self.current_state = self._get_state(state)
@@ -96,7 +96,7 @@ class QLearningBot(LearningBot):
         if self.evaluation_mode:
             return
 
-        os.makedirs("learning_data", exist_ok=True)
+        os.makedirs(os.path.dirname(self.q_table_file) or ".", exist_ok=True)
 
         q_table_to_save = {}
         epsilon_to_save = self.epsilon
@@ -106,6 +106,7 @@ class QLearningBot(LearningBot):
             q_table_to_save[state_key] = action_values
 
         data_to_save = {
+            "feature_set": self.feature_set,
             "q_table": q_table_to_save,
             "epsilon": epsilon_to_save,
             "game_trained": self.game_trained
@@ -114,7 +115,16 @@ class QLearningBot(LearningBot):
         with open(self.q_table_file, "w") as file:
             json.dump(data_to_save, file, indent=4)
 
+    def _load_error_message(self):
+        if getattr(self, "wrong_feature_set", None) is not None:
+            return (
+                f"Saved Q-table uses Feature Set {self.wrong_feature_set!r}, "
+                f"not {self.feature_set!r}: {self.q_table_file}"
+            )
+        return f"Saved Q-table is missing or malformed: {self.q_table_file}"
+
     def load_q_table(self):
+        self.wrong_feature_set = None
         try:
             if (not os.path.exists(self.q_table_file)):
                 return False
@@ -132,6 +142,12 @@ class QLearningBot(LearningBot):
 
         required_keys = {"q_table", "epsilon", "game_trained"}
         if (not required_keys.issubset(saved_data)):
+            return False
+
+        # Tables saved before Feature Sets were recorded are v2.
+        saved_feature_set = saved_data.get("feature_set", "v2")
+        if saved_feature_set != self.feature_set:
+            self.wrong_feature_set = saved_feature_set
             return False
 
         epsilon = saved_data["epsilon"]
@@ -176,7 +192,7 @@ class QLearningBot(LearningBot):
                 return None
 
             if (
-                len(state) != 9
+                len(state) != FEATURE_COUNTS[self.feature_set]
                 or any(type(value) is not int or value not in (0, 1, 2) for value in state)
             ):
                 return None
@@ -220,3 +236,10 @@ class QLearningBot(LearningBot):
         # An unseen state has equal zero values during evaluation.
         action_values = self.q_table.get(state_key, {})
         return self.select_action(state, action_values, self.evaluation_mode)
+
+
+class QLearningV3Bot(QLearningBot):
+    """Q Learning on Feature Set v3, with its own Q-table (ADR 0009)."""
+
+    def __init__(self, engine, random_source=None, **options):
+        super().__init__(engine, random_source, feature_set="v3", **options)

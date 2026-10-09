@@ -1,12 +1,16 @@
 """Run Q Learning Training Mode without opening an Arcade window."""
 
 import argparse
+import os
 import random
 
 from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.engine.SnakeEngine import SnakeEngine
 
+
+# Each Q Learning Bot Mode observes the board with its own Feature Set.
+FEATURE_SET_BY_BOT_MODE = {"q_learning": "v2", "q_learning_v3": "v3"}
 
 def play_game(engine, bot, max_moves):
     """Play one bounded game through the Game Engine and Bot Mode contract."""
@@ -34,6 +38,15 @@ def main(argv=None):
     parser.add_argument("--tile-size", type=int, default=25)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--max-moves", type=int, default=5000)
+    parser.add_argument(
+        "--bot", choices=tuple(FEATURE_SET_BY_BOT_MODE), default="q_learning",
+        help="Q Learning Bot Mode to train (default: q_learning)",
+    )
+    parser.add_argument("--q-table", help="Q-table to train (defaults to the saved table)")
+    parser.add_argument(
+        "--new-table", action="store_true",
+        help="Start an empty Q Learning v3 table instead of resuming one",
+    )
     options = parser.parse_args(argv)
 
     if options.games <= 0:
@@ -51,11 +64,22 @@ def main(argv=None):
         start_position=None,
         random_source=random.Random(options.seed),
     )
+    if options.new_table:
+        if options.bot != "q_learning_v3":
+            parser.error("--new-table only starts a Q Learning v3 table")
+        new_table_path = options.q_table or os.path.join(
+            "learning_data", "q_table_space_state_v3.json"
+        )
+        if os.path.exists(new_table_path):
+            parser.error(f"Q-table already exists: {new_table_path}")
+
     try:
         bot = QLearningBot(
             engine,
             random_source=random.Random(options.seed + 1),
-            require_saved_table=True,
+            require_saved_table=not options.new_table,
+            q_table_file=options.q_table,
+            feature_set=FEATURE_SET_BY_BOT_MODE[options.bot],
         )
     except ValueError as error:
         parser.error(str(error))

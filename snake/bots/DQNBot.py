@@ -6,7 +6,7 @@ import random
 import torch
 from torch import nn
 
-from snake.bots.LearningBot import LearningBot
+from snake.bots.LearningBot import FEATURE_COUNTS, LearningBot
 
 
 DEFAULT_DQN_SETTINGS = {
@@ -18,10 +18,10 @@ DEFAULT_DQN_SETTINGS = {
 }
 
 
-def make_network(hidden_size):
-    """Nine existing features go in; one value for each relative action comes out."""
+def make_network(hidden_size, input_size=9):
+    """The Feature Set's features go in; one value per relative action comes out."""
     return nn.Sequential(
-        nn.Linear(9, hidden_size),
+        nn.Linear(input_size, hidden_size),
         nn.ReLU(),
         nn.Linear(hidden_size, hidden_size),
         nn.ReLU(),
@@ -32,12 +32,13 @@ def make_network(hidden_size):
 class DQNBot(LearningBot):
     def __init__(
         self, engine, random_source=None, replay_random_source=None,
-        settings=None, evaluation_mode=False,
+        settings=None, evaluation_mode=False, feature_set="v2",
     ):
-        super().__init__(engine, random_source)
+        super().__init__(engine, random_source, feature_set=feature_set)
         self.settings = dict(DEFAULT_DQN_SETTINGS if settings is None else settings)
         self.evaluation_mode = evaluation_mode
-        self.network = make_network(self.settings["hidden_size"])
+        input_size = FEATURE_COUNTS[self.feature_set]
+        self.network = make_network(self.settings["hidden_size"], input_size)
         self.target_network = None
         self.optimizer = None
         self.replay = deque(maxlen=self.settings["replay_capacity"])
@@ -52,7 +53,7 @@ class DQNBot(LearningBot):
         self.game_losses = []
 
         if not evaluation_mode:
-            self.target_network = make_network(self.settings["hidden_size"])
+            self.target_network = make_network(self.settings["hidden_size"], input_size)
             self.target_network.load_state_dict(self.network.state_dict())
             self.optimizer = torch.optim.Adam(
                 self.network.parameters(), lr=self.settings["learning_rate"]

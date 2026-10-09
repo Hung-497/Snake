@@ -10,11 +10,17 @@ import random
 import torch
 
 from snake.bots.DQNBot import DEFAULT_DQN_SETTINGS, make_network
+from snake.bots.LearningBot import FEATURE_COUNTS
 
 
 ARTIFACT_VERSION = 2
 SUPPORTED_ARTIFACT_VERSIONS = (1, ARTIFACT_VERSION)
 FEATURE_SCHEMA = "q_learning_space_state_v2"
+# The saved feature schema names the Feature Set the network was trained on.
+FEATURE_SCHEMAS = {
+    "v2": FEATURE_SCHEMA,
+    "v3": "q_learning_space_state_v3",
+}
 ACTIONS = ["Straight", "Turn_Left", "Turn_Right"]
 
 
@@ -26,13 +32,23 @@ def board_details(config):
     }
 
 
-def dqn_details(settings):
+def artifact_feature_set(metadata, path):
+    """The Feature Set recorded in an artifact's metadata."""
+    for feature_set, schema in FEATURE_SCHEMAS.items():
+        if metadata.get("feature_schema") == schema:
+            return feature_set
+    raise ValueError(
+        f"Incompatible DQN feature or action contract (unknown Feature Set): {path}"
+    )
+
+
+def dqn_details(settings, feature_set="v2"):
     """Describe the complete V1 CPU learning recipe saved with each artifact."""
     hidden_size = settings["hidden_size"]
     return {
         "device": "cpu",
         "network": {
-            "input_size": 9,
+            "input_size": FEATURE_COUNTS[feature_set],
             "hidden_sizes": [hidden_size, hidden_size],
             "output_size": 3,
             "activation": "ReLU",
@@ -71,16 +87,18 @@ def save_json_data(path, data):
     temporary_path.replace(path)
 
 
-def common_metadata(config, settings, seed, max_moves, run_id, source_checkpoint):
+def common_metadata(
+    config, settings, seed, max_moves, run_id, source_checkpoint, feature_set="v2",
+):
     return {
         "run_id": run_id,
         "source_checkpoint": source_checkpoint,
         "training_board": board_details(config),
         "learning_settings": dict(settings),
-        "dqn_details": dqn_details(settings),
+        "dqn_details": dqn_details(settings, feature_set),
         "base_seed": seed,
         "max_moves": max_moves,
-        "feature_schema": FEATURE_SCHEMA,
+        "feature_schema": FEATURE_SCHEMAS[feature_set],
         "actions": list(ACTIONS),
         "bot_seed_offset": 1,
         "replay_seed_offset": 2,
@@ -135,14 +153,16 @@ def load_artifact(path, expected_type):
     metadata = data.get("metadata")
     if not isinstance(metadata, dict):
         raise ValueError(f"Invalid DQN artifact metadata: {path}")
-    if metadata.get("feature_schema") != FEATURE_SCHEMA or metadata.get("actions") != ACTIONS:
+    feature_set = artifact_feature_set(metadata, path)
+    if metadata.get("actions") != ACTIONS:
         raise ValueError(f"Incompatible DQN feature or action contract: {path}")
+    input_size = FEATURE_COUNTS[feature_set]
     settings = metadata.get("learning_settings")
     if not valid_settings(settings):
         raise ValueError(f"Invalid DQN learning settings: {path}")
     if (
         artifact_version >= 2
-        and metadata.get("dqn_details") != dqn_details(settings)
+        and metadata.get("dqn_details") != dqn_details(settings, feature_set)
     ):
         raise ValueError(f"Invalid DQN architecture or training details: {path}")
     board = metadata.get("training_board")
@@ -176,15 +196,17 @@ def load_artifact(path, expected_type):
         else state.get("online_weights")
     )
     try:
-        make_network(settings["hidden_size"]).load_state_dict(weights, strict=True)
+        make_network(settings["hidden_size"], input_size).load_state_dict(
+            weights, strict=True
+        )
     except (RuntimeError, TypeError, ValueError) as error:
         raise ValueError(f"Invalid DQN network weights: {path}") from error
     if expected_type == "dqn_training_checkpoint":
-        validate_checkpoint_state(state, settings, path)
+        validate_checkpoint_state(state, settings, path, input_size)
     return data
 
 
-def validate_checkpoint_state(state, settings, path):
+def validate_checkpoint_state(state, settings, path, input_size=9):
     """Check that resume can restore every piece before a new run is made."""
     required = {
         "online_weights", "target_weights", "optimizer", "epsilon",
@@ -209,16 +231,19 @@ def validate_checkpoint_state(state, settings, path):
             raise ValueError(f"Invalid DQN checkpoint replay: {path}")
         features, action, reward, next_features, game_over = experience
         if (
-            not valid_features(features)
+            not valid_features(features, input_size)
             or type(action) is not int or action not in (0, 1, 2)
             or type(reward) not in (int, float) or not math.isfinite(reward)
             or type(game_over) is not bool
             or (next_features is None) != game_over
-            or (next_features is not None and not valid_features(next_features))
+            or (
+                next_features is not None
+                and not valid_features(next_features, input_size)
+            )
         ):
             raise ValueError(f"Invalid DQN checkpoint replay: {path}")
     try:
-        network = make_network(settings["hidden_size"])
+        network = make_network(settings["hidden_size"], input_size)
         network.load_state_dict(state["target_weights"], strict=True)
         optimizer = torch.optim.Adam(
             network.parameters(), lr=settings["learning_rate"]
@@ -238,10 +263,10 @@ def validate_checkpoint_state(state, settings, path):
         raise ValueError(f"Invalid DQN checkpoint: {path}") from error
 
 
-def valid_features(features):
+def valid_features(features, feature_count=9):
     return (
         isinstance(features, (tuple, list))
-        and len(features) == 9
+        and len(features) == feature_count
         and all(type(value) is int and value in (0, 1, 2) for value in features)
     )
 
