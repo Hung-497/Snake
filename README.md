@@ -30,11 +30,24 @@ the keyboard.
 This project uses Python and [Arcade](https://api.arcade.academy) 3 for the whole
 app: the window, the screens, the buttons, the timing, and the drawing.
 
-Install the dependency with:
+The project uses [uv](https://docs.astral.sh/uv/) to manage Python and its
+dependencies. Install uv first by following the
+[official install guide](https://docs.astral.sh/uv/getting-started/installation/),
+for example on macOS:
 
 ```bash
-python3 -m pip install -r requirements.txt
+brew install uv
 ```
+
+Then, from the project root, create the environment:
+
+```bash
+uv sync
+```
+
+`uv sync` downloads Python 3.13 if needed, creates `.venv`, and installs the
+exact versions in `uv.lock`. Every command below starts with `uv run`, which
+runs it inside that environment.
 
 Arcade draws with OpenGL, so it needs a normal desktop session with a graphics
 driver. It works on macOS, Windows, and Linux.
@@ -42,7 +55,7 @@ driver. It works on macOS, Windows, and Linux.
 ## How to Run
 
 ```bash
-cd Snake && python3 SnakeApp.py
+cd Snake && uv run python SnakeApp.py
 ```
 
 The app opens at 900 x 960 in one resizable window and moves between screens
@@ -117,7 +130,7 @@ saved table, beginning new local progress instead of loading the starter.
 Run training from the project root without opening the app window:
 
 ```bash
-python3 -m snake.sessions.TrainQLearning --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
+uv run python -m snake.sessions.TrainQLearning --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
 ```
 
 This resumes the existing saved Q-table and saves learning progress back to it
@@ -135,13 +148,16 @@ and default Bot Experiments do not need PyTorch. Install it only when you want
 to train or evaluate DQN:
 
 ```bash
-python3 -m pip install -r requirements-dqn.txt
+uv sync --group dqn
 ```
+
+A plain `uv sync` removes PyTorch again. The DQN commands below use
+`uv run --group dqn`, which reinstalls it when it is missing.
 
 Train a new model from the project root:
 
 ```bash
-python3 -m snake.sessions.TrainDQN --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
+uv run --group dqn python -m snake.sessions.TrainDQN --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
 ```
 
 Each run gets its own `learning_data/dqn_runs/<run-id>/` folder. `training.json`
@@ -165,7 +181,7 @@ artifacts created by the earlier DQN implementation remain loadable.
 Continue for **additional** games from a checkpoint:
 
 ```bash
-python3 -m snake.sessions.TrainDQN --resume learning_data/dqn_runs/<run-id>/checkpoint.pt --games 100
+uv run --group dqn python -m snake.sessions.TrainDQN --resume learning_data/dqn_runs/<run-id>/checkpoint.pt --games 100
 ```
 
 Resume restores the saved board, seed, move limit, learning settings, and
@@ -174,7 +190,7 @@ untouched. Supplied settings that conflict with the checkpoint are rejected.
 To evaluate a fixed model on the same board or another board, use `model.pt`:
 
 ```bash
-python3 -m snake.sessions.EvaluateDQN --model learning_data/dqn_runs/<run-id>/model.pt --games 10 --width 24 --height 25 --seed 7
+uv run --group dqn python -m snake.sessions.EvaluateDQN --model learning_data/dqn_runs/<run-id>/model.pt --games 10 --width 24 --height 25 --seed 7
 ```
 
 Evaluation does not explore, learn, or alter the saved model. It writes a
@@ -189,7 +205,7 @@ action values come from a neural network instead of a Q-table.
 Compare the normal Bot Modes without opening the app:
 
 ```bash
-python3 -m snake.sessions.RunExperiment --games 10 --width 24 --height 25 --seed 7 --max-moves 5000
+uv run python -m snake.sessions.RunExperiment --games 10 --width 24 --height 25 --seed 7 --max-moves 5000
 ```
 
 The command defaults to one game. It uses the same board and seeds for each Bot
@@ -203,7 +219,7 @@ By default, the command compares Rule Based, Q Learning, Hamiltonian, and
 Search-Based. To compare only particular modes, list them after `--bots`:
 
 ```bash
-python3 -m snake.sessions.RunExperiment --bots rule search_based --games 10 --seed 7
+uv run python -m snake.sessions.RunExperiment --bots rule search_based --games 10 --seed 7
 ```
 
 The selected order is kept in the result. A one-bot experiment is also valid.
@@ -217,7 +233,7 @@ minutes even when they make steady progress.
 To include DQN, explicitly select it and supply an evaluation model:
 
 ```bash
-python3 -m snake.sessions.RunExperiment --bots rule q_learning dqn --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 10 --seed 7
+uv run --group dqn python -m snake.sessions.RunExperiment --bots rule q_learning dqn --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 10 --seed 7
 ```
 
 DQN can also be selected alone. When Q Learning is selected, its local saved
@@ -264,16 +280,12 @@ otherwise identical runs.
 
 ## Run Tests
 
-Install the app and development test dependencies:
-
-```bash
-python3 -m pip install -r requirements.txt -r requirements-dev.txt
-```
+`uv sync` already installs pytest, because it is in the `dev` dependency group.
 
 Run the tests from the project root:
 
 ```bash
-python3 -m pytest
+uv run pytest
 ```
 
 GitHub Actions runs this same test command on Python 3.13 for pull requests

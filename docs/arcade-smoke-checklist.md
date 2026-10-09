@@ -7,14 +7,15 @@ they never open a window, so everything below has to be seen by a person.
 Run the app with:
 
 ```bash
-python3 SnakeApp.py
+uv sync
+uv run python SnakeApp.py
 ```
 
 ## Checks
 
 | # | Check | What to expect |
 |---|---|---|
-| 1 | Window creation | One window opens, titled "Snake Game", 900 x 960 pixels. |
+| 1 | Window creation | After `uv sync`, `uv run python SnakeApp.py` starts without errors and one window opens, titled "Snake Game", 900 x 960 pixels. |
 | 2 | Centering | The window appears in the middle of the screen. |
 | 3 | Resizing | Dragging an edge or corner resizes the window, but not below its minimum size. The board scales to fit, and every screen stays usable. |
 | 4 | Menu controls | Play, Settings, Replay and Records all respond to a click and to hover. |
