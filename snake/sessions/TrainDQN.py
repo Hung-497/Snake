@@ -14,7 +14,8 @@ from snake.engine.SnakeEngine import SnakeEngine
 from snake.sessions.TrainQLearning import play_game
 from snake.storage.DQNArtifacts import (
     board_details, checkpoint_data, common_metadata, evaluation_model_data,
-    load_artifact, save_json_data, save_torch_data,
+    FEATURE_SCHEMAS, artifact_feature_set, load_artifact, save_json_data,
+    save_torch_data,
 )
 
 
@@ -40,6 +41,10 @@ def main(argv=None):
     parser.add_argument("--max-moves", type=int)
     parser.add_argument("--checkpoint-every", type=int)
     parser.add_argument("--batch-size", type=int)
+    parser.add_argument(
+        "--features", choices=tuple(FEATURE_SCHEMAS),
+        help="Feature Set for a new run (default v2; resume keeps the checkpoint's)",
+    )
     options = parser.parse_args(argv)
 
     positive_integer(parser, options.games, "--games")
@@ -61,6 +66,7 @@ def main(argv=None):
             "max_moves": saved["max_moves"],
             "checkpoint_every": saved["checkpoint_every"],
             "batch_size": saved["learning_settings"]["batch_size"],
+            "features": artifact_feature_set(saved, source_checkpoint),
         }
         for name, saved_value in saved_values.items():
             requested = getattr(options, name)
@@ -72,6 +78,7 @@ def main(argv=None):
             "width": 24, "height": 25, "tile_size": 25, "seed": 0,
             "max_moves": 5000, "checkpoint_every": 25,
             "batch_size": DEFAULT_DQN_SETTINGS["batch_size"],
+            "features": "v2",
         }
         for name, default in defaults.items():
             if getattr(options, name) is None:
@@ -107,6 +114,7 @@ def main(argv=None):
         random_source=random.Random(options.seed + 1),
         replay_random_source=random.Random(options.seed + 2),
         settings=settings,
+        feature_set=options.features,
     )
     if checkpoint:
         state = checkpoint["state"]
@@ -124,7 +132,8 @@ def main(argv=None):
     run_id = uuid.uuid4().hex
     run_directory = Path("learning_data") / "dqn_runs" / run_id
     metadata = common_metadata(
-        config, settings, options.seed, options.max_moves, run_id, source_checkpoint
+        config, settings, options.seed, options.max_moves, run_id, source_checkpoint,
+        options.features,
     )
     metadata["checkpoint_every"] = options.checkpoint_every
     metadata["python_version"] = platform.python_version()

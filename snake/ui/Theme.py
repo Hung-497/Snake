@@ -83,6 +83,7 @@ PLAYER_COLORS = {
     "q_learning": Color.from_hex_string("#60A5FA"),
     "hamiltonian": Color.from_hex_string("#34D399"),
     "search_based": Color.from_hex_string("#F472B6"),
+    "q_learning_v3": Color.from_hex_string("#22D3EE"),
     "human": Color.from_hex_string("#C084FC"),
 }
 

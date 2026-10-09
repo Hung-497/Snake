@@ -15,7 +15,9 @@ from snake.bots.DQNBot import DQNBot
 from snake.engine.GameConfig import GameConfig
 from snake.sessions.RunExperiment import code_identity, make_engine, summarize_games
 from snake.sessions.TrainQLearning import play_game
-from snake.storage.DQNArtifacts import board_details, load_artifact, model_identity
+from snake.storage.DQNArtifacts import (
+    artifact_feature_set, board_details, load_artifact, model_identity,
+)
 
 
 def main(argv=None):
@@ -54,6 +56,7 @@ def main(argv=None):
         bot = DQNBot(
             engine, random_source=random.Random(game_seed + 1),
             settings=model["metadata"]["learning_settings"], evaluation_mode=True,
+            feature_set=artifact_feature_set(model["metadata"], options.model),
         )
         bot.network.load_state_dict(model["online_weights"])
         start_time = time.perf_counter()

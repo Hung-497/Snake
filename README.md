@@ -140,6 +140,27 @@ progress in the terminal. It does not add game records or replays.
 
 `--games` is required. The default board is 24 × 25, the default Tile Size is
 25, the default seed is 0, and the default move limit is 5000 per game.
+`--q-table path/to/table.json` trains a different table.
+
+### Q Learning v3
+
+Q Learning v3 is a separate Bot Mode that uses Feature Set v3 (ADR 0009). On
+top of the nine v2 features, it checks whether each move keeps the tail
+reachable, and it counts open space as the tail moves away instead of treating
+the whole body as a wall. It keeps its own table,
+`learning_data/q_table_space_state_v3.json`, plus its own records and best
+replay, so it never changes the v2 table. Every Q-table records its Feature
+Set, and a table saved under another Feature Set is refused.
+
+There is no v3 Starter Q-table. Start an empty v3 table explicitly:
+
+```bash
+uv run python -m snake.sessions.TrainQLearning --bot q_learning_v3 --new-table --games 100 --seed 7
+```
+
+`--new-table` never overwrites an existing table. Leave it out to continue
+training the saved v3 table, and add `--q-table path/to/table.json` to keep
+several v3 tables apart, for example one per training seed.
 
 ## Headless DQN Experiment
 
@@ -177,6 +198,18 @@ complete batch. The target network copies the online network every 100
 optimizer steps. These values, the explicit CPU device, and the network shape
 are stored in every new version 2 checkpoint and evaluation model. Version 1
 artifacts created by the earlier DQN implementation remain loadable.
+
+To train DQN on Feature Set v3 (the twelve features Q Learning v3 uses), add
+`--features v3`. The network then takes twelve inputs instead of nine:
+
+```bash
+uv run --group dqn python -m snake.sessions.TrainDQN --features v3 --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
+```
+
+Without `--features`, training uses v2 exactly as before. Checkpoints and
+evaluation models record their Feature Set, so resuming a run keeps it, and
+evaluation and Bot Experiments read it from the model. A model with an unknown
+Feature Set is rejected.
 
 Continue for **additional** games from a checkpoint:
 
@@ -242,6 +275,16 @@ uses the same board and seed list. The command checks all selected bots and
 required files before any game begins; it never silently omits an unsupported
 bot. DQN's report entry identifies the model and records the training and
 evaluation boards, so cross-board results remain clear.
+
+Q Learning v3 is not in the default comparison. Select it explicitly to compare
+both versions on the same seeds:
+
+```bash
+uv run python -m snake.sessions.RunExperiment --bots q_learning q_learning_v3 --games 10 --seed 7
+```
+
+Use `--q-table-v3 path/to/table.json` to evaluate a different v3 table. The
+report records each table's Feature Set.
 
 Q Learning uses Evaluation Mode: it reads the saved Q-table without exploring,
 learning, or saving changes. Use `--q-table path/to/table.json` to select a
