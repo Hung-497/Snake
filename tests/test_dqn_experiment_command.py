@@ -95,7 +95,7 @@ def test_dqn_only_experiment_records_provenance_and_leaves_runtime_data_unchange
     existing_report.write_text("{\"existing\": true}\n")
     protected = [*run.iterdir(), records, replay, q_table]
     before = {
-        str(path.relative_to(tmp_path)): hashlib.sha256(path.read_bytes()).hexdigest()
+        path.relative_to(tmp_path).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in protected
     }
 
@@ -108,7 +108,7 @@ def test_dqn_only_experiment_records_provenance_and_leaves_runtime_data_unchange
 
     assert compared.returncode == 0, compared.stderr
     after = {
-        str(path.relative_to(tmp_path)): hashlib.sha256(path.read_bytes()).hexdigest()
+        path.relative_to(tmp_path).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in protected
     }
     assert after == before
