@@ -25,3 +25,14 @@ pythonpath = ["."]
 [tool.uv]
 # This is an app, not a package to install or publish.
 package = false
+
+# DQN runs on the CPU only (ADR 0007). On Linux, PyPI's torch also pulls
+# several GB of CUDA packages, so Linux takes the CPU-only build instead.
+# macOS and Windows already get CPU builds from PyPI.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
