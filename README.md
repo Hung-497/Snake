@@ -175,6 +175,11 @@ uv sync --group dqn
 A plain `uv sync` removes PyTorch again. The DQN commands below use
 `uv run --group dqn`, which reinstalls it when it is missing.
 
+On Windows, PyTorch also needs Microsoft's Visual C++ Redistributable. Most
+Windows PCs already have it, but a fresh Windows (or Windows Server) install
+may not, and importing torch then fails with `WinError 1114` while loading
+`c10.dll`. Install it from <https://aka.ms/vs/17/release/vc_redist.x64.exe>.
+
 Train a new model from the project root:
 
 ```bash
