@@ -343,6 +343,75 @@ and pushes to `main`.
 | Hamiltonian bot | Beats the game consistently using cycle planning and safe shortcuts |
 | Search-Based bot | Plans future moves and checks for a safe route after food; may still lose |
 
+### Feature Set v3 experiment
+
+Feature Set v3 (ADR 0009) adds three "can I still reach my tail?" features and
+counts open space as the tail moves away. This experiment checks whether that
+helps Q Learning and DQN, and which of the two learns better with it.
+
+**Setup.** Every bot trained on the 24 × 25 board with a 5000-move limit. Each
+v3 bot was trained three times with different seeds, so one lucky or unlucky
+run cannot decide the result. Every bot then played the same 200 evaluation
+games (seeds 200000–200199), which no bot trained on, in Evaluation Mode.
+
+| Bot | Training games | Training seeds |
+| --- | --- | --- |
+| Q Learning v2 | about 2000 | the local saved table |
+| DQN v2 | 2000, 1200, 1200 | 1000, 3000, 6000 |
+| Q Learning v3 | 2000 each | 9000, 12000, 15000 |
+| DQN v3 | 2000 each | 9000, 12000, 15000 |
+
+**v2 against v3 (5000-move limit).** Mean score over the 200 games:
+
+| Bot | Each training seed | Average | Best game |
+| --- | --- | --- | --- |
+| Q Learning v2 | 33.1 | 33.1 | 70 |
+| DQN v2 | 29.8, 32.2, 37.0 | 33.0 | 66 |
+| Q Learning v3 | 105.3, 123.6, 127.7 | 118.9 | 173 |
+| DQN v3 | 140.8, 139.6, 128.3 | 136.2 | 176 |
+
+Compared game by game, Q Learning v3 scores 85.7 more than v2 (95% range
+83.0 to 88.5) and DQN v3 scores 103.2 more (101.1 to 105.3). v3 wins all
+200 games for both bots. Many v3 games reached the 5000-move limit while the
+snake was still alive (up to 159 of 200), so these v3 scores are lower than
+the bots' real results; v2 games never came close to the limit.
+
+**Q Learning v3 against DQN v3 (20,000-move limit).** The same six v3 bots
+were evaluated again with room to play on:
+
+| Bot | Each training seed | Average | Best game |
+| --- | --- | --- | --- |
+| Q Learning v3 | 108.7, 132.1, 155.4 | 132.1 | 302 |
+| DQN v3 | 236.4, 196.8, 143.0 | 192.0 | 356 |
+
+Game by game, DQN v3 scores 60.0 more than Q Learning v3 (95% range 53.0 to
+66.9) and wins 171 of the 200 games. Even 20,000 moves cut off 100 games for
+one DQN model; those were its best games (316 food on average), so DQN's real
+lead is larger still. No bot filled the board.
+
+**Verdict.**
+
+- v3 breaks the v2 ceiling of about 33 points: both bots score about four
+  times higher, because knowing whether the tail is still reachable stops the
+  snake trapping itself.
+- With v2, Q Learning and DQN were equal. With v3, DQN is clearly better: v3
+  has many more possible situations, and the neural network generalises
+  between similar ones where the table must learn each one separately.
+- The training seed matters a lot. DQN v3 models differ by up to 93 points at
+  the 20,000-move limit, so compare several runs rather than one.
+
+**Notes.** DQN v3 trained for 2000 games, not the 1200 first planned; DQN v2
+stopped improving around game 1000, so the extra games do not explain the gap.
+The 20,000-move evaluations ran on a different computer, and every game that
+ended before move 5000 matched the 5000-move run exactly.
+
+To repeat a result, train with the seeds above and evaluate with, for example:
+
+```bash
+uv run python -m snake.sessions.RunExperiment --bots q_learning_v3 --q-table-v3 learning_data/q_table_v3_seed9000.json --games 200 --seed 200000 --max-moves 20000
+uv run --group dqn python -m snake.sessions.RunExperiment --bots dqn --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 200 --seed 200000 --max-moves 20000
+```
+
 ## Demo
 
 ### App Screens
