@@ -1,3 +1,5 @@
+# Imported before arcade so the Arcade PATH guard runs first (see ArcadePathGuard).
+import snake  # noqa: F401
 import arcade
 from arcade.types import Color
 
