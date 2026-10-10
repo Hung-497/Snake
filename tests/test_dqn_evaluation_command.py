@@ -50,7 +50,7 @@ def test_evaluation_is_read_only_and_records_cross_board_identity(tmp_path):
     q_table.write_text("{\"existing\": true}\n")
     protected = [*run.iterdir(), records, replay, q_table]
     before = {
-        str(path.relative_to(tmp_path)): hashlib.sha256(path.read_bytes()).hexdigest()
+        path.relative_to(tmp_path).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in protected
     }
 
@@ -61,7 +61,7 @@ def test_evaluation_is_read_only_and_records_cross_board_identity(tmp_path):
     )
     assert evaluated.returncode == 0, evaluated.stderr
     after = {
-        str(path.relative_to(tmp_path)): hashlib.sha256(path.read_bytes()).hexdigest()
+        path.relative_to(tmp_path).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in protected
     }
     assert after == before
