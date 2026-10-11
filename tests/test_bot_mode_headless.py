@@ -111,8 +111,8 @@ def test_unselected_bot_modes_cause_no_side_effects(tmp_path, monkeypatch):
 
     monkeypatch.setattr(QLearningBot, "load_q_table", fail_to_load)
 
-    # An odd-by-odd board has no valid cycle, so building Hamiltonian here
-    # would fail if the factory validated every Bot Mode.
+    # Building any Bot Mode must not touch engine randomness or load a
+    # Q-table; only the selected one is built.
     bot = create_bot_mode("rule", engine)
 
     assert isinstance(bot, RuleBasedBot)

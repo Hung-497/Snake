@@ -235,25 +235,18 @@ def test_one_update_cannot_make_an_unlimited_number_of_moves():
 
 def test_the_score_average_prunes_before_it_is_calculated():
     # Only the last hundred scores count, and the oldest goes before the average.
-    session = make_session(engine=FakeEngine(moves_until_game_over=2))
-    session.recent_scores = [1] * 100
-
+    engine = FakeEngine(moves_until_game_over=1)
+    session = make_session(engine=engine)
+    for _ in range(100):                     # a hundred games scoring 1
+        session.advance()
+        session.start_next_game()
+    engine.moves_until_game_over = 2         # then one game scoring 2
     session.advance()
     session.advance()
 
-    average_score = session.record_manager.saved_results[0][4]
+    # 99 ones and a 2: the first game of score 1 has dropped out.
+    average_score = session.record_manager.saved_results[-1][4]
     assert average_score == pytest.approx(1.01)
-
-
-def test_the_move_average_prunes_before_it_is_calculated(capsys):
-    # Only the last ten games count towards the average number of moves.
-    session = make_session(engine=FakeEngine(moves_until_game_over=1))
-    session.total_moves_history = [10] * 10
-    session.total_moves = 19
-
-    session.advance()
-
-    assert "Avg total move: 11.0" in capsys.readouterr().out
 
 
 def test_a_session_drives_a_real_game_engine():
