@@ -40,8 +40,9 @@ The default set follows new normal Bot Modes when they are registered.
 
 The terminal prints each finished game while a comparison is running, then a
 summary for each Bot Mode. Search-Based searches future moves on every board,
-so ten full-board games can take a few minutes even when they make steady
-progress.
+so ten full-board games can take ten minutes or more even when they make
+steady progress. The default ten-game comparison above took about ten and a
+half minutes on a Mac.
 
 ## Include DQN
 

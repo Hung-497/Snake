@@ -1,89 +1,67 @@
 # Snake AI Project
 
-## Overview
+A Python Snake game built with [Arcade](https://api.arcade.academy) 3. Play it
+yourself, or watch AI bots play: hand-written rules, a search that plans ahead,
+a route that covers the whole board, and Q Learning bots that learn from
+experience. Records, replays, and repeatable experiments show how they compare.
 
-A Python Snake game built with Arcade 3.
-The project starts with a basic Snake game, then adds different AI bots, records,
-settings, and replay playback. You can watch a bot play or play yourself with
-the keyboard.
+<p align="center">
+  <img src="img/Gameplay_Hamiltonian.gif" alt="The Hamiltonian bot filling a 16 by 16 board until it wins" width="450">
+  <br>
+  <em>The Hamiltonian bot winning a game on the 16 × 16 board.</em>
+</p>
 
 ## Features
 
-- Basic Snake game
-- Human Play: steer the snake yourself with the arrow keys or WASD
-- Rule-based bot
-- Tabular Q-learning bot
-- Hamiltonian cycle bot
-- Search-Based bot that checks future moves and avoids food paths with no safe continuation
-- Safe shortcut logic
-- Tail reachability check
-- Flood fill space checking
-- Arcade Play menu: play yourself or choose a bot
-- Settings screen for speed, board size, and tile size
-- Resizable window with a board that scales to fit
-- Records screen with filters for each bot and for Human Play, plus summary stats
-- Replay saving and playback of the best game for each bot and for Human Play
-- Q-learning persistence with saved Q-table data
+- **Human Play**: steer the snake yourself with the arrow keys or WASD.
+- **Five bots in the app**: Rule Based, Q Learning, Q Learning v3, Hamiltonian,
+  and Search-Based.
+- **DQN**: an optional neural-network bot, trained and evaluated from the
+  terminal.
+- **Records**: compare Players in a table and charts for each board and speed.
+- **Replays**: watch the best saved game of every Player, with pause, restart,
+  and three speeds.
+- **Settings**: game speed, board size, and tile size, in one resizable window.
+- **Training and Bot Experiments**: train the learning bots and compare every
+  bot on the same seeds, without opening the app.
 
-## Installation
+## Quick Start
 
-This project uses Python and [Arcade](https://api.arcade.academy) 3 for the whole
-app: the window, the screens, the buttons, the timing, and the drawing.
-
-The project uses [uv](https://docs.astral.sh/uv/) to manage Python and its
-dependencies. Install uv first by following the
-[official install guide](https://docs.astral.sh/uv/getting-started/installation/),
-for example on macOS:
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) (on
+macOS, for example, `brew install uv`) and a desktop with a graphics driver,
+because Arcade draws with OpenGL. It works on macOS, Windows, and Linux.
 
 ```bash
-brew install uv
-```
-
-Then, from the project root, create the environment:
-
-```bash
+git clone https://github.com/Hung-497/Snake.git
+cd Snake
 uv sync
+uv run python SnakeApp.py
 ```
 
 `uv sync` downloads Python 3.13 if needed, creates `.venv`, and installs the
-exact versions in `uv.lock`. Every command below starts with `uv run`, which
-runs it inside that environment.
+exact versions in `uv.lock`. The other commands in this project start with
+`uv run`, which runs them inside that environment.
 
-Arcade draws with OpenGL, so it needs a normal desktop session with a graphics
-driver. It works on macOS, Windows, and Linux.
+## How to Play
 
-## How to Run
-
-```bash
-cd Snake && uv run python SnakeApp.py
-```
-
-The app opens at 900 x 960 in one resizable window and moves between screens
-inside it. The board uses the chosen Tile Size when it fits, or smaller whole
-tiles when the window is narrow. Window size is not saved between runs.
+The app opens one 900 × 960 window and moves between screens inside it. You can
+resize the window; the board scales down to fit. The window size is not saved
+between runs.
 
 ```text
-Menu -> Play -> Play Yourself / Rule Based / Q Learning / Hamiltonian / Search-Based
-     -> Settings -> speed, board size, tile size
-     -> Replay   -> Rule Based / Q Learning / Hamiltonian / Search-Based / Human
-     -> Records  -> All Players / Rule / Q-Learning / Hamiltonian / Search-Based / Human
+Menu -> Play     -> Play Yourself / Rule Based / Q Learning / Hamiltonian / Search-Based / Q Learning v3
+     -> Settings -> game speed, board size, tile size
+     -> Replay   -> Rule Based / Q Learning / Hamiltonian / Search-Based / Q Learning v3 / Human
+     -> Records  -> Compare, Trends, and Games for the chosen board and speed
 ```
 
-Settings are kept for as long as the app is open, so a game started afterwards
-uses the speed, board size, and tile size chosen there. Closing the window
-closes the app.
+A bot plays one game after another by itself; use **Back to Menu** to stop.
+Settings are kept for as long as the app is open. The speed names mean
+different delays for bots and for you: bots move every 10, 5, or 1 ms on Slow,
+Normal, or Fast, and Human Play moves every 150, 100, or 70 ms so you can
+react.
 
-The speed names mean different delays for bots and for Human Play. Bots move
-every 10, 5, or 1 ms on Slow, Normal, or Fast; Human Play moves every 150, 100,
-or 70 ms so a person can react.
-
-A bot plays one game after another by itself. Records keeps each finished game,
-and Replay plays back the best saved game for each bot and for Human Play.
-Search-Based games are saved as `search_based` in records and under
-`replays/search_based_best.json` for their best replay. Compare and Trends show
-Search-Based with its own colour under the chosen Board and Speed.
-
-## Human Play Controls
+### Human Play controls
 
 Choose **Play Yourself** on the Play screen. The snake waits until you press
 your first direction key, which can point any way.
@@ -99,141 +77,128 @@ A key that would turn the snake straight back into itself is ignored. The game
 also pauses when the window loses focus, and stays paused until you resume it.
 A game you leave with Esc before it ends is not saved.
 
-## Local Runtime Data
+While watching a replay, P or Space pauses, R restarts, and S switches between
+the Slow, Normal, and Fast Replay Speeds. The buttons on screen do the same.
 
-Games played in the app, by a bot or by you, save game records in `records/`
-and best replays in `replays/`. Each record and replay names its Player: one
-of the bots, or `human` for Human Play. Records files created before Human Play
-used a `bot_name` column instead of `player`; they still load. Q Learning saves
-its progress in `learning_data/`, and Bot Experiments save separate reports in
-`experiments/`. These folders contain local Runtime Data; Git ignores their
-contents. A fresh clone starts with no saved records or replays.
+### Screens
 
-Training and Bot Experiments need a local copy of the bundled Starter
-Q-table first; see
-[Set up the Starter Q-table](docs/training.md#set-up-the-starter-q-table).
+<table>
+  <tr>
+    <td><img src="img/Play_Screen.png" alt="Play screen with Play Yourself and one button per bot" width="400"></td>
+    <td><img src="img/Settings_Screen.png" alt="Settings screen with game speed, board size, and tile size" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Choose who plays</em></td>
+    <td align="center"><em>Settings</em></td>
+  </tr>
+  <tr>
+    <td><img src="img/Records_Screen.png" alt="Records screen comparing every bot in a table and a bar chart" width="400"></td>
+    <td><img src="img/Replay_Screen.png" alt="Replay of a Hamiltonian game with pause, restart, and speed buttons" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Records: compare every Player</em></td>
+    <td align="center"><em>Replay with playback controls</em></td>
+  </tr>
+</table>
 
-## Training and Bot Experiments
+## The Bots
 
-The learning bots can be trained, and all bots compared, from the terminal
-without opening the app:
+| Bot | How it decides | How well it plays |
+| --- | --- | --- |
+| Rule Based | Follows a safe path to the food, else its tail, else the largest open space | Can play, but may still trap itself |
+| Search-Based | Searches future moves for food it can reach and still keep moving afterwards | Plans ahead, but may still lose |
+| Hamiltonian | Follows a route through every cell, taking safe shortcuts | Wins consistently in the app, which has no move limit |
+| Q Learning | Learns which move is best for each of the situations it can see (9 features) | Average score 43.6 |
+| Q Learning v3 | Q Learning that also checks whether its tail stays reachable (12 features) | Average score 118.9 |
+| DQN | A small neural network instead of a table, with either feature set; terminal only | Average score 33.9 (v2), 136.2 (v3) |
 
-- [Training the Learning Bots](docs/training.md): train Q Learning and DQN,
-  resume training, and evaluate DQN models.
-- [Bot Experiments](docs/bot-experiments.md): compare Bot Modes on the same
-  seeds and read the JSON reports.
+The average scores come from the Feature Set v3 experiment: bots trained for
+2000 games, then evaluated on 200 new games on the 24 × 25 board with a
+5000-move limit. See [Results](docs/results.md) for the setup, the full
+results, and their limitations.
 
-## Run Tests
-
-`uv sync` already installs pytest, because it is in the `dev` dependency group.
-
-Run the tests from the project root:
+## Run the Tests
 
 ```bash
 uv run pytest
 ```
 
-GitHub Actions runs this same test command on Python 3.13 for pull requests
-and pushes to `main`.
+`uv sync` already installs pytest, because it is in the `dev` dependency
+group. The DQN tests are skipped unless PyTorch is installed with
+`uv sync --group dqn`. GitHub Actions runs every test, including the DQN tests,
+on Linux, Windows, and macOS for pull requests and pushes to `main`.
 
-## Bot Results
+## Train and Compare Bots
 
-| Bot             | Result                                                              |
-| --------------- | ------------------------------------------------------------------- |
-| Rule-based bot  | Can play, but may still trap itself                                 |
-| Q-learning bot  | Learns short-term behavior, but struggles with long-term traps      |
-| Hamiltonian bot | Beats the game consistently using cycle planning and safe shortcuts |
-| Search-Based bot | Plans future moves and checks for a safe route after food; may still lose |
+Training and Bot Experiments run in the terminal without opening the app. They
+need a local copy of the bundled Starter Q-table first:
 
-The Feature Set v3 experiment, with its setup, results, limitations, and
-how to repeat it, is in [Results](docs/results.md).
+```bash
+mkdir -p learning_data
+cp -n starter_data/q_table_space_state_v2.json learning_data/q_table_space_state_v2.json
+```
 
-## Demo
+Then train Q Learning for 100 games, or compare the bots on ten games with the
+same seeds:
 
-### App Screens
+```bash
+uv run python -m snake.sessions.TrainQLearning --games 100
+uv run python -m snake.sessions.RunExperiment --games 10 --seed 7
+```
 
-These screenshots were taken before the move to Arcade and before Human Play
-was added, so the screens look different now. The Play, Replay, and Records
-screens now also offer Human Play.
+The comparison can take ten minutes or more, mostly because Search-Based plans
+every move. Add `--bots rule q_learning hamiltonian` to leave it out.
 
-**Main Menu**
+- [Training the Learning Bots](docs/training.md): Q Learning v2 and v3, the
+  Training History, and DQN training, resuming, and evaluation.
+- [Bot Experiments](docs/bot-experiments.md): choosing bots, adding DQN, and
+  what each JSON report records.
 
-![Main Menu](/img/Main_Menu.png)
+## Where Your Data Is Saved
 
-**Play Screen**
-
-![Play Screen](/img/Play_Screen.png)
-
-**Settings Screen**
-
-![Settings Screen](/img/Settings_Screen.png)
-
-**Records Screen**
-
-![Records Screen](/img/Logs_Screen.png)
-
-**Replay Screen**
-
-![Replay Screen](/img/Replay_Screen.png)
-
-### Bot Demos
-
-1. Rule-based Bot
-
-![demo_rule_based_bot](/img/Demo_RuleBasedBot.gif)
-
-_Display_
-
-![result_rule_based_bot](/img/Result_RuleBasedBot.png)
-
-_Results on the terminal_
-
-2. Q-learning Bot
-
-![demo_q_learning_bot](/img/Demo_QLearningBot.gif)
-
-_Display_
-
-![result_q_learning_bot](/img/Result_QLearningBot.png)
-
-_Results on the terminal_
-
-3. Hamiltonian Bot
-
-![demo_hamiltonian_bot](/img/Demo_HamiltonianBot.gif)
-
-_Display_
-
-![result_hamiltonian_bot](/img/Result_HamiltonianBot.png)
-
-_Results on the terminal_
+Games played in the app, by a bot or by you, save game records in `records/`
+and each Player's best replay in `replays/`, for example
+`replays/search_based_best.json`. Each record and replay names its Player: a
+bot, or `human` for Human Play. Hamiltonian saves only games it wins. Q
+Learning saves its progress in `learning_data/`, and Bot Experiments save
+reports in `experiments/`. These folders hold local Runtime Data that Git
+ignores, so a fresh clone starts with no records or replays.
 
 ## Project Structure
 
 ```text
 SnakeApp.py          # Starts the app: the Arcade window and the App Views
 snake/
-  engine/            # GameConfig, GameTypes, SnakeEngine: board rules and state
-  bots/              # BotMode, BotFactory, and the four Bot Modes
+  engine/            # SnakeEngine, GameConfig, GameTypes: board rules and state
+  bots/              # BotMode, BotFactory, and the bots: Rule Based, Q Learning
+                     # (v2 and v3), Hamiltonian, Search-Based, and DQN
   sessions/          # GameSession, ReplaySession, SessionSettings, HumanPlayer,
-                     # PlayerFactory, and the TrainQLearning and RunExperiment
-                     # commands
-  storage/           # RecordManager and ReplayManager
+                     # PlayerFactory, and the TrainQLearning, TrainDQN,
+                     # EvaluateDQN, and RunExperiment commands
+  storage/           # Records, replays, DQN files, and code version for reports
   ui/                # AppShell, Theme, WindowLayout, MotionRules, BoardRenderer,
-                     # RecordsBrowser, and PlayerLabels
-    views/           # Menu, Settings, Play, Game, Replay, ReplayPlayback,
+                     # RecordsBrowser, Charts, and PlayerLabels
+    views/           # Menu, Play, Settings, Game, Replay, ReplayPlayback,
                      # and Records App Views
-tests/               # Behavior and regression tests
-assets/              # Bundled fonts
-records/             # Saved game result CSV data
-replays/             # Saved replay JSON files
-learning_data/       # Saved Q-table data
+tests/               # Automated tests (pytest)
+docs/                # Training, Bot Experiments, Results, and decisions
+assets/fonts/        # Bundled Inter font and its licence
+img/                 # Screenshots and the GIF in this README
 starter_data/        # Bundled Starter Q-table
-experiments/         # Saved Bot Experiment reports
-docs/                # Architecture decisions and the smoke checklist
 DEVLOG.md            # Development diary
 ```
 
-## Development Diary
+`records/`, `replays/`, `learning_data/`, and `experiments/` are created when
+you play, train, or run Bot Experiments.
 
-I documented the learning process, bugs, experiments, and results in [DEVLOG.md](DEVLOG.md).
+## Documentation
+
+- [Training the Learning Bots](docs/training.md)
+- [Bot Experiments](docs/bot-experiments.md)
+- [Results](docs/results.md)
+- [Architecture Decision Log](docs/adr/README.md): why the project is built the
+  way it is
+- [Arcade smoke checklist](docs/arcade-smoke-checklist.md): manual checks the
+  automated tests cannot cover
+- [Development diary](DEVLOG.md): the learning process, bugs, experiments, and
+  results along the way
