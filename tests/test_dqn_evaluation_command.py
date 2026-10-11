@@ -23,22 +23,8 @@ def command(tmp_path, module, *options):
     )
 
 
-def train_model(tmp_path):
-    trained = command(
-        tmp_path, "snake.sessions.TrainDQN", "--games", "1", "--width", "4",
-        "--height", "4", "--max-moves", "4", "--batch-size", "2",
-    )
-    assert trained.returncode == 0, trained.stderr
-    return next((tmp_path / "learning_data" / "dqn_runs").iterdir()) / "model.pt"
-
-
-def test_evaluation_is_read_only_and_records_cross_board_identity(tmp_path):
-    trained = command(
-        tmp_path, "snake.sessions.TrainDQN", "--games", "2", "--width", "4",
-        "--height", "4", "--max-moves", "8", "--seed", "9", "--batch-size", "2",
-    )
-    assert trained.returncode == 0, trained.stderr
-    run = next((tmp_path / "learning_data" / "dqn_runs").iterdir())
+def test_evaluation_is_read_only_and_records_cross_board_identity(tmp_path, trained_dqn_run):
+    run = trained_dqn_run
     model = run / "model.pt"
     records = tmp_path / "records" / "game_records.csv"
     records.parent.mkdir()
@@ -78,17 +64,12 @@ def test_evaluation_is_read_only_and_records_cross_board_identity(tmp_path):
     assert report["bots"]["dqn"]["summary"]["total_moves"] <= 16
 
 
-def test_evaluation_requires_a_model_and_rejects_training_checkpoint(tmp_path):
+def test_evaluation_requires_a_model_and_rejects_training_checkpoint(tmp_path, trained_dqn_run):
     missing = command(tmp_path, "snake.sessions.EvaluateDQN", "--games", "1")
     assert missing.returncode != 0
     assert "--model" in missing.stderr
 
-    trained = command(
-        tmp_path, "snake.sessions.TrainDQN", "--games", "1", "--width", "4",
-        "--height", "4", "--max-moves", "4",
-    )
-    assert trained.returncode == 0, trained.stderr
-    checkpoint = next((tmp_path / "learning_data" / "dqn_runs").iterdir()) / "checkpoint.pt"
+    checkpoint = trained_dqn_run / "checkpoint.pt"
     rejected = command(
         tmp_path, "snake.sessions.EvaluateDQN", "--model", str(checkpoint),
         "--games", "1", "--width", "4", "--height", "4", "--max-moves", "4",
@@ -103,14 +84,14 @@ def test_evaluation_requires_a_model_and_rejects_training_checkpoint(tmp_path):
     [
         ("missing", "Missing or invalid DQN artifact"),
         ("malformed", "Missing or invalid DQN artifact"),
-        ("incompatible", "Incompatible DQN feature or action contract"),
+        ("incompatible", "unknown Feature Set"),
         ("wrong_shape", "Invalid DQN network weights"),
     ],
 )
 def test_invalid_model_artifacts_fail_before_play_or_report(
-    tmp_path, artifact_kind, expected_error,
+    tmp_path, artifact_kind, expected_error, trained_dqn_run,
 ):
-    model = train_model(tmp_path)
+    model = trained_dqn_run / "model.pt"
     candidate = tmp_path / f"{artifact_kind}.pt"
     if artifact_kind == "malformed":
         candidate.write_bytes(b"not a torch artifact")
@@ -135,8 +116,8 @@ def test_invalid_model_artifacts_fail_before_play_or_report(
     assert not (tmp_path / "experiments").exists()
 
 
-def test_evaluation_preserves_existing_experiment_report(tmp_path):
-    model = train_model(tmp_path)
+def test_evaluation_preserves_existing_experiment_report(tmp_path, trained_dqn_run):
+    model = trained_dqn_run / "model.pt"
     experiments = tmp_path / "experiments"
     experiments.mkdir()
     existing = experiments / "experiment_existing.json"

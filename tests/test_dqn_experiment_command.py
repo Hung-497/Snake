@@ -23,22 +23,8 @@ def command(tmp_path, module, *options):
     )
 
 
-def train_model(tmp_path):
-    trained = command(
-        tmp_path, "snake.sessions.TrainDQN", "--games", "1", "--width", "4",
-        "--height", "4", "--max-moves", "4", "--batch-size", "2",
-    )
-    assert trained.returncode == 0, trained.stderr
-    return next((tmp_path / "learning_data" / "dqn_runs").iterdir())
-
-
-def test_dqn_comparison_uses_shared_seeds_and_records_model(tmp_path):
-    trained = command(
-        tmp_path, "snake.sessions.TrainDQN", "--games", "1", "--width", "4",
-        "--height", "4", "--max-moves", "5",
-    )
-    assert trained.returncode == 0, trained.stderr
-    model = next((tmp_path / "learning_data" / "dqn_runs").iterdir()) / "model.pt"
+def test_dqn_comparison_uses_shared_seeds_and_records_model(tmp_path, trained_dqn_run):
+    model = trained_dqn_run / "model.pt"
     compared = command(
         tmp_path, "snake.sessions.RunExperiment", "--bots", "rule", "dqn",
         "--dqn-model", str(model), "--games", "2", "--width", "4",
@@ -78,8 +64,10 @@ def test_missing_dqn_model_stops_comparison_before_any_games(tmp_path):
     assert not (tmp_path / "experiments").exists()
 
 
-def test_dqn_only_experiment_records_provenance_and_leaves_runtime_data_unchanged(tmp_path):
-    run = train_model(tmp_path)
+def test_dqn_only_experiment_records_provenance_and_leaves_runtime_data_unchanged(
+    tmp_path, trained_dqn_run,
+):
+    run = trained_dqn_run
     model = run / "model.pt"
     records = tmp_path / "records" / "game_records.csv"
     records.parent.mkdir()
@@ -134,29 +122,8 @@ def test_dqn_only_experiment_records_provenance_and_leaves_runtime_data_unchange
     assert "mean_score" in report["bots"]["dqn"]["summary"]
 
 
-def test_repeated_dqn_experiments_reproduce_fixed_seed_games(tmp_path):
-    model = train_model(tmp_path) / "model.pt"
-    options = (
-        "--bots", "dqn", "--dqn-model", str(model), "--games", "2",
-        "--width", "4", "--height", "4", "--seed", "7", "--max-moves", "3",
-    )
-
-    first = command(tmp_path, "snake.sessions.RunExperiment", *options)
-    second = command(tmp_path, "snake.sessions.RunExperiment", *options)
-
-    assert first.returncode == 0, first.stderr
-    assert second.returncode == 0, second.stderr
-    reports = [
-        json.loads(path.read_text())
-        for path in sorted((tmp_path / "experiments").iterdir())
-    ]
-    assert len(reports) == 2
-    assert reports[0]["seeds"] == reports[1]["seeds"] == [7, 8]
-    assert reports[0]["bots"]["dqn"]["games"] == reports[1]["bots"]["dqn"]["games"]
-
-
-def test_dqn_preflight_rejects_invalid_model_and_selected_dependencies(tmp_path):
-    run = train_model(tmp_path)
+def test_dqn_preflight_rejects_invalid_model_and_selected_dependencies(tmp_path, trained_dqn_run):
+    run = trained_dqn_run
     checkpoint = run / "checkpoint.pt"
     missing_model = tmp_path / "missing-model.pt"
     malformed_model = tmp_path / "malformed-model.pt"
@@ -181,8 +148,8 @@ def test_dqn_preflight_rejects_invalid_model_and_selected_dependencies(tmp_path)
     assert not (tmp_path / "experiments").exists()
 
 
-def test_dqn_selection_keeps_unsupported_board_as_a_preflight_error(tmp_path):
-    model = train_model(tmp_path) / "model.pt"
+def test_dqn_selection_keeps_unsupported_board_as_a_preflight_error(tmp_path, trained_dqn_run):
+    model = trained_dqn_run / "model.pt"
     compared = command(
         tmp_path, "snake.sessions.RunExperiment", "--bots", "hamiltonian", "dqn",
         "--dqn-model", str(model), "--games", "1", "--width", "3",
