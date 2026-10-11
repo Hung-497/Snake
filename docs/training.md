@@ -15,18 +15,29 @@ below from the project root.
 ## Set up the Starter Q-table
 
 The project bundles a Starter Q-table at
-`starter_data/q_table_space_state_v2.json`. Headless training and Bot
-Experiments need a local saved Q-table. From the project root, copy the starter
-once before using either command:
+`starter_data/q_table_space_state_v2.json`. Training Q Learning v2 without
+`--new-table`, and any Bot Experiment that includes Q Learning, need a local
+saved Q-table. A Bot Experiment without Q Learning needs no table, a Q Learning
+v3 table is created by its own training command (see
+[Q Learning v3](#q-learning-v3)), and DQN needs no Q-table. From the project
+root, copy the starter once.
+
+On macOS or Linux:
 
 ```bash
 mkdir -p learning_data
 cp -n starter_data/q_table_space_state_v2.json learning_data/q_table_space_state_v2.json
 ```
 
-The `-n` option preserves an existing local table. On Windows, create the
-`learning_data` folder and copy the starter with File Explorer only when the
-local table does not already exist. Later training updates the local copy; the
+On Windows (PowerShell):
+
+```powershell
+New-Item -ItemType Directory -Force learning_data
+if (-not (Test-Path learning_data\q_table_space_state_v2.json)) { Copy-Item starter_data\q_table_space_state_v2.json learning_data\ }
+```
+
+Both copy the starter only when the local table does not already exist, so an
+existing local table is never overwritten. Later training updates the local copy; the
 Starter Q-table stays unchanged. The app can also start Q Learning without a
 saved table, beginning new local progress instead of loading the starter.
 
