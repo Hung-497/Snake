@@ -1,5 +1,7 @@
 """Shared learning rules stay usable by both tabular and future DQN bots."""
 
+import pytest
+
 from snake.bots.LearningBot import LearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.engine.GameTypes import Direction
@@ -36,13 +38,34 @@ def test_learning_bot_excludes_unsafe_relative_actions():
     assert rules.available_actions(state) == ["Straight", "Turn_Right"]
 
 
-def test_learning_bot_uses_the_same_reward_and_exploration_rules():
+@pytest.mark.parametrize(
+    "game_over, ate_food, old_distance, new_distance, space_level, expected",
+    [
+        (True, False, 3, 2, 2, -100),   # game over
+        (True, True, 3, 2, 2, -100),    # game over wins over eating
+        (False, True, 3, 2, 0, 100),    # food, whatever the space
+        (False, False, 3, 2, 2, 6),     # -1 move, +5 closer, +2 plenty of space
+        (False, False, 3, 2, 1, 4),     # -1, +5, no space bonus
+        (False, False, 3, 2, 0, -4),    # -1, +5, -8 almost no space
+        (False, False, 2, 3, 2, -1),    # -1, -2 farther, +2
+        (False, False, 2, 3, 1, -3),    # -1, -2
+        (False, False, 2, 3, 0, -11),   # -1, -2, -8
+    ],
+)
+def test_every_reward_rule_gives_its_exact_value(
+    game_over, ate_food, old_distance, new_distance, space_level, expected,
+):
+    rules, _ = make_rules()
+
+    assert rules.reward(
+        game_over, ate_food, old_distance, new_distance, space_level,
+    ) == expected
+
+
+def test_learning_bot_explores_in_training_and_takes_the_best_value_in_evaluation():
     rules, state = make_rules()
     values = {"Straight": 0, "Turn_Left": 10, "Turn_Right": 0}
 
-    assert rules.reward(False, False, 3, 2, 2) == 6
-    assert rules.reward(True, False, 3, 2, 2) == -100
-    assert rules.reward(False, True, 3, 2, 2) == 100
     assert rules.select_action(state, values, evaluation_mode=False) == "Straight"
     assert rules.select_action(state, values, evaluation_mode=True) == "Turn_Left"
 
