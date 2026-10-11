@@ -57,10 +57,7 @@ class SearchBasedBot(BotMode):
                         return next_path[0], None, remaining_states
 
                     after_eating = self._state_after(current_state, transition)
-                    can_continue, remaining_states = self._can_reach_tail(
-                        after_eating, remaining_states
-                    )
-                    if can_continue:
+                    if self._can_reach_tail(after_eating):
                         return next_path[0], None, remaining_states
                     if not path:
                         rejected_food_direction = direction
@@ -88,25 +85,38 @@ class SearchBasedBot(BotMode):
             game_won=transition.game_won,
         )
 
-    def _can_reach_tail(self, state, remaining_states):
-        tail_position = state.snake_body[-1]
-        positions_to_check = deque([state])
-        visited_states = {state}
+    def _can_reach_tail(self, state):
+        """Can the head still reach the tail? The rest of the body is a wall.
 
-        while positions_to_check and remaining_states > 0:
-            current_state = positions_to_check.popleft()
-            remaining_states -= 1
+        This walks board cells rather than future snake states, so it needs
+        no search budget. A budgeted search ran out before reaching a distant
+        tail, and running out counted as unsafe: the bot refused safe food
+        and circled its own tail forever.
+        """
+        head_position = self.head_position(state)
+        body = self.body_positions(state)
+        tail_position = body[-1]
+        walls = set(body[:-1])
+        positions_to_check = deque([head_position])
+        visited_positions = {head_position}
 
-            for _, transition in self._legal_moves(current_state):
-                if transition.position == tail_position:
-                    return True, remaining_states
+        while positions_to_check:
+            current_position = positions_to_check.popleft()
 
-                next_state = self._state_after(current_state, transition)
-                if next_state not in visited_states:
-                    visited_states.add(next_state)
-                    positions_to_check.append(next_state)
+            for direction in self.DIRECTIONS:
+                next_position = self.position_after(current_position, direction)
+                if next_position == tail_position:
+                    return True
+                if (
+                    next_position in visited_positions
+                    or next_position in walls
+                    or not self.is_inside_board(state, next_position)
+                ):
+                    continue
+                visited_positions.add(next_position)
+                positions_to_check.append(next_position)
 
-        return False, remaining_states
+        return False
 
     def _survival_action(self, state, rejected_food_direction, remaining_states):
         best_action = None

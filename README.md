@@ -146,8 +146,8 @@ uv run python -m snake.sessions.TrainQLearning --games 100
 uv run python -m snake.sessions.RunExperiment --games 10 --seed 7
 ```
 
-The comparison can take ten minutes or more, mostly because Search-Based plans
-every move. Add `--bots rule q_learning hamiltonian` to leave it out.
+The comparison takes about two minutes, mostly because Search-Based plans every
+move. Add `--bots rule q_learning hamiltonian` to leave it out.
 
 - [Training the Learning Bots](docs/training.md): Q Learning v2 and v3, the
   Training History, and DQN training, resuming, and evaluation.
