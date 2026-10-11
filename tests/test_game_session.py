@@ -609,6 +609,39 @@ def test_a_human_game_replays_along_the_path_it_was_played(tmp_path):
     assert replay.snake_position == (2, 0)
 
 
+def test_a_refused_first_direction_keeps_human_play_waiting():
+    # The snake has a body behind it, so it cannot start by turning around.
+    engine = SnakeEngine(
+        GameConfig(width=6, height=6, tile_size=20),
+        start_position=(3, 3),
+        body=((2, 3),),
+        direction=Direction.RIGHT,
+        food_position=(0, 0),
+    )
+    session = make_session(engine=engine, bot=None, bot_mode="human", now=FakeClock())
+    session.start()
+
+    session.press_direction(Direction.LEFT)
+
+    assert session.status == "waiting_to_start"
+    assert session.advance_by(1.0) == 0
+    assert engine.snake_position == (3, 3)
+
+
+def test_stopping_during_the_result_pause_starts_no_new_game():
+    engine = FakeEngine(moves_until_game_over=1)
+    session = make_session(engine=engine)
+    session.advance()
+    assert session.games_played == 1
+
+    session.stop()
+    for _ in range(10):
+        session.advance_by(1.0)
+
+    assert engine.reset_count == 0
+    assert session.games_played == 1
+
+
 def test_food_eaten_in_a_game_is_saved_in_its_replay(tmp_path):
     engine = SnakeEngine(
         GameConfig(width=6, height=6, tile_size=20),
