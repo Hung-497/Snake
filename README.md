@@ -202,3 +202,9 @@ you play, train, or run Bot Experiments.
   automated tests cannot cover
 - [Development diary](DEVLOG.md): the learning process, bugs, experiments, and
   results along the way
+
+## License
+
+This project is released under the [MIT License](LICENSE). The bundled Inter
+font in `assets/fonts/` is not covered by it: it keeps its own
+[SIL Open Font License](assets/fonts/Inter-LICENSE.txt).
