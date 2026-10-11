@@ -6,10 +6,10 @@ class SessionSettings:
     """
     The board size, tile size and speed the user picked for this app session.
 
-    These are the same options the CustomTkinter menu offered. Keeping them in
-    one plain object means the Settings App View only has to show them, and the
-    choices survive leaving and reopening Settings because the object outlives
-    the view. Nothing here knows about Arcade, and no game or bot rule lives
+    These are the options the Settings App View offers. Keeping them in one
+    plain object means the view only has to show them, and the choices
+    survive leaving and reopening Settings because the object outlives the
+    view. Nothing here knows about Arcade, and no game or bot rule lives
     here: it only builds the GameConfig that gameplay already expects.
     """
 
