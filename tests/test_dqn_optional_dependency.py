@@ -29,6 +29,7 @@ def test_normal_app_import_does_not_require_pytorch(tmp_path):
         env=environment_with_blocked_torch(tmp_path),
         capture_output=True,
         text=True,
+        timeout=120,
     )
 
     assert result.returncode == 0, result.stderr
@@ -50,6 +51,7 @@ def test_default_experiment_selection_excludes_dqn_without_pytorch(tmp_path):
         env=environment_with_blocked_torch(tmp_path),
         capture_output=True,
         text=True,
+        timeout=120,
     )
 
     assert result.returncode == 0, result.stderr
@@ -72,6 +74,7 @@ def test_explicit_dqn_selection_reports_missing_optional_dependency(tmp_path):
         env=environment_with_blocked_torch(tmp_path, "ImportError"),
         capture_output=True,
         text=True,
+        timeout=120,
     )
 
     assert result.returncode != 0

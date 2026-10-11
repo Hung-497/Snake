@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import threading
 
 import pytest
 
@@ -23,6 +24,7 @@ def run_training(tmp_path, *options):
         env=environment,
         capture_output=True,
         text=True,
+        timeout=120,
     )
 
 
@@ -96,6 +98,10 @@ def test_periodic_checkpoint_exists_before_an_interrupted_run_can_export_model(t
         text=True,
         bufsize=1,
     )
+    # A silent hang would block the line loop forever, so a timer kills the
+    # process after a deadline; the loop then ends and the test fails.
+    deadline = threading.Timer(60, process.kill)
+    deadline.start()
     saw_periodic_save = False
     try:
         for line in process.stdout:
@@ -105,6 +111,7 @@ def test_periodic_checkpoint_exists_before_an_interrupted_run_can_export_model(t
                 break
         process.wait(timeout=10)
     finally:
+        deadline.cancel()
         if process.poll() is None:
             process.kill()
             process.wait(timeout=10)

@@ -19,7 +19,7 @@ def command(tmp_path, module, *options):
     environment["PYTHONPATH"] = str(PROJECT_ROOT)
     return subprocess.run(
         [sys.executable, "-m", module, *options], cwd=tmp_path,
-        env=environment, capture_output=True, text=True,
+        env=environment, capture_output=True, text=True, timeout=120,
     )
 
 

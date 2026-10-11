@@ -27,6 +27,7 @@ def run_module(tmp_path, module, *options):
         env=environment,
         capture_output=True,
         text=True,
+        timeout=120,
     )
 
 

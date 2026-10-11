@@ -27,7 +27,7 @@ def trained_dqn_run_template(tmp_path_factory):
             "--width", "4", "--height", "4", "--max-moves", "4",
             "--batch-size", "2", "--seed", "9",
         ],
-        cwd=directory, env=environment, capture_output=True, text=True,
+        cwd=directory, env=environment, capture_output=True, text=True, timeout=120,
     )
     assert trained.returncode == 0, trained.stderr
     (run,) = (directory / "learning_data" / "dqn_runs").iterdir()
