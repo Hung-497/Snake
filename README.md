@@ -144,7 +144,8 @@ progress in the terminal. It does not add game records or replays.
 `--q-table path/to/table.json` trains a different table.
 
 Each Q-table keeps a Training History (ADR 0010): a `training_history` list
-inside the table with one entry per training session. An entry records the
+inside the table with one entry per training session, from this command or
+from app play (one entry per visit to the Game view). An entry records the
 seed, board, move limit, learning settings, code version, and the games,
 epsilon, and scores at the start and end of the session. It is updated after
 every game, so a run stopped part-way is still described. Tables saved before
