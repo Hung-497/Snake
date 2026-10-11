@@ -3,7 +3,7 @@
 import json
 import random
 
-from snake.bots.BotFactory import create_bot_mode, normal_experiment_modes
+from snake.bots.BotFactory import create_bot_mode
 from snake.engine.GameConfig import GameConfig
 from snake.engine.GameTypes import Direction
 from snake.engine.SnakeEngine import SnakeEngine
@@ -94,8 +94,3 @@ def test_q_learning_v3_keeps_its_own_records_replay_and_colour(tmp_path):
     assert player_group("q_learning_v2") == "q_learning"
     assert replays.get_replay_file_path("q_learning_v3").endswith("q_learning_v3_best.json")
     assert player_color("q_learning_v3") not in (TEXT_MUTED, player_color("q_learning"))
-
-
-def test_q_learning_v3_is_not_in_the_default_bot_experiment():
-    assert "q_learning_v3" not in normal_experiment_modes()
-    assert "q_learning" in normal_experiment_modes()

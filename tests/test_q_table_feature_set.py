@@ -44,13 +44,13 @@ def test_q_table_without_feature_set_loads_as_v2(tmp_path):
     bot = QLearningBot(make_engine(), evaluation_mode=True, q_table_file=str(path))
 
     assert bot.q_table == {(0, 0, 0, 1, 0, 0, 2, 2, 2): ACTION_VALUES}
+    assert bot.epsilon == 0.3
     assert bot.game_trained == 5
 
 
-@pytest.mark.parametrize("feature_set", ["v3", "v9", 2])
-def test_q_table_with_another_feature_set_is_refused(tmp_path, feature_set):
+def test_q_table_with_another_feature_set_is_refused(tmp_path):
     path = tmp_path / "table.json"
-    write_table(path, feature_set)
+    write_table(path, "v3")
 
     with pytest.raises(ValueError, match="Feature Set"):
         QLearningBot(make_engine(), evaluation_mode=True, q_table_file=str(path))

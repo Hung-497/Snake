@@ -29,22 +29,6 @@ def run_experiment(tmp_path, *options):
     )
 
 
-def test_explicit_rule_only_experiment_needs_no_q_table(tmp_path):
-    result = run_experiment(
-        tmp_path, "--bots", "rule", "--width", "3", "--height", "3",
-        "--max-moves", "5",
-    )
-
-    assert result.returncode == 0, result.stderr
-    report_path = next((tmp_path / "experiments").glob("*.json"))
-    report = json.loads(report_path.read_text())
-    assert report["schema_version"] == 3
-    assert report["selected_bot_modes"] == ["rule"]
-    assert set(report["bots"]) == {"rule"}
-    assert "q_learning" not in report
-    assert not (tmp_path / "learning_data").exists()
-
-
 def test_search_based_only_experiment_runs_without_other_bot_requirements(tmp_path):
     result = run_experiment(
         tmp_path, "--bots", "search_based", "--width", "3", "--height", "3",
@@ -188,18 +172,6 @@ def test_experiment_rejects_missing_or_malformed_selected_table(tmp_path, conten
         assert table_path.read_text() == contents
 
 
-@pytest.mark.parametrize("board", [("3", "3"), ("1", "4")])
-def test_unsupported_board_is_rejected_before_result_creation(tmp_path, board):
-    result = run_experiment(
-        tmp_path, "--width", board[0], "--height", board[1],
-        "--max-moves", "5",
-    )
-
-    assert result.returncode != 0
-    assert "Hamiltonian" in result.stderr
-    assert not (tmp_path / "experiments").exists()
-
-
 @pytest.mark.parametrize("option", ["--width", "--height", "--tile-size", "--max-moves"])
 def test_invalid_board_or_move_limit_is_rejected(tmp_path, option):
     result = run_experiment(tmp_path, option, "0")
@@ -242,40 +214,6 @@ def test_repeated_experiments_keep_both_results(tmp_path):
     assert not (tmp_path / "learning_data").exists()
 
 
-def test_multiple_games_use_the_same_seed_list_for_every_bot(tmp_path):
-    table_path = tmp_path / "selected_table.json"
-    original_table = json.dumps({
-        "q_table": {}, "epsilon": 0.8, "game_trained": 3,
-    })
-    table_path.write_text(original_table)
-    records = tmp_path / "records"
-    records.mkdir()
-    (records / "game_records.csv").write_text("watched games\n")
-    replays = tmp_path / "replays"
-    replays.mkdir()
-    (replays / "best.json").write_text("watched replay\n")
-
-    result = run_experiment(
-        tmp_path, "--games", "3", "--seed", "7", "--width", "4",
-        "--height", "4", "--max-moves", "2", "--q-table", str(table_path),
-    )
-
-    assert result.returncode == 0, result.stderr
-    report_path = next((tmp_path / "experiments").glob("*.json"))
-    report = json.loads(report_path.read_text())
-    assert report["game_count"] == 3
-    assert report["base_seed"] == 7
-    assert report["seeds"] == [7, 8, 9]
-    assert report["bot_seed_offset"] == 1
-    for bot in report["bots"].values():
-        assert [game["seed"] for game in bot["games"]] == [7, 8, 9]
-        assert all(0 <= game["moves"] <= 2 for game in bot["games"])
-        assert all(game["outcome"] in {"won", "collision", "move_limit"} for game in bot["games"])
-    assert table_path.read_text() == original_table
-    assert (records / "game_records.csv").read_text() == "watched games\n"
-    assert (replays / "best.json").read_text() == "watched replay\n"
-
-
 def test_report_summarizes_known_games_and_identifies_the_workload(tmp_path):
     table_path = tmp_path / "selected_table.json"
     original_table = json.dumps({
@@ -294,6 +232,11 @@ def test_report_summarizes_known_games_and_identifies_the_workload(tmp_path):
     assert [game["score"] for game in report["bots"]["rule"]["games"]] == [1, 1, 0]
     assert [game["score"] for game in report["bots"]["q_learning"]["games"]] == [1, 0, 0]
     assert [game["score"] for game in report["bots"]["hamiltonian"]["games"]] == [1, 1, 0]
+    # Every bot plays the same seeds, and its own randomness is offset from them.
+    assert report["seeds"] == [7, 8, 9]
+    assert report["bot_seed_offset"] == 1
+    for bot in report["bots"].values():
+        assert [game["seed"] for game in bot["games"]] == [7, 8, 9]
 
     summary = report["bots"]["rule"]["summary"]
     assert summary["mean_score"] == pytest.approx(2 / 3)

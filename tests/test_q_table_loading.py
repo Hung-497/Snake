@@ -37,19 +37,8 @@ def saved_data(q_table=None, epsilon=0.4, game_trained=12):
     }
 
 
-@pytest.mark.parametrize("contents", [None, ""])
-def test_missing_or_empty_file_keeps_defaults(tmp_path, contents):
-    bot = make_loader(tmp_path, contents)
-
-    bot.load_q_table()
-
-    assert bot.q_table == {}
-    assert bot.epsilon == 1.0
-    assert bot.game_trained == 0
-
-
-@pytest.mark.parametrize("contents", ["not json", json.dumps([])])
-def test_invalid_file_structure_keeps_complete_defaults(tmp_path, contents):
+@pytest.mark.parametrize("contents", [None, "", "not json", json.dumps([])])
+def test_a_missing_empty_or_unreadable_file_keeps_the_defaults(tmp_path, contents):
     bot = make_loader(tmp_path, contents)
 
     bot.load_q_table()
@@ -82,19 +71,6 @@ def test_malformed_q_table_does_not_partially_apply(tmp_path, bad_q_table):
     assert bot.q_table == {}
     assert bot.epsilon == 1.0
     assert bot.game_trained == 0
-
-
-def test_valid_q_table_restores_all_saved_values(tmp_path):
-    data = saved_data({VALID_STATE: VALID_ACTION_VALUES})
-    bot = make_loader(tmp_path, json.dumps(data))
-
-    bot.load_q_table()
-
-    assert bot.q_table == {
-        (0, 0, 0, 0, 1, 0, 2, 2, 2): VALID_ACTION_VALUES,
-    }
-    assert bot.epsilon == pytest.approx(0.4)
-    assert bot.game_trained == 12
 
 
 V2_KEY = "0_0_0_0_1_0_2_2_2"

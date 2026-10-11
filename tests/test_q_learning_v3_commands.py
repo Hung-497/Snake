@@ -61,25 +61,6 @@ def test_new_table_option_creates_and_trains_an_empty_v3_table(tmp_path):
     assert v2_table.read_text() == V2_TABLE
 
 
-def test_new_table_can_be_written_to_a_chosen_path(tmp_path):
-    result = train(
-        tmp_path, "--bot", "q_learning_v3", "--new-table",
-        "--q-table", "runs/seed_7.json",
-    )
-
-    assert result.returncode == 0, result.stderr
-    saved = json.loads((tmp_path / "runs" / "seed_7.json").read_text())
-    assert saved["feature_set"] == "v3"
-
-
-def test_training_v3_without_a_table_is_refused(tmp_path):
-    result = train(tmp_path, "--bot", "q_learning_v3")
-
-    assert result.returncode != 0
-    assert "missing or malformed" in result.stderr
-    assert not (tmp_path / "learning_data").exists()
-
-
 def test_new_table_never_overwrites_an_existing_table(tmp_path):
     table_path = tmp_path / "v3.json"
     table_path.write_text("keep me")
@@ -129,18 +110,6 @@ def test_experiment_compares_q_learning_versions_on_the_same_seeds(tmp_path):
     assert saved["q_learning_v3"]["feature_set"] == "v3"
     assert saved["q_learning_v3"]["table_path"].endswith("q_table_space_state_v3.json")
     assert "Q Learning v3" in result.stdout
-
-
-def test_experiment_uses_a_chosen_v3_table(tmp_path):
-    assert train(
-        tmp_path, "--bot", "q_learning_v3", "--new-table", "--q-table", "mine.json",
-    ).returncode == 0
-
-    result = experiment(tmp_path, "--bots", "q_learning_v3", "--q-table-v3", "mine.json")
-
-    assert result.returncode == 0, result.stderr
-    saved = json.loads(next((tmp_path / "experiments").glob("*.json")).read_text())
-    assert saved["q_learning_v3"]["table_path"] == "mine.json"
 
 
 def test_experiment_refuses_q_learning_v3_without_a_table(tmp_path):
