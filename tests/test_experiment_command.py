@@ -314,7 +314,8 @@ def test_report_summarizes_known_games_and_identifies_the_workload(tmp_path):
 
     assert datetime.fromisoformat(report["created_at"]).tzinfo is not None
     assert report["python_version"] == platform.python_version()
-    assert report["code"]["git_commit"]
+    # git_commit is None without git (for example a zip download), by design.
+    assert "git_commit" in report["code"]
     assert len(report["code"]["source_sha256"]) == 64
     assert "perf_counter" in report["timing_basis"]
     assert report["q_learning"]["table_path"] == str(table_path)
