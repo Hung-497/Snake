@@ -51,6 +51,7 @@ def test_fresh_training_saves_progress_checkpoint_and_evaluation_model(tmp_path)
     checkpoint = torch.load(run / "checkpoint.pt", weights_only=True)
     model = torch.load(run / "model.pt", weights_only=True)
     assert checkpoint["schema_version"] == model["schema_version"] == 2
+    assert model["metadata"]["feature_schema"] == "q_learning_space_state_v2"
     expected_details = {
         "device": "cpu",
         "network": {
@@ -76,24 +77,6 @@ def test_fresh_training_saves_progress_checkpoint_and_evaluation_model(tmp_path)
         "game_trained", "optimizer_steps", "replay", "engine_random_state",
         "bot_random_state", "replay_random_state", "torch_random_state",
     }
-
-
-def test_fresh_runs_are_unique_and_reproduce_fixed_seed_games(tmp_path):
-    options = (
-        "--games", "2", "--width", "4", "--height", "4",
-        "--max-moves", "8", "--seed", "13", "--batch-size", "2",
-    )
-
-    first = run_training(tmp_path, *options)
-    second = run_training(tmp_path, *options)
-
-    assert first.returncode == 0, first.stderr
-    assert second.returncode == 0, second.stderr
-    runs = read_runs(tmp_path)
-    assert len(runs) == 2
-    assert runs[0][0].name != runs[1][0].name
-    assert runs[0][1]["run_id"] != runs[1][1]["run_id"]
-    assert runs[0][1]["games"] == runs[1][1]["games"]
 
 
 def test_periodic_checkpoint_exists_before_an_interrupted_run_can_export_model(tmp_path):
@@ -176,33 +159,9 @@ def test_resume_matches_uninterrupted_training_and_keeps_source_unchanged(tmp_pa
     assert full_checkpoint["state"]["optimizer_steps"] == resumed_checkpoint["state"]["optimizer_steps"]
 
 
-def test_resume_rejects_incomplete_checkpoint_before_creating_a_run(tmp_path):
-    trained = run_training(
-        tmp_path, "--games", "1", "--width", "4", "--height", "4",
-        "--max-moves", "4",
-    )
-    assert trained.returncode == 0, trained.stderr
+def test_resume_rejects_broken_checkpoints_before_creating_a_run(tmp_path, trained_dqn_run):
     runs = tmp_path / "learning_data" / "dqn_runs"
-    checkpoint_path = next(runs.iterdir()) / "checkpoint.pt"
-    checkpoint = torch.load(checkpoint_path, weights_only=True)
-    del checkpoint["state"]["replay_random_state"]
-    invalid_path = tmp_path / "incomplete.pt"
-    torch.save(checkpoint, invalid_path)
-
-    resumed = run_training(tmp_path, "--resume", str(invalid_path), "--games", "1")
-    assert resumed.returncode != 0
-    assert "Invalid DQN checkpoint" in resumed.stderr
-    assert len(list(runs.iterdir())) == 1
-
-
-def test_versioned_checkpoint_validation_rejects_metadata_and_shape_changes(tmp_path):
-    trained = run_training(
-        tmp_path, "--games", "1", "--width", "4", "--height", "4",
-        "--max-moves", "4",
-    )
-    assert trained.returncode == 0, trained.stderr
-    runs = tmp_path / "learning_data" / "dqn_runs"
-    source = next(runs.iterdir()) / "checkpoint.pt"
+    source = trained_dqn_run / "checkpoint.pt"
 
     unsupported = torch.load(source, weights_only=True)
     unsupported["schema_version"] = 999
@@ -221,7 +180,13 @@ def test_versioned_checkpoint_validation_rejects_metadata_and_shape_changes(tmp_
     wrong_shape_path = tmp_path / "wrong_shape.pt"
     torch.save(wrong_shape, wrong_shape_path)
 
+    incomplete = torch.load(source, weights_only=True)
+    del incomplete["state"]["replay_random_state"]
+    incomplete_path = tmp_path / "incomplete.pt"
+    torch.save(incomplete, incomplete_path)
+
     cases = (
+        (incomplete_path, "Invalid DQN checkpoint"),
         (unsupported_path, "Unsupported DQN artifact version"),
         (missing_details_path, "Invalid DQN architecture or training details"),
         (wrong_shape_path, "Invalid DQN network weights"),

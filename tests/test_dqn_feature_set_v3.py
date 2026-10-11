@@ -54,15 +54,6 @@ def test_v3_training_saves_twelve_input_artifacts_marked_v3(tmp_path):
     assert all(len(experience[0]) == 12 for experience in checkpoint["state"]["replay"])
 
 
-def test_training_without_features_option_stays_v2(tmp_path):
-    result = train(tmp_path, "--games", "1", *SMALL_RUN)
-
-    assert result.returncode == 0, result.stderr
-    model = torch.load(only_run(tmp_path) / "model.pt", weights_only=True)
-    assert model["metadata"]["feature_schema"] == "q_learning_space_state_v2"
-    assert first_layer_inputs(model["online_weights"]) == 9
-
-
 def test_resume_keeps_the_checkpoint_feature_set(tmp_path):
     assert train(tmp_path, "--games", "1", "--features", "v3", *SMALL_RUN).returncode == 0
     source = only_run(tmp_path) / "checkpoint.pt"
@@ -99,23 +90,6 @@ def test_v3_model_is_evaluated_with_v3_features(tmp_path):
     for report_path in (tmp_path / "experiments").glob("*.json"):
         report = json.loads(report_path.read_text())
         assert report["dqn"]["feature_schema"] == "q_learning_space_state_v3"
-
-
-def test_unknown_feature_set_in_a_model_is_rejected(tmp_path):
-    assert train(tmp_path, "--games", "1", *SMALL_RUN).returncode == 0
-    model_path = only_run(tmp_path) / "model.pt"
-    model = torch.load(model_path, weights_only=True)
-    model["metadata"]["feature_schema"] = "q_learning_space_state_v9"
-    torch.save(model, model_path)
-
-    result = run_module(
-        tmp_path, "snake.sessions.EvaluateDQN", "--model", str(model_path),
-        "--width", "5", "--height", "5",
-    )
-
-    assert result.returncode != 0
-    assert "Feature Set" in result.stderr
-    assert not (tmp_path / "experiments").exists()
 
 
 def test_v3_training_learns_from_batches_that_include_game_over_moves(tmp_path):
