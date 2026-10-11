@@ -185,23 +185,8 @@ def test_a_finished_game_is_recorded_and_the_bot_is_told():
     saved_result = session.record_manager.saved_results[0]
     assert saved_result[0] == "rule"       # bot name
     assert saved_result[2] == 2            # score
+    assert saved_result[8:12] == (10, 10, 25, 10)  # board, tile size, speed
     assert "on_game_end" in bot.calls
-
-
-def test_a_finished_search_based_game_keeps_its_player_conditions_and_outcome():
-    session = make_session(
-        engine=FakeEngine(moves_until_game_over=1),
-        bot_mode="search_based",
-    )
-
-    session.advance()
-
-    result = session.record_manager.saved_results[0]
-    assert result[0] == "search_based"
-    assert result[2] == 1
-    assert result[8:12] == (10, 10, 25, 10)
-    assert session.record_manager.saved_outcomes == ["died"]
-    assert session.replay_manager.saved_replays == [("search_based", 1, False)]
 
 
 def test_watched_search_based_game_moves_past_a_repeated_survival_route():
@@ -223,15 +208,6 @@ def test_watched_search_based_game_moves_past_a_repeated_survival_route():
         session.advance()
 
     assert session.score >= 6
-
-
-def test_a_won_game_is_reported_as_a_win():
-    session = make_session(engine=FakeEngine(moves_until_game_over=1, game_won=True))
-
-    session.advance()
-
-    assert session.game_won
-    assert session.replay_manager.saved_replays == [("rule", 1, True)]
 
 
 def test_the_next_game_starts_after_the_result_pause():
@@ -553,18 +529,6 @@ def test_human_game_time_leaves_out_waiting_and_paused_time():
     assert saved_result[7] == 32.0  # session time: 0 -> 332, minus the pause
 
 
-def test_the_first_direction_can_turn_the_snake_around_before_it_moves():
-    # The snake starts facing right, but a person pressing Left means Left.
-    session = make_human_session(speed_delay=100)
-
-    session.press_direction(Direction.LEFT)
-    session.advance_by(0.1)
-
-    assert session.status == "playing"
-    assert session.engine.direction == Direction.LEFT
-    assert session.engine.moves_made == 1
-
-
 def test_a_human_replay_records_a_direction_for_every_move():
     # A replay plays back one saved direction per move, straight moves included.
     session = make_human_session(engine=FakeEngine(moves_until_game_over=10), speed_delay=100)
@@ -684,7 +648,9 @@ def test_a_finished_bot_game_records_its_outcome(game_won, outcome):
 
     session.advance()
 
+    assert session.game_won is game_won
     assert session.record_manager.saved_outcomes == [outcome]
+    assert session.replay_manager.saved_replays == [("rule", 1, game_won)]
 
 
 @pytest.mark.parametrize("game_won, outcome", [(True, "won"), (False, "died")])

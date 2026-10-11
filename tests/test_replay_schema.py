@@ -121,17 +121,6 @@ def save_human_game(manager, score):
     manager.save_replay("human", score)
 
 
-def test_a_human_replay_is_saved_as_the_best_human_game(tmp_path):
-    manager = ReplayManager(folder_name=str(tmp_path))
-
-    save_human_game(manager, score=3)
-
-    assert (tmp_path / "human_best.json").exists()
-    replay = manager.load_replay("human")
-    assert replay["final_score"] == 3
-    assert replay["speed_delay"] == 100
-
-
 def test_only_a_higher_scoring_human_game_replaces_the_saved_replay(tmp_path):
     manager = ReplayManager(folder_name=str(tmp_path))
     save_human_game(manager, score=5)
@@ -140,7 +129,9 @@ def test_only_a_higher_scoring_human_game_replaces_the_saved_replay(tmp_path):
     assert manager.load_replay("human")["final_score"] == 5
 
     save_human_game(manager, score=8)
-    assert manager.load_replay("human")["final_score"] == 8
+    replay = manager.load_replay("human")
+    assert replay["final_score"] == 8
+    assert replay["speed_delay"] == 100
 
 
 def save_hamiltonian_game(manager, score, game_won):

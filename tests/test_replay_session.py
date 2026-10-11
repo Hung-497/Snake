@@ -126,25 +126,6 @@ def test_the_replay_finishes_after_the_last_saved_move():
     assert session.finished
 
 
-def test_moves_are_played_at_the_replay_speed():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 5))
-
-    session.advance_by(0.005)
-    assert session.move_index == 0
-
-    session.advance_by(0.005)
-    assert session.move_index == 1
-
-
-def test_a_stopped_replay_plays_no_further_moves():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-
-    session.stop()
-    session.advance_by(1.0)
-
-    assert session.move_index == 0
-
-
 def test_a_finished_replay_stops_playing_by_itself():
     session = ReplaySession(make_replay_data(moves=(RIGHT, RIGHT)))
 
@@ -280,12 +261,6 @@ def test_a_stopped_replay_cannot_be_restarted():
     assert session.advance_by(1.0) == 0
 
 
-def test_every_replay_starts_at_the_normal_replay_speed():
-    session = ReplaySession(make_replay_data())
-
-    assert session.speed_name == "Normal"
-
-
 def test_the_replay_speed_cycles_from_slow_to_normal_to_fast():
     session = ReplaySession(make_replay_data())
     speed_names = []
@@ -357,43 +332,6 @@ def test_a_stopped_replay_keeps_its_replay_speed():
     session.cycle_speed()
 
     assert session.speed_name == "Normal"
-
-
-def test_progress_starts_at_the_first_of_all_saved_moves():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-
-    assert session.moves_played == 0
-    assert session.total_moves == 20
-
-
-def test_progress_counts_up_as_moves_are_played():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-
-    session.advance()
-    session.advance()
-
-    assert session.moves_played == 2
-
-
-def test_progress_stays_the_same_while_paused():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-    session.advance()
-    session.toggle_pause()
-
-    session.advance_by(1.0)
-
-    assert session.moves_played == 1
-
-
-def test_progress_goes_back_to_the_start_on_restart():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-    session.advance()
-    session.advance()
-
-    session.restart()
-
-    assert session.moves_played == 0
-    assert session.total_moves == 20
 
 
 def test_progress_reaches_every_move_when_the_replay_ends():

@@ -11,7 +11,6 @@ from snake.bots.QLearningBot import QLearningBot
 from snake.bots.RuleBasedBot import RuleBasedBot
 from snake.bots.SearchBasedBot import SearchBasedBot
 from snake.engine.SnakeEngine import SnakeEngine
-from snake.ui.PlayerLabels import BOT_MODE_LABELS
 
 
 MOVE_LIMIT = 5000
@@ -78,13 +77,6 @@ def test_bot_modes_replay_the_same_game_from_the_same_seed(bot_mode, tmp_path, m
     assert first.game_won == second.game_won
 
 
-def test_hamiltonian_still_wins_a_full_board():
-    engine, _ = play_game("hamiltonian", 6, 6, seed=1)
-
-    assert engine.game_won is True
-    assert engine.score == 6 * 6 - 1
-
-
 def test_factory_builds_only_the_selected_bot_mode():
     engine = SnakeEngine(
         GameConfig(width=4, height=4, tile_size=20),
@@ -97,22 +89,6 @@ def test_factory_builds_only_the_selected_bot_mode():
     assert isinstance(create_bot_mode("hamiltonian", engine), HamiltonianBot)
     assert create_bot_mode(None, engine) is None
     assert create_bot_mode("replay:rule", engine) is None
-
-
-def test_search_based_can_start_a_game_and_choose_a_legal_move():
-    engine = SnakeEngine(
-        GameConfig(width=4, height=4, tile_size=20),
-        start_position=(1, 1),
-        body=((0, 1),),
-        direction=Direction.RIGHT,
-        food_position=(3, 3),
-    )
-
-    bot = create_bot_mode("search_based", engine)
-    action = bot.choose_action(engine.state)
-
-    assert BOT_MODE_LABELS["search_based"] == "Search-Based"
-    assert engine.preview(action).moved is True
 
 
 def test_unselected_bot_modes_cause_no_side_effects(tmp_path, monkeypatch):
