@@ -77,7 +77,7 @@ def test_training_resumes_saved_table_without_changing_watched_games(tmp_path):
     assert not (tmp_path / "experiments").exists()
 
 
-@pytest.mark.parametrize("contents", [None, "not json", json.dumps({"q_table": []})])
+@pytest.mark.parametrize("contents", [None, "not json", json.dumps({"q_table": [], "epsilon": 0.5, "game_trained": 1})])
 def test_training_rejects_missing_or_malformed_saved_table(tmp_path, contents):
     learning_directory = tmp_path / "learning_data"
     learning_directory.mkdir()

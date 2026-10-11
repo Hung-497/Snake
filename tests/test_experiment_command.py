@@ -168,7 +168,7 @@ def test_one_game_experiment_saves_result_without_changing_game_data(tmp_path):
     assert replay_path.read_text() == "existing replay\n"
 
 
-@pytest.mark.parametrize("contents", [None, "not json", json.dumps({"q_table": []})])
+@pytest.mark.parametrize("contents", [None, "not json", json.dumps({"q_table": [], "epsilon": 0.5, "game_trained": 1})])
 def test_experiment_rejects_missing_or_malformed_selected_table(tmp_path, contents):
     table_path = tmp_path / "selected_table.json"
     if contents is not None:
