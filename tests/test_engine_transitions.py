@@ -190,3 +190,55 @@ def test_preview_evaluates_a_candidate_direction_without_committing_it():
     assert transition.direction is Direction.DOWN
     assert transition.position == Position(1, 2)
     assert engine.direction is Direction.RIGHT
+
+
+BOARD = GameConfig(width=4, height=4, tile_size=25)
+
+
+@pytest.mark.parametrize(
+    "options, error",
+    [
+        ({"start_position": (1, 1), "food_position": (1, 1)}, ValueError),
+        ({"start_position": (2, 1), "body": ((1, 1),), "food_position": (1, 1)}, ValueError),
+        ({"start_position": (7, 1)}, ValueError),
+        ({"start_position": (1, 1), "body": ((1, 9),)}, ValueError),
+        ({"start_position": (1, 1), "direction": "Diagonal"}, ValueError),
+    ],
+)
+def test_the_engine_refuses_an_impossible_starting_board(options, error):
+    with pytest.raises(error):
+        SnakeEngine(BOARD, random_source=random.Random(1), **options)
+
+
+def test_the_engine_needs_a_game_config():
+    with pytest.raises(TypeError):
+        SnakeEngine({"width": 4, "height": 4}, start_position=(1, 1))
+
+
+def test_a_finished_game_does_not_move_and_preview_agrees():
+    engine = SnakeEngine(
+        GameConfig(width=2, height=1, tile_size=25),
+        start_position=(1, 0),
+        direction=Direction.RIGHT,
+        random_source=random.Random(1),
+    )
+    engine.step()
+    assert engine.game_over is True
+    before = engine.state
+
+    preview = engine.preview(Direction.LEFT)
+    engine.step()
+
+    assert preview.moved is False
+    assert preview.collision is False
+    assert preview.game_over is True
+    assert engine.state == before
+
+
+def test_preview_refuses_a_direction_that_does_not_exist():
+    engine = SnakeEngine(BOARD, start_position=(1, 1), random_source=random.Random(1))
+
+    with pytest.raises(ValueError):
+        engine.preview("Diagonal")
+    # Changing direction reports the mistake instead of raising.
+    assert engine.change_direction("Diagonal") is False
