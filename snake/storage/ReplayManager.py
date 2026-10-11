@@ -1,6 +1,7 @@
 import os
 import json
 from snake.engine.GameTypes import Direction
+from snake.storage.JsonFile import save_json_atomically
 
 
 REPLAY_SCHEMA_VERSION = 2
@@ -135,8 +136,7 @@ class ReplayManager:
         if (player != "hamiltonian" and not self.should_replace_replay(file_path, score)):
             return
         
-        with open(file_path, "w") as file:
-            json.dump(self.replay_data, file, indent=4)
+        save_json_atomically(file_path, self.replay_data)
     
     def get_replay_file_path(self, player):
         if (player == "rule"):

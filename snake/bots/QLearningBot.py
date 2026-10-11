@@ -6,6 +6,7 @@ import platform
 
 from snake.bots.LearningBot import FEATURE_COUNTS, LearningBot
 from snake.storage.CodeIdentity import code_identity
+from snake.storage.JsonFile import save_json_atomically
 
 
 # A session with no description is app play: no fixed seed or move limit.
@@ -175,8 +176,7 @@ class QLearningBot(LearningBot):
             "training_history": self.training_history,
         }
 
-        with open(self.q_table_file, "w") as file:
-            json.dump(data_to_save, file, indent=4)
+        save_json_atomically(self.q_table_file, data_to_save)
 
     def _load_error_message(self):
         if getattr(self, "wrong_feature_set", None) is not None:
