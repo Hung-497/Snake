@@ -1,5 +1,11 @@
 # Version Learned Artifacts by Feature Set
 
+- Status: Accepted
+- Category: Bots & Training
+- Recorded: 2026-10-09
+- Discussed in: [#88](https://github.com/Hung-497/Snake/issues/88)
+- Extends: [ADR 0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md), DQN models also record their Feature Set
+
 Feature Set v3 changes what Q Learning and DQN observe, so a Q-table or DQN model trained on one Feature Set gives wrong action values on another. Every Q-table and DQN artifact records its Feature Set and refuses to load under a different one; Q-tables without the marker are treated as v2. Q Learning v3 is a separate Bot Mode (`q_learning_v3`) with its own table, records, and best replay, while DQN stays one Bot Mode whose model file decides the Feature Set, because DQN models already carried that metadata and are only used headlessly.
 
 ## Considered Options
