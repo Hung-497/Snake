@@ -52,7 +52,8 @@ def test_search_based_only_experiment_runs_without_other_bot_requirements(tmp_pa
 def test_search_based_reaches_distant_food_instead_of_circling_until_move_limit(tmp_path):
     result = run_experiment(
         tmp_path, "--bots", "search_based", "--width", "24", "--height", "25",
-        "--games", "1", "--seed", "7", "--max-moves", "120",
+        # The bar is reached at move 57; circling would never reach it.
+        "--games", "1", "--seed", "7", "--max-moves", "75",
     )
 
     assert result.returncode == 0, result.stderr
@@ -63,7 +64,8 @@ def test_search_based_reaches_distant_food_instead_of_circling_until_move_limit(
 def test_search_based_does_not_repeat_a_survival_loop_on_another_seed(tmp_path):
     result = run_experiment(
         tmp_path, "--bots", "search_based", "--width", "24", "--height", "25",
-        "--games", "1", "--seed", "14", "--max-moves", "120",
+        # The bar is reached at move 67; circling would never reach it.
+        "--games", "1", "--seed", "14", "--max-moves", "85",
     )
 
     assert result.returncode == 0, result.stderr

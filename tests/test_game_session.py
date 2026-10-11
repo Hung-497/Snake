@@ -189,27 +189,6 @@ def test_a_finished_game_is_recorded_and_the_bot_is_told():
     assert "on_game_end" in bot.calls
 
 
-def test_watched_search_based_game_moves_past_a_repeated_survival_route():
-    engine = SnakeEngine(
-        GameConfig(width=24, height=25, tile_size=25),
-        start_position=None,
-        random_source=random.Random(14),
-    )
-    session = GameSession(
-        engine,
-        bot_mode="search_based",
-        speed_delay=1,
-        record_manager=FakeRecordManager(),
-        replay_manager=FakeReplayManager(),
-    )
-    session.start()
-
-    for _ in range(120):
-        session.advance()
-
-    assert session.score >= 6
-
-
 def test_the_next_game_starts_after_the_result_pause():
     session = make_session(engine=FakeEngine(moves_until_game_over=1), speed_delay=10)
 
