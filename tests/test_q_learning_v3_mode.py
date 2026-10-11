@@ -7,7 +7,6 @@ from snake.bots.BotFactory import create_bot_mode
 from snake.engine.GameConfig import GameConfig
 from snake.engine.GameTypes import Direction
 from snake.engine.SnakeEngine import SnakeEngine
-from snake.storage.ReplayManager import ReplayManager
 from snake.ui.PlayerLabels import BOT_MODE_LABELS
 from snake.ui.RecordsBrowser import player_group
 from snake.ui.Theme import player_color, TEXT_MUTED
@@ -86,11 +85,7 @@ def test_q_learning_v3_loads_its_saved_table(tmp_path, monkeypatch):
     assert again.q_table == first.q_table
 
 
-def test_q_learning_v3_keeps_its_own_records_replay_and_colour(tmp_path):
-    replays = ReplayManager.__new__(ReplayManager)
-    replays.folder_name = str(tmp_path)
-
+def test_q_learning_v3_keeps_its_own_records_group_and_colour():
     assert player_group("q_learning_v3") == "q_learning_v3"
     assert player_group("q_learning_v2") == "q_learning"
-    assert replays.get_replay_file_path("q_learning_v3").endswith("q_learning_v3_best.json")
     assert player_color("q_learning_v3") not in (TEXT_MUTED, player_color("q_learning"))

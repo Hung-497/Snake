@@ -15,18 +15,14 @@ VALID_ACTION_VALUES = {
 }
 
 
-def make_loader(tmp_path, contents=None):
+def load_bot(tmp_path, contents=None):
     path = tmp_path / "q_table.json"
     if contents is not None:
         path.write_text(contents)
 
-    bot = QLearningBot.__new__(QLearningBot)
-    bot.q_table_file = str(path)
-    bot.q_table = {}
-    bot.epsilon = 1.0
-    bot.game_trained = 0
-    bot.actions = ["Straight", "Turn_Left", "Turn_Right"]
-    return bot
+    # The constructor loads the table, keeping the defaults if it is unusable.
+    engine = SnakeEngine(GameConfig(4, 4, 25), start_position=None)
+    return QLearningBot(engine, q_table_file=str(path))
 
 
 def saved_data(q_table=None, epsilon=0.4, game_trained=12):
@@ -39,9 +35,7 @@ def saved_data(q_table=None, epsilon=0.4, game_trained=12):
 
 @pytest.mark.parametrize("contents", [None, "", "not json", json.dumps([])])
 def test_a_missing_empty_or_unreadable_file_keeps_the_defaults(tmp_path, contents):
-    bot = make_loader(tmp_path, contents)
-
-    bot.load_q_table()
+    bot = load_bot(tmp_path, contents)
 
     assert bot.q_table == {}
     assert bot.epsilon == 1.0
@@ -64,9 +58,7 @@ def test_malformed_q_table_does_not_partially_apply(tmp_path, bad_q_table):
         epsilon=0.2,
         game_trained=99,
     )
-    bot = make_loader(tmp_path, json.dumps(data))
-
-    bot.load_q_table()
+    bot = load_bot(tmp_path, json.dumps(data))
 
     assert bot.q_table == {}
     assert bot.epsilon == 1.0
