@@ -35,7 +35,8 @@ def play_one_game(bot, engine, move_limit=300):
     bot.on_game_end(engine.state)
 
 
-def test_q_learning_v3_is_a_labelled_bot_mode_on_feature_set_v3():
+def test_q_learning_v3_is_a_labelled_bot_mode_on_feature_set_v3(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     engine = make_engine()
     bot = create_bot_mode("q_learning_v3", engine, random_source=random.Random(4))
 

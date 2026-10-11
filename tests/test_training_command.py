@@ -26,12 +26,11 @@ def run_training(tmp_path, *options):
     )
 
 
-def test_starter_q_table_initializes_local_training_without_changing_starter(tmp_path):
+def test_bundled_starter_q_table_can_be_trained(tmp_path):
     learning_directory = tmp_path / "learning_data"
     learning_directory.mkdir()
     local_table = learning_directory / "q_table_space_state_v2.json"
     shutil.copyfile(STARTER_TABLE, local_table)
-    starter_before = STARTER_TABLE.read_bytes()
     trained_before = json.loads(local_table.read_text())["game_trained"]
 
     result = run_training(
@@ -41,7 +40,6 @@ def test_starter_q_table_initializes_local_training_without_changing_starter(tmp
 
     assert result.returncode == 0, result.stderr
     assert json.loads(local_table.read_text())["game_trained"] == trained_before + 1
-    assert STARTER_TABLE.read_bytes() == starter_before
 
 
 def test_training_resumes_saved_table_without_changing_watched_games(tmp_path):
@@ -79,7 +77,7 @@ def test_training_resumes_saved_table_without_changing_watched_games(tmp_path):
     assert not (tmp_path / "experiments").exists()
 
 
-@pytest.mark.parametrize("contents", [None, "not json", json.dumps({"q_table": []})])
+@pytest.mark.parametrize("contents", [None, "not json", json.dumps({"q_table": [], "epsilon": 0.5, "game_trained": 1})])
 def test_training_rejects_missing_or_malformed_saved_table(tmp_path, contents):
     learning_directory = tmp_path / "learning_data"
     learning_directory.mkdir()

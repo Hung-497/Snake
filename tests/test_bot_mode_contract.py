@@ -291,9 +291,11 @@ def test_bot_defaults_to_its_own_random_source():
 
 
 def make_q_learning_bot(engine, tmp_path, random_source=None):
-    bot = QLearningBot(engine, random_source=random_source)
-    bot.q_table_file = os.path.join(str(tmp_path), "q_table.json")
-    return bot
+    # The table path is given up front, so no local Q-table is loaded.
+    return QLearningBot(
+        engine, random_source=random_source,
+        q_table_file=os.path.join(str(tmp_path), "q_table.json"),
+    )
 
 
 def test_q_learning_chooses_a_direction_from_engine_state_alone(tmp_path):

@@ -32,3 +32,14 @@ def test_hamiltonian_cannot_play_on_an_odd_by_odd_board():
 
 def test_an_unknown_bot_mode_is_not_blocked_by_this_check():
     assert supports_board("replay", 25, 25)
+
+
+@pytest.mark.parametrize("bot_mode", ["q_learning", "q_learning_v3", "dqn"])
+def test_learning_bot_modes_need_a_free_cell_for_food(bot_mode):
+    assert supports_board(bot_mode, 1, 1) is False
+    assert supports_board(bot_mode, 2, 1) is True
+
+
+@pytest.mark.parametrize("board", [(1, 4), (4, 1), (2, 1)])
+def test_hamiltonian_cannot_play_on_a_board_one_cell_wide_or_high(board):
+    assert supports_board("hamiltonian", *board) is False

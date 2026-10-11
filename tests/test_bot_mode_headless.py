@@ -46,7 +46,9 @@ def play_game(bot_mode, width, height, seed, q_table_file=None):
 
 
 @pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "search_based"])
-def test_every_bot_mode_completes_a_game_without_a_window(bot_mode, tmp_path):
+def test_every_bot_mode_completes_a_game_without_a_window(bot_mode, tmp_path, monkeypatch):
+    # Bots are built in an empty folder, so no local Q-table is loaded.
+    monkeypatch.chdir(tmp_path)
     engine, moves = play_game(
         bot_mode,
         width=6,
@@ -56,12 +58,13 @@ def test_every_bot_mode_completes_a_game_without_a_window(bot_mode, tmp_path):
     )
 
     assert engine.game_over is True
-    assert moves < MOVE_LIMIT
-    assert engine.score >= 0
+    # More than one move: the bot did not walk straight into a wall or itself.
+    assert 1 < moves < MOVE_LIMIT
 
 
 @pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "search_based"])
-def test_bot_modes_replay_the_same_game_from_the_same_seed(bot_mode, tmp_path):
+def test_bot_modes_replay_the_same_game_from_the_same_seed(bot_mode, tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
     first, first_moves = play_game(
         bot_mode, 6, 4, seed=7, q_table_file=str(tmp_path / "a.json")
     )
