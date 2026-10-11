@@ -275,7 +275,7 @@ def test_one_update_cannot_make_an_unlimited_number_of_moves():
 
     moves_made = session.advance_by(60.0)
 
-    assert 0 < moves_made <= GameSession.MOVES_PER_UPDATE_LIMIT
+    assert moves_made == GameSession.MOVES_PER_UPDATE_LIMIT
 
 
 def test_the_score_average_prunes_before_it_is_calculated():

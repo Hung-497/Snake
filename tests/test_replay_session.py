@@ -156,13 +156,15 @@ def test_a_finished_replay_stops_playing_by_itself():
 
 
 def test_one_update_cannot_play_an_unlimited_number_of_moves():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 10_000))
+    # A one-cell snake circling a small square never hits anything, so the
+    # replay is long enough that only the per-update limit can stop it.
+    session = ReplaySession(make_replay_data(moves=(RIGHT, DOWN, LEFT, UP) * 2_500))
     session.cycle_speed()
     assert session.speed_name == "Fast"
 
     moves_played = session.advance_by(60.0)
 
-    assert 0 < moves_played <= ReplaySession.MOVES_PER_UPDATE_LIMIT
+    assert moves_played == ReplaySession.MOVES_PER_UPDATE_LIMIT
 
 
 def test_a_paused_replay_plays_no_moves():

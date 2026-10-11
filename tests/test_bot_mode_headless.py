@@ -9,6 +9,7 @@ from snake.engine.GameTypes import Direction
 from snake.bots.HamiltonianBot import HamiltonianBot
 from snake.bots.QLearningBot import QLearningBot
 from snake.bots.RuleBasedBot import RuleBasedBot
+from snake.bots.SearchBasedBot import SearchBasedBot
 from snake.engine.SnakeEngine import SnakeEngine
 from snake.ui.PlayerLabels import BOT_MODE_LABELS
 
@@ -224,7 +225,7 @@ def test_search_based_limits_moves_in_one_fast_game_update():
 
     moves = session.advance_by(1.0)
 
-    assert 1 <= moves <= 4
+    assert moves == SearchBasedBot.MAX_MOVES_PER_UPDATE
     assert session.advance_by(0.0) == 0
 
 

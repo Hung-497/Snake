@@ -66,7 +66,10 @@ def test_features_of_the_same_board_are_computed_once(monkeypatch):
     )
 
     first = bot.features(engine.state)
+    searches_for_first = len(searches)
     again = bot.features(engine.state)
 
     assert first == again
-    assert len(searches) == 3
+    assert searches_for_first > 0
+    # The same board again needs no new search, however many the first took.
+    assert len(searches) == searches_for_first

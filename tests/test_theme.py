@@ -47,7 +47,8 @@ def test_mixing_backwards_stays_at_the_start():
 
 
 def test_mixing_keeps_the_colour_fully_opaque():
-    assert blend_color(BLACK, WHITE, 0.3).a == 255
+    # Even a fully transparent colour mixes into an opaque one.
+    assert blend_color(Color(0, 0, 0, 0), WHITE, 0.3).a == 255
 
 
 def test_each_channel_moves_independently():
