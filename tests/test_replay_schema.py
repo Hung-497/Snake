@@ -59,23 +59,34 @@ def test_legacy_pixel_replay_is_migrated_to_grid_cells(tmp_path):
     assert replay["foods"] == [[2, 1], [3, 1]]
 
 
+VALID_GRID_METADATA = {
+    "schema_version": 2, "coordinate_system": "grid",
+    "board_width": 4, "board_height": 3, "tile_size": 20, "speed_delay": 1,
+    "start_food": None, "foods": [], "moves": [], "final_score": 0,
+}
+
+
 @pytest.mark.parametrize(
-    "payload",
+    "payload, message",
     [
-        {"schema_version": 99, "coordinate_system": "grid"},
-        {"schema_version": 2, "coordinate_system": "pixels"},
-        {"schema_version": 2, "coordinate_system": "grid", "start_snake": [4, 0]},
+        ({"schema_version": 99, "coordinate_system": "grid"},
+         "Unsupported replay schema version: 99"),
+        ({"schema_version": 2, "coordinate_system": "pixels"},
+         "Unsupported replay coordinate system: pixels"),
+        # Everything is valid except a start cell one column off the board.
+        ({**VALID_GRID_METADATA, "start_snake": [4, 0]},
+         "invalid grid position"),
     ],
 )
 def test_unsupported_or_malformed_replays_report_compatibility_failure(
-    tmp_path, payload
+    tmp_path, payload, message
 ):
     manager = ReplayManager(folder_name=str(tmp_path))
     path = manager.get_replay_file_path("rule")
     with open(path, "w") as file:
         json.dump(payload, file)
 
-    with pytest.raises(ReplayCompatibilityError):
+    with pytest.raises(ReplayCompatibilityError, match=message):
         manager.load_replay("rule")
 
 
@@ -128,6 +139,26 @@ def test_only_a_higher_scoring_human_game_replaces_the_saved_replay(tmp_path):
 
     save_human_game(manager, score=8)
     assert manager.load_replay("human")["final_score"] == 8
+
+
+def save_hamiltonian_game(manager, score, game_won):
+    manager.start_recording("hamiltonian", 4, 3, 20, 10, engine=make_engine())
+    manager.record_move(Direction.RIGHT)
+    manager.save_replay("hamiltonian", score, game_won=game_won)
+
+
+def test_hamiltonian_saves_a_best_replay_only_for_a_win(tmp_path):
+    manager = ReplayManager(folder_name=str(tmp_path))
+
+    save_hamiltonian_game(manager, score=9, game_won=False)
+    assert manager.load_replay("hamiltonian") is None
+
+    save_hamiltonian_game(manager, score=11, game_won=True)
+    assert manager.load_replay("hamiltonian")["final_score"] == 11
+
+    # A later loss never replaces the saved win, even with a higher score.
+    save_hamiltonian_game(manager, score=12, game_won=False)
+    assert manager.load_replay("hamiltonian")["final_score"] == 11
 
 
 def test_search_based_best_replay_can_be_loaded_and_played(tmp_path):

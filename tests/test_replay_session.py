@@ -85,11 +85,14 @@ def test_an_incompatible_replay_explains_itself_instead_of_being_drawn():
     assert message == "Unsupported replay schema version: 1"
 
 
-def test_a_replay_in_an_unknown_coordinate_system_is_refused():
-    replay_data = make_replay_data(coordinate_system="polar")
+def test_a_replay_in_an_unknown_coordinate_system_is_refused_when_loaded():
+    # The manager passes raw data through, so the session itself must refuse it.
+    replay_manager = FakeReplayManager(make_replay_data(coordinate_system="polar"))
 
-    with pytest.raises(ReplayCompatibilityError):
-        ReplaySession(replay_data)
+    session, message = load_replay_session(replay_manager, "rule")
+
+    assert session is None
+    assert message == "Unsupported replay coordinate system: polar"
 
 
 def test_the_snake_follows_the_saved_moves():

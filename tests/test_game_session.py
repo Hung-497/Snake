@@ -609,6 +609,42 @@ def test_a_human_game_replays_along_the_path_it_was_played(tmp_path):
     assert replay.snake_position == (2, 0)
 
 
+def test_food_eaten_in_a_game_is_saved_in_its_replay(tmp_path):
+    engine = SnakeEngine(
+        GameConfig(width=6, height=6, tile_size=20),
+        start_position=(3, 3),
+        direction=Direction.RIGHT,
+        food_position=(4, 3),
+        random_source=random.Random(2),
+    )
+    replay_manager = ReplayManager(folder_name=str(tmp_path))
+    session = GameSession(
+        engine,
+        bot_mode="human",
+        speed_delay=100,
+        record_manager=FakeRecordManager(),
+        replay_manager=replay_manager,
+        now=FakeClock(),
+    )
+    session.start()
+
+    session.press_direction(Direction.RIGHT)
+    session.advance_by(0.1)                   # eats at (4, 3); new food appears
+    assert session.score == 1
+    new_food = engine.food_position
+    session.press_direction(Direction.UP)
+    for _ in range(4):                        # up into the wall
+        session.advance_by(0.1)
+    assert session.status == "showing_result"
+
+    saved = replay_manager.load_replay("human")
+    assert saved["foods"] == [[4, 3], [new_food.x, new_food.y]]
+    replay = ReplaySession(saved)
+    while not replay.finished:
+        replay.advance()
+    assert replay.score == 1
+
+
 @pytest.mark.parametrize("game_won, outcome", [(True, "won"), (False, "died")])
 def test_a_finished_bot_game_records_its_outcome(game_won, outcome):
     session = make_session(engine=FakeEngine(moves_until_game_over=1, game_won=game_won))
