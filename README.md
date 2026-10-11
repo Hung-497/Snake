@@ -152,7 +152,7 @@ every game, so a run stopped part-way is still described. Tables saved before
 this feature have no history and still load. The first time one is trained
 again, an `unrecorded` entry counts the games it already had, so the history
 always adds up to the table's game count. A table whose history is broken is
-refused.
+refused. Bot Experiment reports copy the evaluated table's Training History.
 
 ### Q Learning v3
 

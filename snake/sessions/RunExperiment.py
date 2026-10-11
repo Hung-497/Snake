@@ -77,6 +77,8 @@ def q_learning_identity(bot):
         "min_epsilon": bot.min_epsilon,
         "epsilon_decay": bot.epsilon_decay,
         "evaluation_mode": bot.evaluation_mode,
+        # How the table was trained, as it stood when this experiment ran.
+        "training_history": bot.training_history,
     }
 
 

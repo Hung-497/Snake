@@ -213,3 +213,54 @@ def test_a_starter_table_copy_accounts_for_its_bundled_games(tmp_path):
         session["games_at_end"] - session["games_at_start"]
     )
     assert games_in_history == saved["game_trained"]
+
+
+def experiment(tmp_path, *options):
+    return run_module(
+        tmp_path, "snake.sessions.RunExperiment",
+        "--games", "1", "--width", "5", "--height", "5", "--max-moves", "30", *options,
+    )
+
+
+def saved_report(tmp_path):
+    return json.loads(next((tmp_path / "experiments").glob("*.json")).read_text())
+
+
+def test_report_copies_the_training_history_of_each_q_table(tmp_path):
+    train(tmp_path, "--new-table", "--q-table", "v2.json", "--games", "2")
+    train(
+        tmp_path, "--bot", "q_learning_v3", "--new-table", "--q-table", "v3.json",
+        "--games", "1",
+    )
+
+    result = experiment(
+        tmp_path, "--bots", "q_learning", "q_learning_v3",
+        "--q-table", "v2.json", "--q-table-v3", "v3.json",
+    )
+
+    assert result.returncode == 0, result.stderr
+    report = saved_report(tmp_path)
+    for bot_mode, table in (("q_learning", "v2.json"), ("q_learning_v3", "v3.json")):
+        expected = read_table(tmp_path / table)["training_history"]
+        assert report[bot_mode]["training_history"] == expected
+
+
+def test_report_lists_no_history_for_an_older_table(tmp_path):
+    (tmp_path / "old.json").write_text(json.dumps(OLD_TABLE))
+
+    result = experiment(tmp_path, "--bots", "q_learning", "--q-table", "old.json")
+
+    assert result.returncode == 0, result.stderr
+    assert saved_report(tmp_path)["q_learning"]["training_history"] == []
+
+
+def test_later_training_does_not_change_a_saved_report(tmp_path):
+    train(tmp_path, "--new-table", "--q-table", "v2.json", "--games", "1")
+    experiment(tmp_path, "--bots", "q_learning", "--q-table", "v2.json")
+    report_path = next((tmp_path / "experiments").glob("*.json"))
+    before = report_path.read_text()
+
+    train(tmp_path, "--q-table", "v2.json", "--games", "1")
+
+    assert report_path.read_text() == before
+    assert len(json.loads(before)["q_learning"]["training_history"]) == 1
