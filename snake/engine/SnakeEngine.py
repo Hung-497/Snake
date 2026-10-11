@@ -337,18 +337,7 @@ class SnakeEngine:
         else:
             raise ValueError("positions must contain two integer coordinates")
 
-        x, y = candidate
         if self._is_inside_board(candidate):
-            return Position(x, y)
-
-        # Accept old pixel inputs at the migration boundary.  The engine's
-        # authoritative state remains in cells after this conversion.
-        if (
-            x % self.tile_size == 0
-            and y % self.tile_size == 0
-            and 0 <= x < self.board_width * self.tile_size
-            and 0 <= y < self.board_height * self.tile_size
-        ):
-            return Position(x // self.tile_size, y // self.tile_size)
+            return Position(*candidate)
 
         raise ValueError("positions must be inside the board")

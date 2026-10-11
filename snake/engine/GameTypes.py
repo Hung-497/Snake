@@ -43,10 +43,7 @@ class Position:
         if isinstance(other, Position):
             return self.x == other.x and self.y == other.y
         if isinstance(other, (tuple, list)) and len(other) == 2:
-            return tuple(other) in {
-                (self.x, self.y),
-                (self.x * 25, self.y * 25),
-            }
+            return tuple(other) == (self.x, self.y)
         return NotImplemented
 
 
