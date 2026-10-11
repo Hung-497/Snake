@@ -169,6 +169,7 @@ def test_preview_reports_a_full_board_win_without_requesting_food():
 
     engine.step()
 
+    assert engine.score == 1
     assert engine.game_won is True
     assert engine.food_position is None
 
