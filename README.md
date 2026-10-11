@@ -143,6 +143,14 @@ progress in the terminal. It does not add game records or replays.
 25, the default seed is 0, and the default move limit is 5000 per game.
 `--q-table path/to/table.json` trains a different table.
 
+Each Q-table keeps a Training History (ADR 0010): a `training_history` list
+inside the table with one entry per training session. An entry records the
+seed, board, move limit, learning settings, code version, and the games,
+epsilon, and scores at the start and end of the session. It is updated after
+every game, so a run stopped part-way is still described. Tables saved before
+this feature have no history and still load; a table whose history is broken
+is refused.
+
 ### Q Learning v3
 
 Q Learning v3 is a separate Bot Mode that uses Feature Set v3 (ADR 0009). On

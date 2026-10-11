@@ -8,7 +8,6 @@ from pathlib import Path
 import platform
 import random
 import statistics
-import subprocess
 import time
 import uuid
 
@@ -19,6 +18,7 @@ from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.engine.SnakeEngine import SnakeEngine
 from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE, play_game
+from snake.storage.CodeIdentity import code_identity
 
 
 BOT_NAMES = {
@@ -61,29 +61,6 @@ def summarize_games(games, elapsed_seconds):
         "max_moves": max(moves),
         "elapsed_seconds": elapsed_seconds,
         "games_per_second": len(games) / elapsed_seconds if elapsed_seconds > 0 else 0,
-    }
-
-
-def code_identity():
-    """Identify both the Git revision and the current Python source files."""
-    project_root = Path(__file__).resolve().parents[2]
-    try:
-        revision = subprocess.run(
-            ["git", "-C", str(project_root), "rev-parse", "HEAD"],
-            capture_output=True, text=True, check=False,
-        )
-        git_commit = revision.stdout.strip() if revision.returncode == 0 else None
-    except OSError:
-        git_commit = None
-    source_hash = hashlib.sha256()
-    for source_path in sorted((project_root / "snake").rglob("*.py")):
-        source_hash.update(str(source_path.relative_to(project_root)).encode())
-        source_hash.update(b"\0")
-        source_hash.update(source_path.read_bytes())
-
-    return {
-        "git_commit": git_commit,
-        "source_sha256": source_hash.hexdigest(),
     }
 
 

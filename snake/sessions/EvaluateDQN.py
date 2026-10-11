@@ -13,8 +13,9 @@ import torch
 
 from snake.bots.DQNBot import DQNBot
 from snake.engine.GameConfig import GameConfig
-from snake.sessions.RunExperiment import code_identity, make_engine, summarize_games
+from snake.sessions.RunExperiment import make_engine, summarize_games
 from snake.sessions.TrainQLearning import play_game
+from snake.storage.CodeIdentity import code_identity
 from snake.storage.DQNArtifacts import (
     artifact_feature_set, board_details, load_artifact, model_identity,
 )
