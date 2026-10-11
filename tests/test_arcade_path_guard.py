@@ -18,14 +18,8 @@ def test_windows_path_gets_a_trailing_separator():
     end_path_with_separator(environ, "win32")
 
     assert environ["PATH"] == rf"C:\Windows;{GIT};"
-
-
-def test_arcade_append_after_the_guard_keeps_every_folder_intact():
-    environ = {"PATH": rf"C:\Windows;{GIT}"}
-
-    end_path_with_separator(environ, "win32")
-    environ["PATH"] += ARCADE_LIB  # exactly what Arcade 3.3 does on Windows
-
+    # Why it matters: Arcade 3.3 appends its folder with no separator.
+    environ["PATH"] += ARCADE_LIB
     assert environ["PATH"].split(";") == [r"C:\Windows", GIT, ARCADE_LIB]
 
 

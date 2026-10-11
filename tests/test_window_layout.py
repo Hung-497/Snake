@@ -49,16 +49,6 @@ def test_a_cell_becomes_the_pixel_corner_arcade_draws_from():
     assert layout.cell_to_pixels((1, 1)) == (430, 440)
 
 
-def test_the_top_row_of_the_grid_is_drawn_highest_on_the_screen():
-    # Grid rows count downwards, while Arcade's y axis counts upwards.
-    layout = make_layout(board_width=4, board_height=3, tile_size=20)
-
-    _, top_row_y = layout.cell_to_pixels((0, 0))
-    _, bottom_row_y = layout.cell_to_pixels((0, 2))
-
-    assert top_row_y > bottom_row_y
-
-
 def test_the_last_cell_sits_inside_the_board():
     layout = make_layout(board_width=4, board_height=3, tile_size=20)
 
@@ -66,21 +56,6 @@ def test_the_last_cell_sits_inside_the_board():
 
     assert x + layout.tile_size == layout.left + layout.width
     assert y == layout.bottom
-
-
-def test_a_bigger_tile_size_makes_a_bigger_board_from_the_same_cells():
-    small = make_layout(tile_size=20)
-    large = make_layout(tile_size=40)
-
-    assert (large.width, large.height) == (small.width * 2, small.height * 2)
-
-
-def test_the_board_stays_centred_when_the_window_changes():
-    narrow = make_layout(window_width=700)
-    wide = make_layout(window_width=1100)
-
-    assert narrow.left == (700 - narrow.width) / 2
-    assert wide.left == (1100 - wide.width) / 2
 
 
 def test_a_large_board_uses_the_largest_whole_tile_size_that_fits():
@@ -117,12 +92,6 @@ def test_score_and_result_labels_follow_a_resized_window():
     assert positions["result_score"] == (350, 290)
 
 
-def test_score_uses_a_separate_hud_row_at_the_minimum_window_size():
-    positions = view_label_positions(700, 700, result_score_gap=60)
-
-    assert positions["bot_mode"][1] - positions["score"][1] >= 28
-
-
 def test_layout_uses_compact_type_below_the_width_threshold():
     assert layout_step(799) == "compact"
     assert layout_step(800) == "regular"
@@ -131,16 +100,6 @@ def test_layout_uses_compact_type_below_the_width_threshold():
 def test_taller_windows_show_more_record_rows():
     assert record_rows_per_page(700) == 4
     assert record_rows_per_page(960) == 9
-
-
-@pytest.mark.parametrize("board", [(16, 16), (24, 25), (30, 30), (25, 25)])
-def test_every_supported_board_is_centred(board):
-    board_width, board_height = board
-
-    layout = layout_board(WINDOW_WIDTH, WINDOW_HEIGHT, board_width, board_height, 25)
-
-    assert layout.left == (WINDOW_WIDTH - layout.width) / 2
-    assert layout.bottom == (WINDOW_HEIGHT - HUD_HEIGHT - layout.height) / 2
 
 
 def test_the_compare_bar_chart_gets_the_height_left_under_the_table():

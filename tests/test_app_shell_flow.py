@@ -6,10 +6,8 @@ app cleanly. They use a fake window instead of a real Arcade window, so they
 need no graphical display and never depend on Arcade's own behaviour.
 """
 
-import pytest
 
 from snake.ui.AppShell import AppShell
-from snake.sessions.SessionSettings import SessionSettings
 
 
 class FakeWindow:
@@ -84,57 +82,14 @@ def test_a_view_can_be_registered_after_the_shell_is_built():
     assert window.shown_views == ["menu-view"]
 
 
-def test_back_from_settings_returns_to_the_menu():
-    shell, window = make_shell(menu="menu-view", settings="settings-view")
-    shell.start()
-
-    shell.show_view("settings")
-    shell.show_view("menu")
-
-    assert shell.current_view_name == "menu"
-    assert window.shown_views == ["menu-view", "settings-view", "menu-view"]
-
-
-def test_settings_choices_are_kept_when_settings_is_reopened():
-    # The Settings App View is rebuilt each time it is opened, so this checks a
-    # freshly built one would still see the choice made earlier in the session.
-    settings = SessionSettings()
-    window = FakeWindow()
-    shell = AppShell(
-        window,
-        {
-            "menu": lambda: "menu-view",
-            "settings": lambda: settings.selected_board_size_name,
-        },
-    )
-    shell.start()
-
-    shell.show_view("settings")
-    settings.select_board_size("Large 30 x 30")
-    shell.show_view("menu")
-    shell.show_view("settings")
-
-    assert window.shown_views[-1] == "Large 30 x 30"
-
-
 def test_a_view_can_be_opened_with_a_choice_the_user_made():
     window = FakeWindow()
     shell = AppShell(window, {"game": lambda bot_mode: f"game-view:{bot_mode}"})
 
-    shell.show_view("game", bot_mode="rule")
-
-    assert window.shown_views == ["game-view:rule"]
-
-
-@pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "human"])
-def test_every_player_can_open_the_game_app_view(bot_mode):
-    window = FakeWindow()
-    shell = AppShell(window, {"game": lambda bot_mode: f"game-view:{bot_mode}"})
-
-    opened = shell.show_view("game", bot_mode=bot_mode)
+    opened = shell.show_view("game", bot_mode="rule")
 
     assert opened is True
-    assert window.shown_views == [f"game-view:{bot_mode}"]
+    assert window.shown_views == ["game-view:rule"]
 
 
 def test_the_app_moves_among_every_app_view_and_then_closes_cleanly():

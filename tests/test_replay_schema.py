@@ -3,7 +3,7 @@ import json
 import pytest
 
 from snake.engine.GameConfig import GameConfig
-from snake.engine.GameTypes import Direction
+from snake.engine.GameTypes import Direction, Position
 from snake.storage.ReplayManager import ReplayCompatibilityError, ReplayManager
 from snake.engine.SnakeEngine import SnakeEngine
 from snake.sessions.ReplaySession import load_replay_session
@@ -23,6 +23,7 @@ def test_new_replays_declare_grid_schema_and_store_cell_positions(tmp_path):
 
     manager.start_recording("rule", 4, 3, 20, 1, engine=make_engine())
     manager.record_move(Direction.RIGHT)
+    manager.record_food(Position(3, 2))
 
     assert manager.replay_data["player"] == "rule"
     assert manager.replay_data["schema_version"] == 2
@@ -30,6 +31,7 @@ def test_new_replays_declare_grid_schema_and_store_cell_positions(tmp_path):
     assert manager.replay_data["start_snake"] == [1, 1]
     assert manager.replay_data["start_food"] == [2, 1]
     assert manager.replay_data["moves"] == [4]
+    assert manager.replay_data["foods"][-1] == [3, 2]
 
 
 def test_legacy_pixel_replay_is_migrated_to_grid_cells(tmp_path):

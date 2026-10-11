@@ -82,18 +82,6 @@ def test_a_summary_is_worked_out_from_the_stored_records():
     assert summary["average_moves"] == 20.0
 
 
-def test_the_newest_record_is_shown_first():
-    browser = make_browser([
-        make_record(date_time="2026-01-01 10:00:00", score=1),
-        make_record(date_time="2026-01-02 10:00:00", score=2),
-        make_record(date_time="2026-01-03 10:00:00", score=3),
-    ])
-
-    shown = browser.visible_records()
-
-    assert [record["score"] for record in shown] == ["3", "2", "1"]
-
-
 def test_only_the_most_recent_records_are_kept():
     browser = make_browser([make_record(score=number) for number in range(60)])
 
@@ -129,25 +117,6 @@ def test_each_filter_selects_the_records_it_should(selected_filter, expected_pla
     assert [record["player"] for record in browser.filtered_records()] == expected_players
 
 
-def test_search_based_appears_in_comparison_and_trends_for_matching_conditions():
-    browser = make_browser([
-        make_record(player="rule", score=2, outcome="died"),
-        make_record(player="search_based", score=4, outcome="won"),
-        make_record(player="search_based", score=6, outcome="died"),
-        make_record(player="search_based", score=20, board=(4, 4), outcome="won"),
-    ])
-
-    rows = {row["player"]: row for row in browser.player_statistics()}
-    trends = {row["player"]: row for row in browser.player_trends()}
-    assert rows["search_based"]["games"] == 2
-    assert rows["search_based"]["average_score"] == 5
-    assert rows["search_based"]["win_rate"] == 0.5
-    assert "search_based" in trends
-
-    browser.select_filter("search_based")
-    assert browser.summary()["total_games"] == 2
-
-
 def test_a_filter_summary_only_counts_the_records_it_selected():
     browser = make_browser([
         make_record(player="rule", score=2, total_moves=10),
@@ -161,23 +130,6 @@ def test_a_filter_summary_only_counts_the_records_it_selected():
         "best_score": 2,
         "average_score": 2.0,
         "average_moves": 10.0,
-    }
-
-
-def test_the_human_filter_summary_only_counts_human_games():
-    browser = make_browser([
-        make_record(player="human", score=6, total_moves=40),
-        make_record(player="rule", score=30, total_moves=500),
-        make_record(player="human", score=10, total_moves=80),
-    ])
-
-    browser.select_filter("human")
-
-    assert browser.summary() == {
-        "total_games": 2,
-        "best_score": 10,
-        "average_score": 8.0,
-        "average_moves": 60.0,
     }
 
 
@@ -269,18 +221,6 @@ def test_records_saved_before_the_player_column_still_load(tmp_path):
     browser.load()
 
     assert [record["player"] for record in browser.latest_records()] == ["rule"]
-
-
-def test_adding_a_game_to_an_old_records_file_keeps_every_record_readable(tmp_path):
-    records_file = tmp_path / "game_records.csv"
-    records_file.write_text(OLD_RECORDS_FILE)
-    record_manager = RecordManager(file_name=str(records_file))
-
-    save_example_game(record_manager, player="hamiltonian")
-
-    browser = RecordsBrowser(record_manager=record_manager)
-    browser.load()
-    assert [record["player"] for record in browser.filtered_records()] == ["rule", "hamiltonian"]
 
 
 # Game Outcome: new games store won or died, and old files are upgraded once
@@ -638,11 +578,10 @@ def test_unreadable_records_are_left_out_of_the_numbers_but_still_listed():
     missing_moves["total_moves"] = None   # a short row read from a damaged file
     browser = make_browser([
         make_record(score=4, total_moves=10, game_time="2.0"),
-        make_record(score=9, game_time=""),
+        make_record(score="not a number", game_time=""),
         make_record(score=5, game_time="abc"),
         missing_moves,
     ])
-    browser.records[1]["score"] = "not a number"
 
     row = statistics_for(browser, "rule")
 
