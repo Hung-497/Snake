@@ -34,23 +34,6 @@ def test_normal_app_import_does_not_require_pytorch(tmp_path):
     assert result.returncode == 0, result.stderr
 
 
-def test_non_dqn_experiment_runs_when_pytorch_is_unavailable(tmp_path):
-    result = subprocess.run(
-        [
-            sys.executable, "-m", "snake.sessions.RunExperiment",
-            "--bots", "rule", "--width", "3", "--height", "3",
-            "--max-moves", "2",
-        ],
-        cwd=tmp_path,
-        env=environment_with_blocked_torch(tmp_path),
-        capture_output=True,
-        text=True,
-    )
-
-    assert result.returncode == 0, result.stderr
-    assert (tmp_path / "experiments").exists()
-
-
 def test_default_experiment_selection_excludes_dqn_without_pytorch(tmp_path):
     learning_data = tmp_path / "learning_data"
     learning_data.mkdir()

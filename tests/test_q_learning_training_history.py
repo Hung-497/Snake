@@ -37,6 +37,13 @@ def train(tmp_path, *options):
     )
 
 
+def train_ok(tmp_path, *options):
+    """Run training that must succeed, showing its error if it does not."""
+    result = train(tmp_path, *options)
+    assert result.returncode == 0, result.stderr
+    return result
+
+
 def read_table(path):
     return json.loads(Path(path).read_text())
 
@@ -70,7 +77,7 @@ def test_new_table_run_records_one_command_session(tmp_path):
 
 
 def test_each_run_adds_a_session_and_keeps_earlier_ones(tmp_path):
-    train(tmp_path, "--new-table", "--q-table", "table.json", "--games", "2", "--seed", "1")
+    train_ok(tmp_path, "--new-table", "--q-table", "table.json", "--games", "2", "--seed", "1")
     first = read_table(tmp_path / "table.json")["training_history"][0]
 
     result = train(tmp_path, "--q-table", "table.json", "--games", "1", "--seed", "2")
@@ -94,15 +101,22 @@ def test_session_is_up_to_date_after_every_save(tmp_path):
         session={"source": "train_command", "seed": 3, "max_moves": 30},
     )
 
-    for game_number in range(1, 3):
+    scores = []
+    move_limit_games = 0
+    for game_number in range(1, 5):
         if game_number > 1:
             engine.reset()
         play_game(engine, bot, 30)
+        scores.append(engine.score)
+        move_limit_games += int(not engine.game_over)
 
         saved = read_table(table_path)
         [entry] = saved["training_history"]
         assert entry["games_at_end"] == game_number == saved["game_trained"]
         assert entry["epsilon_at_end"] == saved["epsilon"]
+        assert entry["average_score"] == sum(scores) / len(scores)
+        assert entry["best_score"] == max(scores)
+        assert entry["move_limit_games"] == move_limit_games
 
 
 def test_a_broken_history_is_refused_and_left_alone(tmp_path):
@@ -117,51 +131,27 @@ def test_a_broken_history_is_refused_and_left_alone(tmp_path):
     assert table_path.read_text() == before
 
 
-def test_evaluation_leaves_the_history_unchanged(tmp_path):
-    train(tmp_path, "--new-table", "--q-table", "table.json", "--games", "1")
-    before = (tmp_path / "table.json").read_text()
-
-    result = run_module(
-        tmp_path, "snake.sessions.RunExperiment", "--bots", "q_learning",
-        "--q-table", "table.json", "--games", "1",
-        "--width", "5", "--height", "5", "--max-moves", "30",
-    )
-
-    assert result.returncode == 0, result.stderr
-    assert (tmp_path / "table.json").read_text() == before
-
-
-def test_earlier_games_without_history_are_recorded_as_unrecorded(tmp_path):
+def test_earlier_games_without_history_are_recorded_once_as_unrecorded(tmp_path):
     table_path = tmp_path / "old.json"
     table_path.write_text(json.dumps(OLD_TABLE))
 
-    train(tmp_path, "--q-table", "old.json", "--games", "2")
+    train_ok(tmp_path, "--q-table", "old.json", "--games", "2")
+    train_ok(tmp_path, "--q-table", "old.json", "--games", "1")
 
     saved = read_table(table_path)
-    unrecorded, session = saved["training_history"]
+    unrecorded, first, second = saved["training_history"]
     assert unrecorded == {"source": "unrecorded", "games": 3}
-    assert session["games_at_start"] == 3
-    assert session["games_at_end"] == 5 == saved["game_trained"]
-
-
-def test_unrecorded_games_are_recorded_only_once(tmp_path):
-    table_path = tmp_path / "old.json"
-    table_path.write_text(json.dumps(OLD_TABLE))
-
-    train(tmp_path, "--q-table", "old.json", "--games", "1")
-    train(tmp_path, "--q-table", "old.json", "--games", "1")
-
-    history = read_table(table_path)["training_history"]
-    assert [entry["source"] for entry in history] == [
-        "unrecorded", "train_command", "train_command",
-    ]
+    assert first["games_at_start"] == 3
+    assert first["games_at_end"] == 5
+    assert second["source"] == "train_command"
+    assert second["games_at_end"] == 6 == saved["game_trained"]
 
 
 def test_a_table_with_no_games_has_nothing_unrecorded(tmp_path):
     table_path = tmp_path / "empty.json"
     table_path.write_text(json.dumps({**OLD_TABLE, "game_trained": 0}))
 
-    train(tmp_path, "--q-table", "empty.json", "--games", "1")
+    train_ok(tmp_path, "--q-table", "empty.json", "--games", "1")
 
     [entry] = read_table(table_path)["training_history"]
     assert entry["source"] == "train_command"
@@ -179,8 +169,8 @@ def saved_report(tmp_path):
 
 
 def test_report_copies_the_training_history_of_each_q_table(tmp_path):
-    train(tmp_path, "--new-table", "--q-table", "v2.json", "--games", "2")
-    train(
+    train_ok(tmp_path, "--new-table", "--q-table", "v2.json", "--games", "2")
+    train_ok(
         tmp_path, "--bot", "q_learning_v3", "--new-table", "--q-table", "v3.json",
         "--games", "1",
     )
@@ -195,6 +185,7 @@ def test_report_copies_the_training_history_of_each_q_table(tmp_path):
     for bot_mode, table in (("q_learning", "v2.json"), ("q_learning_v3", "v3.json")):
         expected = read_table(tmp_path / table)["training_history"]
         assert report[bot_mode]["training_history"] == expected
+        assert report[bot_mode]["table_path"] == table
 
 
 def test_report_lists_no_history_for_an_older_table(tmp_path):

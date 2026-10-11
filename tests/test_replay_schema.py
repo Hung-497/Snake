@@ -3,7 +3,7 @@ import json
 import pytest
 
 from snake.engine.GameConfig import GameConfig
-from snake.engine.GameTypes import Direction
+from snake.engine.GameTypes import Direction, Position
 from snake.storage.ReplayManager import ReplayCompatibilityError, ReplayManager
 from snake.engine.SnakeEngine import SnakeEngine
 from snake.sessions.ReplaySession import load_replay_session
@@ -23,6 +23,7 @@ def test_new_replays_declare_grid_schema_and_store_cell_positions(tmp_path):
 
     manager.start_recording("rule", 4, 3, 20, 1, engine=make_engine())
     manager.record_move(Direction.RIGHT)
+    manager.record_food(Position(3, 2))
 
     assert manager.replay_data["player"] == "rule"
     assert manager.replay_data["schema_version"] == 2
@@ -30,6 +31,7 @@ def test_new_replays_declare_grid_schema_and_store_cell_positions(tmp_path):
     assert manager.replay_data["start_snake"] == [1, 1]
     assert manager.replay_data["start_food"] == [2, 1]
     assert manager.replay_data["moves"] == [4]
+    assert manager.replay_data["foods"][-1] == [3, 2]
 
 
 def test_legacy_pixel_replay_is_migrated_to_grid_cells(tmp_path):
@@ -119,17 +121,6 @@ def save_human_game(manager, score):
     manager.save_replay("human", score)
 
 
-def test_a_human_replay_is_saved_as_the_best_human_game(tmp_path):
-    manager = ReplayManager(folder_name=str(tmp_path))
-
-    save_human_game(manager, score=3)
-
-    assert (tmp_path / "human_best.json").exists()
-    replay = manager.load_replay("human")
-    assert replay["final_score"] == 3
-    assert replay["speed_delay"] == 100
-
-
 def test_only_a_higher_scoring_human_game_replaces_the_saved_replay(tmp_path):
     manager = ReplayManager(folder_name=str(tmp_path))
     save_human_game(manager, score=5)
@@ -138,7 +129,9 @@ def test_only_a_higher_scoring_human_game_replaces_the_saved_replay(tmp_path):
     assert manager.load_replay("human")["final_score"] == 5
 
     save_human_game(manager, score=8)
-    assert manager.load_replay("human")["final_score"] == 8
+    replay = manager.load_replay("human")
+    assert replay["final_score"] == 8
+    assert replay["speed_delay"] == 100
 
 
 def save_hamiltonian_game(manager, score, game_won):

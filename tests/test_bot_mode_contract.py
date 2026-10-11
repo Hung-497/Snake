@@ -282,14 +282,6 @@ def test_bot_random_source_is_injectable_and_separate_from_the_engine():
     assert bot.random_source is not engine.random_source
 
 
-def test_bot_defaults_to_its_own_random_source():
-    engine = make_engine()
-
-    bot = RuleBasedBot(engine)
-
-    assert bot.random_source is not engine.random_source
-
-
 def make_q_learning_bot(engine, tmp_path, random_source=None):
     # The table path is given up front, so no local Q-table is loaded.
     return QLearningBot(

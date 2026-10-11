@@ -126,25 +126,6 @@ def test_the_replay_finishes_after_the_last_saved_move():
     assert session.finished
 
 
-def test_moves_are_played_at_the_replay_speed():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 5))
-
-    session.advance_by(0.005)
-    assert session.move_index == 0
-
-    session.advance_by(0.005)
-    assert session.move_index == 1
-
-
-def test_a_stopped_replay_plays_no_further_moves():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-
-    session.stop()
-    session.advance_by(1.0)
-
-    assert session.move_index == 0
-
-
 def test_a_finished_replay_stops_playing_by_itself():
     session = ReplaySession(make_replay_data(moves=(RIGHT, RIGHT)))
 
@@ -156,13 +137,15 @@ def test_a_finished_replay_stops_playing_by_itself():
 
 
 def test_one_update_cannot_play_an_unlimited_number_of_moves():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 10_000))
+    # A one-cell snake circling a small square never hits anything, so the
+    # replay is long enough that only the per-update limit can stop it.
+    session = ReplaySession(make_replay_data(moves=(RIGHT, DOWN, LEFT, UP) * 2_500))
     session.cycle_speed()
     assert session.speed_name == "Fast"
 
     moves_played = session.advance_by(60.0)
 
-    assert 0 < moves_played <= ReplaySession.MOVES_PER_UPDATE_LIMIT
+    assert moves_played == ReplaySession.MOVES_PER_UPDATE_LIMIT
 
 
 def test_a_paused_replay_plays_no_moves():
@@ -172,7 +155,7 @@ def test_a_paused_replay_plays_no_moves():
     session.advance_by(1.0)
 
     assert session.paused
-    assert session.move_index == 0
+    assert session.moves_played == 0
 
 
 def test_resuming_continues_from_the_same_move_without_a_burst():
@@ -190,7 +173,7 @@ def test_resuming_continues_from_the_same_move_without_a_burst():
 
     session.advance_by(0.01)
 
-    assert session.move_index == 3
+    assert session.moves_played == 3
 
 
 def test_a_finished_replay_cannot_be_paused():
@@ -223,7 +206,7 @@ def test_restart_brings_back_the_start_of_the_replay():
     assert session.snake_body == []
     assert session.food_position == (3, 1)
     assert session.score == 0
-    assert session.move_index == 0
+    assert session.moves_played == 0
 
 
 def test_a_restarted_replay_plays_again_from_the_first_move():
@@ -269,19 +252,13 @@ def test_restart_starts_with_no_leftover_time():
 def test_a_stopped_replay_cannot_be_restarted():
     session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
     session.advance_by(0.03)
-    move_when_stopped = session.move_index
+    move_when_stopped = session.moves_played
 
     session.stop()
     session.restart()
 
-    assert session.move_index == move_when_stopped
+    assert session.moves_played == move_when_stopped
     assert session.advance_by(1.0) == 0
-
-
-def test_every_replay_starts_at_the_normal_replay_speed():
-    session = ReplaySession(make_replay_data())
-
-    assert session.speed_name == "Normal"
 
 
 def test_the_replay_speed_cycles_from_slow_to_normal_to_fast():
@@ -307,10 +284,10 @@ def test_each_replay_speed_plays_moves_at_its_own_interval(cycles, speed_name, m
     assert session.speed_name == speed_name
 
     session.advance_by(move_seconds * 0.9)
-    assert session.move_index == 0
+    assert session.moves_played == 0
 
     session.advance_by(move_seconds * 0.2)
-    assert session.move_index == 1
+    assert session.moves_played == 1
 
 
 def test_changing_the_replay_speed_plays_no_burst_of_moves():
@@ -355,43 +332,6 @@ def test_a_stopped_replay_keeps_its_replay_speed():
     session.cycle_speed()
 
     assert session.speed_name == "Normal"
-
-
-def test_progress_starts_at_the_first_of_all_saved_moves():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-
-    assert session.moves_played == 0
-    assert session.total_moves == 20
-
-
-def test_progress_counts_up_as_moves_are_played():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-
-    session.advance()
-    session.advance()
-
-    assert session.moves_played == 2
-
-
-def test_progress_stays_the_same_while_paused():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-    session.advance()
-    session.toggle_pause()
-
-    session.advance_by(1.0)
-
-    assert session.moves_played == 1
-
-
-def test_progress_goes_back_to_the_start_on_restart():
-    session = ReplaySession(make_replay_data(moves=(RIGHT,) * 20))
-    session.advance()
-    session.advance()
-
-    session.restart()
-
-    assert session.moves_played == 0
-    assert session.total_moves == 20
 
 
 def test_progress_reaches_every_move_when_the_replay_ends():
