@@ -27,9 +27,13 @@ experience. Records, replays, and repeatable experiments show how they compare.
 
 ## Quick Start
 
-You need [uv](https://docs.astral.sh/uv/getting-started/installation/) (on
-macOS, for example, `brew install uv`) and a desktop with a graphics driver,
-because Arcade draws with OpenGL. It works on macOS, Windows, and Linux.
+You need [Git](https://git-scm.com/downloads),
+[uv](https://docs.astral.sh/uv/getting-started/installation/) (on macOS, for
+example, `brew install uv`), and a desktop with a graphics driver,
+because Arcade draws with OpenGL. Arcade supports macOS, Windows, and Linux.
+The automated tests run on all three; the app window itself has so far been
+checked by hand on macOS (see the
+[smoke checklist](docs/arcade-smoke-checklist.md)).
 
 ```bash
 git clone https://github.com/Hung-497/Snake.git
@@ -37,6 +41,9 @@ cd Snake
 uv sync
 uv run python SnakeApp.py
 ```
+
+Without Git, use **Code → Download ZIP** on the GitHub page instead, unzip it,
+and run the same commands from `cd Snake-main` onwards.
 
 `uv sync` downloads Python 3.13 if needed, creates `.venv`, and installs the
 exact versions in `uv.lock`. The other commands in this project start with
@@ -130,12 +137,24 @@ on Linux, Windows, and macOS for pull requests and pushes to `main`.
 
 ## Train and Compare Bots
 
-Training and Bot Experiments run in the terminal without opening the app. They
-need a local copy of the bundled Starter Q-table first:
+Training and Bot Experiments run in the terminal without opening the app. The
+two examples below use Q Learning v2, which needs a local Q-table. Copy the
+bundled Starter Q-table once first. Comparing bots without Q Learning (for
+example `--bots rule hamiltonian`) needs no table, and Q Learning v3 and DQN
+are set up separately; see [Training the Learning Bots](docs/training.md).
+
+On macOS or Linux:
 
 ```bash
 mkdir -p learning_data
 cp -n starter_data/q_table_space_state_v2.json learning_data/q_table_space_state_v2.json
+```
+
+On Windows (PowerShell; if your prompt does not start with `PS`, type `powershell` first):
+
+```powershell
+New-Item -ItemType Directory -Force learning_data
+if (-not (Test-Path learning_data\q_table_space_state_v2.json)) { Copy-Item starter_data\q_table_space_state_v2.json learning_data\ }
 ```
 
 Then train Q Learning for 100 games, or compare the bots on ten games with the
