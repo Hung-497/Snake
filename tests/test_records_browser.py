@@ -401,6 +401,22 @@ def test_records_from_other_boards_or_delays_only_appear_under_all():
     assert scores_selected(browser) == ["1", "2", "3"]
 
 
+def test_a_record_with_unreadable_conditions_only_appears_under_all():
+    unreadable = make_record(score=2)
+    unreadable["board_width"] = "?"
+    unreadable["speed_delay"] = ""
+    browser = make_browser([make_record(score=1), unreadable])
+    assert scores_selected(browser) == ["1"]
+
+    browser.select_board(ALL_BOARDS)
+    assert scores_selected(browser) == ["1"]
+
+    browser.select_speed(ALL_SPEEDS)
+    assert scores_selected(browser) == ["1", "2"]
+    assert len(browser.visible_records()) == 2
+    assert browser.summary()["total_games"] == 2
+
+
 def test_the_board_speed_and_player_filters_combine_in_the_summary():
     browser = make_browser([
         make_record(player="rule", score=4, board=(30, 30), speed_delay=5),

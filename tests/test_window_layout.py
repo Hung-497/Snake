@@ -90,6 +90,19 @@ def test_a_large_board_uses_the_largest_whole_tile_size_that_fits():
     assert (layout.width, layout.height) == (630, 630)
 
 
+def test_a_wide_board_in_a_narrow_window_is_fitted_by_its_width():
+    # Height would allow (2000 - 60) // 10 = 194; width allows only 700 // 50 = 14.
+    layout = layout_board(700, 2000, 50, 10, 30)
+
+    assert layout.tile_size == 14
+    assert (layout.width, layout.height) == (700, 140)
+
+
+@pytest.mark.parametrize("window_height", [500, 100])
+def test_a_very_short_window_still_shows_one_record_per_page(window_height):
+    assert record_rows_per_page(window_height) == 1
+
+
 def test_window_minimum_respects_a_floor_and_the_board_needed():
     assert minimum_window_size(30, 30, 30) == (700, 700)
     assert minimum_window_size(50, 50, 30) == (800, 860)
