@@ -23,6 +23,7 @@ def run_training(tmp_path, *options):
         env=environment,
         capture_output=True,
         text=True,
+        timeout=120,
     )
 
 

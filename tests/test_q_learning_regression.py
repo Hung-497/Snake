@@ -35,9 +35,18 @@ def test_terminal_update_does_not_bootstrap_from_a_next_state(tmp_path):
         GameConfig(2, 1, 25), start_position=(1, 0), direction=Direction.RIGHT,
         food_position=(0, 0),
     )
-    bot = QLearningBot(
-        engine, random_source=FirstChoiceRandom(), q_table_file=str(tmp_path / "t.json"),
-    )
+    # The fatal move is blocked, so the snake stays put and the state after it
+    # is the same state. Give that state a high value: a bot that wrongly
+    # bootstrapped would add 0.9 * 50 and end at -5.5 instead of -10.
+    reader = QLearningBot(engine, q_table_file=str(tmp_path / "unused.json"))
+    key = "_".join(str(value) for value in reader.features(engine.state))
+    table_path = tmp_path / "table.json"
+    table_path.write_text(json.dumps({
+        "q_table": {key: {"Straight": 0, "Turn_Left": 50, "Turn_Right": 0}},
+        "epsilon": 1.0,
+        "game_trained": 0,
+    }))
+    bot = QLearningBot(engine, random_source=FirstChoiceRandom(), q_table_file=str(table_path))
     state_before = bot.features(engine.state)
 
     transition = play_one_move(bot, engine)

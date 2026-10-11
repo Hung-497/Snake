@@ -24,6 +24,7 @@ def run_module(tmp_path, module, *options):
         env=environment,
         capture_output=True,
         text=True,
+        timeout=120,
     )
 
 
@@ -87,7 +88,10 @@ def test_v3_model_is_evaluated_with_v3_features(tmp_path):
 
     assert evaluation.returncode == 0, evaluation.stderr
     assert experiment.returncode == 0, experiment.stderr
-    for report_path in (tmp_path / "experiments").glob("*.json"):
+    # One report per command, so the check below cannot pass on no reports.
+    report_paths = list((tmp_path / "experiments").glob("*.json"))
+    assert len(report_paths) == 2
+    for report_path in report_paths:
         report = json.loads(report_path.read_text())
         assert report["dqn"]["feature_schema"] == "q_learning_space_state_v3"
 
