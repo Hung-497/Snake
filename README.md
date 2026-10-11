@@ -357,15 +357,17 @@ Feature Set v3 (ADR 0009) adds three "can I still reach my tail?" features and
 counts open space as the tail moves away. This experiment checks whether that
 helps Q Learning and DQN, and which of the two learns better with it.
 
-**Setup.** Every bot trained on the 24 × 25 board with a 5000-move limit. Each
-v3 bot was trained three times with different seeds, so one lucky or unlucky
-run cannot decide the result. Every bot then played the same 200 evaluation
-games (seeds 200000–200199), which no bot trained on, in Evaluation Mode.
+**Setup.** Every bot trained on the 24 × 25 board with a 5000-move limit,
+starting from an empty table or a new network. Each bot was trained three
+times with the same three seeds, so one lucky or unlucky run cannot decide the
+result and v2 and v3 get exactly the same chances. Every bot then played the
+same 200 evaluation games (seeds 200000–200199), which no bot trained on, in
+Evaluation Mode.
 
 | Bot | Training games | Training seeds |
 | --- | --- | --- |
-| Q Learning v2 | about 2000 | the local saved table |
-| DQN v2 | 2000, 1200, 1200 | 1000, 3000, 6000 |
+| Q Learning v2 | 2000 each | 9000, 12000, 15000 |
+| DQN v2 | 2000 each | 9000, 12000, 15000 |
 | Q Learning v3 | 2000 each | 9000, 12000, 15000 |
 | DQN v3 | 2000 each | 9000, 12000, 15000 |
 
@@ -373,16 +375,21 @@ games (seeds 200000–200199), which no bot trained on, in Evaluation Mode.
 
 | Bot | Each training seed | Average | Best game |
 | --- | --- | --- | --- |
-| Q Learning v2 | 33.1 | 33.1 | 70 |
-| DQN v2 | 29.8, 32.2, 37.0 | 33.0 | 66 |
+| Q Learning v2 | 43.6, 44.1, 43.1 | 43.6 | 87 |
+| DQN v2 | 32.9, 37.8, 31.1 | 33.9 | 76 |
 | Q Learning v3 | 105.3, 123.6, 127.7 | 118.9 | 173 |
 | DQN v3 | 140.8, 139.6, 128.3 | 136.2 | 176 |
 
-Compared game by game, Q Learning v3 scores 85.7 more than v2 (95% range
-83.0 to 88.5) and DQN v3 scores 103.2 more (101.1 to 105.3). v3 wins all
-200 games for both bots. Many v3 games reached the 5000-move limit while the
-snake was still alive (up to 159 of 200), so these v3 scores are lower than
-the bots' real results; v2 games never came close to the limit.
+Compared game by game, Q Learning v3 scores 75.3 more than v2 (95% range
+72.6 to 78.0) and DQN v3 scores 102.3 more (100.0 to 104.6). v3 scores higher
+in all 200 games for both bots. Many v3 games reached the 5000-move limit
+while the snake was still alive (up to 159 of 200), so these v3 scores are
+lower than the bots' real results; no v2 game reached the limit.
+
+With v2, Q Learning scores 9.7 more than DQN (95% range 8.1 to 11.3) and is
+ahead in 159 of the 200 games. With v3 the order flips: DQN v3 scores 17.4
+more than Q Learning v3 (14.4 to 20.3) at this limit, and 60.0 more at the
+20,000-move limit below.
 
 **Q Learning v3 against DQN v3 (20,000-move limit).** The same six v3 bots
 were evaluated again with room to play on:
@@ -399,23 +406,36 @@ lead is larger still. No bot filled the board.
 
 **Verdict.**
 
-- v3 breaks the v2 ceiling of about 33 points: both bots score about four
-  times higher, because knowing whether the tail is still reachable stops the
-  snake trapping itself.
-- With v2, Q Learning and DQN were equal. With v3, DQN is clearly better: v3
-  has many more possible situations, and the neural network generalises
-  between similar ones where the table must learn each one separately.
-- The training seed matters a lot. DQN v3 models differ by up to 93 points at
-  the 20,000-move limit, so compare several runs rather than one.
+- v3 breaks the v2 ceiling: Q Learning scores about 2.7 times higher and DQN
+  about 4 times higher, because knowing whether the tail is still reachable
+  stops the snake trapping itself.
+- The better learner depends on the Feature Set. With v2, the table beats the
+  network by about 10 points; with v3, DQN is clearly better. v2 has few
+  possible situations, so a table can learn each one; v3 has many more, and the
+  neural network generalises between similar ones where the table must learn
+  each one separately.
+- The training seed matters a lot for v3. DQN v3 models differ by up to 93
+  points at the 20,000-move limit, so compare several runs rather than one.
+  The v2 runs agree within about 7 points.
 
-**Notes.** DQN v3 trained for 2000 games, not the 1200 first planned; DQN v2
-stopped improving around game 1000, so the extra games do not explain the gap.
-The 20,000-move evaluations ran on a different computer, and every game that
-ended before move 5000 matched the 5000-move run exactly.
+**Notes.** The v2 bots above were trained and evaluated on a Windows computer
+and the v3 bots on a Mac; the 20,000-move evaluations also ran on a different
+computer, and every game that ended before move 5000 matched the 5000-move run
+exactly.
+
+An earlier baseline used an older local Q Learning v2 table (about 2000
+games) and DQN v2 runs with other seeds (1000, 3000, 6000; 2000, 1200 and 1200
+games). That DQN v2 baseline scored 33.0, the same as the matched runs above.
+The old Q Learning v2 table scored only 33.1, 10.5 less than the matched
+tables (95% range 8.6 to 12.3). A Q-table does not record how it was trained,
+so the reason is unknown.
 
 To repeat a result, train with the seeds above and evaluate with, for example:
 
 ```bash
+uv run python -m snake.sessions.TrainQLearning --new-table --q-table learning_data/q_table_v2_seed9000.json --seed 9000 --games 2000
+uv run --group dqn python -m snake.sessions.TrainDQN --features v2 --seed 9000 --games 2000
+uv run --group dqn python -m snake.sessions.RunExperiment --bots q_learning dqn --q-table learning_data/q_table_v2_seed9000.json --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 200 --seed 200000 --max-moves 5000
 uv run python -m snake.sessions.RunExperiment --bots q_learning_v3 --q-table-v3 learning_data/q_table_v3_seed9000.json --games 200 --seed 200000 --max-moves 20000
 uv run --group dqn python -m snake.sessions.RunExperiment --bots dqn --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 200 --seed 200000 --max-moves 20000
 ```
