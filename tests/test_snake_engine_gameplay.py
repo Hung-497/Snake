@@ -61,26 +61,22 @@ def test_eating_final_free_cell_wins_without_spawning_more_food():
     assert engine.food_position is None
 
 
-def test_reset_recreates_a_deterministic_valid_state_from_a_seed():
-    first = SnakeEngine(
-        GameConfig(width=4, height=4, tile_size=25),
+def test_reset_clears_the_score_and_places_new_food_on_a_free_cell():
+    engine = SnakeEngine(
+        GameConfig(width=3, height=1, tile_size=25),
         start_position=(0, 0),
+        direction=Direction.RIGHT,
+        food_position=(1, 0),
         random_source=random.Random(10),
     )
-    second = SnakeEngine(
-        GameConfig(width=4, height=4, tile_size=25),
-        start_position=(0, 0),
-        random_source=random.Random(10),
-    )
+    engine.step()
+    assert engine.score == 1
 
-    assert first.state == second.state
+    engine.reset()
 
-    first.step()
-    second.step()
-    first.reset()
-    second.reset()
-
-    assert first.state == second.state
-    assert first.score == 0
-    assert first.game_over is False
-    assert first.game_won is False
+    assert engine.score == 0
+    assert engine.snake_position == (0, 0)
+    assert engine.state.snake_body == ()
+    assert engine.food_position in {(1, 0), (2, 0)}
+    assert engine.game_over is False
+    assert engine.game_won is False

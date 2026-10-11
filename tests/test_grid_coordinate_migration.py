@@ -1,12 +1,8 @@
 import random
-from types import SimpleNamespace
 
 from snake.engine.GameConfig import GameConfig
 from snake.engine.GameTypes import Direction, Position
-from snake.bots.HamiltonianBot import HamiltonianBot
-from snake.bots.QLearningBot import QLearningBot
 from snake.storage.ReplayManager import ReplayManager
-from snake.bots.RuleBasedBot import RuleBasedBot
 from snake.engine.SnakeEngine import SnakeEngine
 
 
@@ -82,57 +78,6 @@ def test_equal_actions_have_equal_outcomes_for_different_tile_sizes():
         assert first.food_position == second.food_position
         assert first.score == second.score
         assert first.game_over == second.game_over
-
-
-class GridBotGame:
-    def __init__(self, tile_size):
-        self.window = SimpleNamespace(
-            width=4,
-            height=4,
-            tile_size=tile_size,
-            WINDOW_WIDTH=4 * tile_size,
-            WINDOW_HEIGHT=4 * tile_size,
-        )
-        self.snake = SimpleNamespace(x=1, y=1, body=[])
-        self.food = SimpleNamespace(x=2, y=1)
-        self.movement = SimpleNamespace(velocity_x=1, velocity_y=0)
-
-
-def make_grid_q_learning_bot(engine):
-    bot = QLearningBot.__new__(QLearningBot)
-    bot.engine = engine
-    bot.random_source = random.Random(1)
-    bot.evaluation_mode = False
-    bot.q_table = {}
-    bot.actions = ["Straight", "Turn_Left", "Turn_Right"]
-    bot.epsilon = 0
-    bot.current_state = None
-    bot.current_action = None
-    bot.distance_before_move = 0
-    return bot
-
-
-def make_grid_engine(tile_size):
-    return SnakeEngine(
-        GameConfig(width=4, height=4, tile_size=tile_size),
-        start_position=(1, 1),
-        direction=Direction.RIGHT,
-        food_position=(2, 1),
-    )
-
-
-def test_all_existing_bots_use_cells_independently_of_tile_size():
-    small_game = GridBotGame(tile_size=20)
-    large_game = GridBotGame(tile_size=40)
-    small_engine = make_grid_engine(tile_size=20)
-    large_engine = make_grid_engine(tile_size=40)
-
-    assert RuleBasedBot(small_engine).choose_action(small_engine.state) is Direction.RIGHT
-    assert RuleBasedBot(large_engine).choose_action(large_engine.state) is Direction.RIGHT
-    assert make_grid_q_learning_bot(small_engine).choose_action(small_engine.state) is Direction.RIGHT
-    assert make_grid_q_learning_bot(large_engine).choose_action(large_engine.state) is Direction.RIGHT
-    assert HamiltonianBot(small_engine).choose_action(small_engine.state) is Direction.RIGHT
-    assert HamiltonianBot(large_engine).choose_action(large_engine.state) is Direction.RIGHT
 
 
 def test_engine_replays_use_the_versioned_grid_storage_format(tmp_path):

@@ -58,8 +58,8 @@ def test_every_bot_mode_completes_a_game_without_a_window(bot_mode, tmp_path, mo
     )
 
     assert engine.game_over is True
-    assert moves < MOVE_LIMIT
-    assert engine.score >= 0
+    # More than one move: the bot did not walk straight into a wall or itself.
+    assert 1 < moves < MOVE_LIMIT
 
 
 @pytest.mark.parametrize("bot_mode", ["rule", "q_learning", "hamiltonian", "search_based"])
