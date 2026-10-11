@@ -1,89 +1,67 @@
 # Snake AI Project
 
-## Overview
+A Python Snake game built with [Arcade](https://api.arcade.academy) 3. Play it
+yourself, or watch AI bots play: hand-written rules, a search that plans ahead,
+a route that covers the whole board, and Q Learning bots that learn from
+experience. Records, replays, and repeatable experiments show how they compare.
 
-A Python Snake game built with Arcade 3.
-The project starts with a basic Snake game, then adds different AI bots, records,
-settings, and replay playback. You can watch a bot play or play yourself with
-the keyboard.
+<p align="center">
+  <img src="img/Gameplay_Hamiltonian.gif" alt="The Hamiltonian bot filling a 16 by 16 board until it wins" width="450">
+  <br>
+  <em>The Hamiltonian bot winning a game on the 16 × 16 board.</em>
+</p>
 
 ## Features
 
-- Basic Snake game
-- Human Play: steer the snake yourself with the arrow keys or WASD
-- Rule-based bot
-- Tabular Q-learning bot
-- Hamiltonian cycle bot
-- Search-Based bot that checks future moves and avoids food paths with no safe continuation
-- Safe shortcut logic
-- Tail reachability check
-- Flood fill space checking
-- Arcade Play menu: play yourself or choose a bot
-- Settings screen for speed, board size, and tile size
-- Resizable window with a board that scales to fit
-- Records screen with filters for each bot and for Human Play, plus summary stats
-- Replay saving and playback of the best game for each bot and for Human Play
-- Q-learning persistence with saved Q-table data
+- **Human Play**: steer the snake yourself with the arrow keys or WASD.
+- **Five bots in the app**: Rule Based, Q Learning, Q Learning v3, Hamiltonian,
+  and Search-Based.
+- **DQN**: an optional neural-network bot, trained and evaluated from the
+  terminal.
+- **Records**: compare Players in a table and charts for each board and speed.
+- **Replays**: watch the best saved game of every Player, with pause, restart,
+  and three speeds.
+- **Settings**: game speed, board size, and tile size, in one resizable window.
+- **Training and Bot Experiments**: train the learning bots and compare every
+  bot on the same seeds, without opening the app.
 
-## Installation
+## Quick Start
 
-This project uses Python and [Arcade](https://api.arcade.academy) 3 for the whole
-app: the window, the screens, the buttons, the timing, and the drawing.
-
-The project uses [uv](https://docs.astral.sh/uv/) to manage Python and its
-dependencies. Install uv first by following the
-[official install guide](https://docs.astral.sh/uv/getting-started/installation/),
-for example on macOS:
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/) (on
+macOS, for example, `brew install uv`) and a desktop with a graphics driver,
+because Arcade draws with OpenGL. It works on macOS, Windows, and Linux.
 
 ```bash
-brew install uv
-```
-
-Then, from the project root, create the environment:
-
-```bash
+git clone https://github.com/Hung-497/Snake.git
+cd Snake
 uv sync
+uv run python SnakeApp.py
 ```
 
 `uv sync` downloads Python 3.13 if needed, creates `.venv`, and installs the
-exact versions in `uv.lock`. Every command below starts with `uv run`, which
-runs it inside that environment.
+exact versions in `uv.lock`. The other commands in this project start with
+`uv run`, which runs them inside that environment.
 
-Arcade draws with OpenGL, so it needs a normal desktop session with a graphics
-driver. It works on macOS, Windows, and Linux.
+## How to Play
 
-## How to Run
-
-```bash
-cd Snake && uv run python SnakeApp.py
-```
-
-The app opens at 900 x 960 in one resizable window and moves between screens
-inside it. The board uses the chosen Tile Size when it fits, or smaller whole
-tiles when the window is narrow. Window size is not saved between runs.
+The app opens one 900 × 960 window and moves between screens inside it. You can
+resize the window; the board scales down to fit. The window size is not saved
+between runs.
 
 ```text
-Menu -> Play -> Play Yourself / Rule Based / Q Learning / Hamiltonian / Search-Based
-     -> Settings -> speed, board size, tile size
-     -> Replay   -> Rule Based / Q Learning / Hamiltonian / Search-Based / Human
-     -> Records  -> All Players / Rule / Q-Learning / Hamiltonian / Search-Based / Human
+Menu -> Play     -> Play Yourself / Rule Based / Q Learning / Hamiltonian / Search-Based / Q Learning v3
+     -> Settings -> game speed, board size, tile size
+     -> Replay   -> Rule Based / Q Learning / Hamiltonian / Search-Based / Q Learning v3 / Human
+     -> Records  -> Compare, Trends, and Games for the chosen board and speed
 ```
 
-Settings are kept for as long as the app is open, so a game started afterwards
-uses the speed, board size, and tile size chosen there. Closing the window
-closes the app.
+A bot plays one game after another by itself; use **Back to Menu** to stop.
+Settings are kept for as long as the app is open. The speed names mean
+different delays for bots and for you: bots move every 10, 5, or 1 ms on Slow,
+Normal, or Fast, and Human Play moves every 150, 100, or 70 ms so you can
+react.
 
-The speed names mean different delays for bots and for Human Play. Bots move
-every 10, 5, or 1 ms on Slow, Normal, or Fast; Human Play moves every 150, 100,
-or 70 ms so a person can react.
-
-A bot plays one game after another by itself. Records keeps each finished game,
-and Replay plays back the best saved game for each bot and for Human Play.
-Search-Based games are saved as `search_based` in records and under
-`replays/search_based_best.json` for their best replay. Compare and Trends show
-Search-Based with its own colour under the chosen Board and Speed.
-
-## Human Play Controls
+### Human Play controls
 
 Choose **Play Yourself** on the Play screen. The snake waits until you press
 your first direction key, which can point any way.
@@ -99,444 +77,134 @@ A key that would turn the snake straight back into itself is ignored. The game
 also pauses when the window loses focus, and stays paused until you resume it.
 A game you leave with Esc before it ends is not saved.
 
-## Local Runtime Data
+While watching a replay, P or Space pauses, R restarts, and S switches between
+the Slow, Normal, and Fast Replay Speeds. The buttons on screen do the same.
 
-Games played in the app, by a bot or by you, save game records in `records/`
-and best replays in `replays/`. Each record and replay names its Player: one
-of the bots, or `human` for Human Play. Records files created before Human Play
-used a `bot_name` column instead of `player`; they still load. Q Learning saves
-its progress in `learning_data/`, and Bot Experiments save separate reports in
-`experiments/`. These folders contain local Runtime Data; Git ignores their
-contents. A fresh clone starts with no saved records or replays.
+### Screens
 
-The project bundles a Starter Q-table at
-`starter_data/q_table_space_state_v2.json`. Headless training and Bot
-Experiments need a local saved Q-table. From the project root, copy the starter
-once before using either command:
+<table>
+  <tr>
+    <td><img src="img/Play_Screen.png" alt="Play screen with Play Yourself and one button per bot" width="400"></td>
+    <td><img src="img/Settings_Screen.png" alt="Settings screen with game speed, board size, and tile size" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Choose who plays</em></td>
+    <td align="center"><em>Settings</em></td>
+  </tr>
+  <tr>
+    <td><img src="img/Records_Screen.png" alt="Records screen comparing every bot in a table and a bar chart" width="400"></td>
+    <td><img src="img/Replay_Screen.png" alt="Replay of a Hamiltonian game with pause, restart, and speed buttons" width="400"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Records: compare every Player</em></td>
+    <td align="center"><em>Replay with playback controls</em></td>
+  </tr>
+</table>
+
+## The Bots
+
+| Bot | How it decides | How well it plays |
+| --- | --- | --- |
+| Rule Based | Follows a safe path to the food, else its tail, else the largest open space | Can play, but may still trap itself |
+| Search-Based | Searches future moves for food it can reach and still keep moving afterwards | Plans ahead, but may still lose |
+| Hamiltonian | Follows a route through every cell, taking safe shortcuts | Wins consistently in the app, which has no move limit |
+| Q Learning | Learns which move is best for each of the situations it can see (9 features) | Average score 43.6 |
+| Q Learning v3 | Q Learning that also checks whether its tail stays reachable (12 features) | Average score 118.9 |
+| DQN | A small neural network instead of a table, with either feature set; terminal only | Average score 33.9 (v2), 136.2 (v3) |
+
+The average scores come from the Feature Set v3 experiment: bots trained for
+2000 games, then evaluated on 200 new games on the 24 × 25 board with a
+5000-move limit. See [Results](docs/results.md) for the setup, the full
+results, and their limitations.
+
+## Run the Tests
+
+```bash
+uv run pytest
+```
+
+`uv sync` already installs pytest, because it is in the `dev` dependency
+group. The DQN tests are skipped unless PyTorch is installed with
+`uv sync --group dqn`. GitHub Actions runs every test, including the DQN tests,
+on Linux, Windows, and macOS for pull requests and pushes to `main`.
+
+## Train and Compare Bots
+
+Training and Bot Experiments run in the terminal without opening the app. They
+need a local copy of the bundled Starter Q-table first:
 
 ```bash
 mkdir -p learning_data
 cp -n starter_data/q_table_space_state_v2.json learning_data/q_table_space_state_v2.json
 ```
 
-The `-n` option preserves an existing local table. On Windows, create the
-`learning_data` folder and copy the starter with File Explorer only when the
-local table does not already exist. Later training updates the local copy; the
-Starter Q-table stays unchanged. The app can also start Q Learning without a
-saved table, beginning new local progress instead of loading the starter.
-
-## Headless Q Learning Training
-
-Run training from the project root without opening the app window:
+Then train Q Learning for 100 games, or compare the bots on ten games with the
+same seeds:
 
 ```bash
-uv run python -m snake.sessions.TrainQLearning --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
+uv run python -m snake.sessions.TrainQLearning --games 100
+uv run python -m snake.sessions.RunExperiment --games 10 --seed 7
 ```
 
-This resumes the existing saved Q-table and saves learning progress back to it
-after each game. A missing or malformed table stops the command with an error;
-training does not start a new table unless you ask for one with `--new-table`
-(see below). The command prints score and learning
-progress in the terminal. It does not add game records or replays.
-
-`--games` is required. The default board is 24 × 25, the default Tile Size is
-25, the default seed is 0, and the default move limit is 5000 per game.
-`--q-table path/to/table.json` trains a different table.
-
-Each Q-table keeps a Training History (ADR 0010): a `training_history` list
-inside the table with one entry per training session, from this command or
-from app play (one entry per visit to the Game view). An entry records the
-seed, board, move limit, learning settings, code version, and the games,
-epsilon, and scores at the start and end of the session. It is updated after
-every game, so a run stopped part-way is still described. Tables saved before
-this feature have no history and still load. The first time one is trained
-again, an `unrecorded` entry counts the games it already had, so the history
-always adds up to the table's game count. A table whose history is broken is
-refused. Bot Experiment reports copy the evaluated table's Training History.
-
-### Q Learning v3
-
-Q Learning v3 is a separate Bot Mode that uses Feature Set v3 (ADR 0009). On
-top of the nine v2 features, it checks whether each move keeps the tail
-reachable, and it counts open space as the tail moves away instead of treating
-the whole body as a wall. It keeps its own table,
-`learning_data/q_table_space_state_v3.json`, plus its own records and best
-replay, so it never changes the v2 table. Every Q-table records its Feature
-Set, and a table saved under another Feature Set is refused.
-
-There is no v3 Starter Q-table. Start an empty v3 table explicitly:
-
-```bash
-uv run python -m snake.sessions.TrainQLearning --bot q_learning_v3 --new-table --games 100 --seed 7
-```
-
-`--new-table` never overwrites an existing table. Leave it out to continue
-training the saved v3 table, and add `--q-table path/to/table.json` to keep
-several v3 tables apart, for example one per training seed. `--new-table` also
-starts an empty v2 table when `--bot` is left out; give it its own
-`--q-table` path, because the default v2 table already exists after setup.
-
-## Headless DQN Experiment
-
-DQN is an optional, CPU-only Deep Q Learning experiment. The normal Snake app
-and default Bot Experiments do not need PyTorch. Install it only when you want
-to train or evaluate DQN:
-
-```bash
-uv sync --group dqn
-```
-
-A plain `uv sync` removes PyTorch again. The DQN commands below use
-`uv run --group dqn`, which reinstalls it when it is missing.
-
-On Windows, PyTorch also needs Microsoft's Visual C++ Redistributable. Most
-Windows PCs already have it, but a fresh Windows (or Windows Server) install
-may not, and importing torch then fails with `WinError 1114` while loading
-`c10.dll`. Install it from <https://aka.ms/vs/17/release/vc_redist.x64.exe>.
-
-Train a new model from the project root:
-
-```bash
-uv run --group dqn python -m snake.sessions.TrainDQN --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
-```
-
-Each run gets its own `learning_data/dqn_runs/<run-id>/` folder. `training.json`
-records each game and loss, `checkpoint.pt` contains the full resumable state,
-and `model.pt` contains the trained network and identifying metadata for
-evaluation. The checkpoint includes both networks, optimizer, epsilon, game
-count, replay buffer, and random states. It is updated every 25 games by
-default and at completion; use `--checkpoint-every` to change that interval.
-`--batch-size` changes the number of replay experiences used per update.
-
-The V1 CPU model is a feed-forward `9 → 64 → 64 → 3` network: the existing
-nine Q Learning features enter two 64-unit ReLU layers, and the three outputs
-are the values of Straight, Turn Left, and Turn Right. Training uses Adam with
-a learning rate of 0.001, uniform experience replay with a 10,000-transition
-capacity and a batch size of 32, and no extra warm-up beyond collecting one
-complete batch. The target network copies the online network every 100
-optimizer steps. These values, the explicit CPU device, and the network shape
-are stored in every new version 2 checkpoint and evaluation model. Version 1
-artifacts created by the earlier DQN implementation remain loadable.
-
-To train DQN on Feature Set v3 (the twelve features Q Learning v3 uses), add
-`--features v3`. The network then takes twelve inputs instead of nine:
-
-```bash
-uv run --group dqn python -m snake.sessions.TrainDQN --features v3 --games 100 --width 24 --height 25 --seed 7 --max-moves 5000
-```
-
-Without `--features`, training uses v2 exactly as before. Checkpoints and
-evaluation models record their Feature Set, so resuming a run keeps it, and
-evaluation and Bot Experiments read it from the model. A model with an unknown
-Feature Set is rejected.
-
-Continue for **additional** games from a checkpoint:
-
-```bash
-uv run --group dqn python -m snake.sessions.TrainDQN --resume learning_data/dqn_runs/<run-id>/checkpoint.pt --games 100
-```
-
-Resume restores the saved board, seed, move limit, learning settings, and
-random state. It writes a new run folder and leaves the source checkpoint
-untouched. Supplied settings that conflict with the checkpoint are rejected.
-To evaluate a fixed model on the same board or another board, use `model.pt`:
-
-```bash
-uv run --group dqn python -m snake.sessions.EvaluateDQN --model learning_data/dqn_runs/<run-id>/model.pt --games 10 --width 24 --height 25 --seed 7
-```
-
-Evaluation does not explore, learn, or alter the saved model. It writes a
-version 3 report in `experiments/`, including the model hash and both training
-and evaluation boards. A training checkpoint cannot be used as an evaluation
-model. DQN uses the same nine features, three relative actions, safe-action
-selection, reward, discount, and epsilon rules as tabular Q Learning; its
-action values come from a neural network instead of a Q-table.
-
-## Bot Experiments
-
-Compare the normal Bot Modes without opening the app:
-
-```bash
-uv run python -m snake.sessions.RunExperiment --games 10 --width 24 --height 25 --seed 7 --max-moves 5000
-```
-
-The command defaults to one game. It uses the same board and seeds for each Bot
-Mode: with `--seed 7 --games 10`, the per-game seeds are 7 through 16. Each game
-gets fresh Game Engine and bot random sources. The Game Engine uses the listed
-seed; the bot uses that seed plus one. Use the same command, code, and
-Q-table again to repeat the gameplay results. Each run saves a new JSON file in
-`experiments/` and prints its path; older results are kept.
-
-By default, the command compares Rule Based, Q Learning, Hamiltonian, and
-Search-Based. To compare only particular modes, list them after `--bots`:
-
-```bash
-uv run python -m snake.sessions.RunExperiment --bots rule search_based --games 10 --seed 7
-```
-
-The selected order is kept in the result. A one-bot experiment is also valid.
-The default set follows new normal Bot Modes when they are registered.
-The terminal prints a Search-Based summary, and the report stores its games and
-summary under `bots.search_based` with the same version 3 format as the others.
-It also prints each finished game while a comparison is running. Search-Based
-searches future moves on every board, so ten full-board games can take a few
-minutes even when they make steady progress.
-
-To include DQN, explicitly select it and supply an evaluation model:
-
-```bash
-uv run --group dqn python -m snake.sessions.RunExperiment --bots rule q_learning dqn --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 10 --seed 7
-```
-
-DQN can also be selected alone. When Q Learning is selected, its local saved
-Q-table or an explicit `--q-table` path is still required. Every selected bot
-uses the same board and seed list. The command checks all selected bots and
-required files before any game begins; it never silently omits an unsupported
-bot. DQN's report entry identifies the model and records the training and
-evaluation boards, so cross-board results remain clear.
-
-Q Learning v3 is not in the default comparison. Select it explicitly to compare
-both versions on the same seeds:
-
-```bash
-uv run python -m snake.sessions.RunExperiment --bots q_learning q_learning_v3 --games 10 --seed 7
-```
-
-Use `--q-table-v3 path/to/table.json` to evaluate a different v3 table. The
-report records each table's Feature Set.
-
-Q Learning uses Evaluation Mode: it reads the saved Q-table without exploring,
-learning, or saving changes. Use `--q-table path/to/table.json` to select a
-different table. A Q-table is required when Q Learning is selected, including
-in the default comparison; the command never silently loads the Starter Q-table.
-Missing or malformed required tables, invalid settings, and boards unsupported
-by a selected Bot Mode stop before play. Hamiltonian needs both board
-dimensions to be at least two and at least one even dimension. Training Mode
-uses the separate command above and does change the saved Q-table.
-
-The version 3 JSON records the selected Bot Modes and keeps every game's seed,
-score, moves, and outcome (`won`, `collision`, or `move_limit`). A move limit is
-never counted as a win or a collision. On a
-large board, the move limit may end a surviving Hamiltonian game before the
-snake fills every cell. Each Bot Mode also has:
-
-- Mean, median, and best score; population score standard deviation. Lower
-  standard deviation means more consistent scores within that workload.
-- Wins and win rate (a fraction in JSON, shown as a percentage in the terminal),
-  plus collision and move-limit counts.
-- Total, mean, median, minimum, and maximum moves, and games per second.
-
-The result records creation time, Python version, Git commit, a hash of the
-current `snake/` Python sources, board settings, game count, base and per-game
-seeds, move limit, and the selected Q-table's path, hash, and learning settings.
-It also states the timing basis. Games per second measures wall time for each
-Bot Mode's actual gameplay. It excludes engine and bot setup, Q-table loading,
-the initial Q-table check, and JSON writing. Throughput varies
-by machine and Python version, so compare it under the same environment.
-
-These experiments use one fixed Q-table and one board configuration per run.
-They do not train a new policy, measure statistical confidence, or save game
-records and replays. Human Play is not part of Bot Experiments. Scores are
-comparable across bots for the same seed list; elapsed time can vary between
-otherwise identical runs.
-
-## Run Tests
-
-`uv sync` already installs pytest, because it is in the `dev` dependency group.
-
-Run the tests from the project root:
-
-```bash
-uv run pytest
-```
-
-GitHub Actions runs this same test command on Python 3.13 for pull requests
-and pushes to `main`.
-
-## Bot Results
-
-| Bot             | Result                                                              |
-| --------------- | ------------------------------------------------------------------- |
-| Rule-based bot  | Can play, but may still trap itself                                 |
-| Q-learning bot  | Learns short-term behavior, but struggles with long-term traps      |
-| Hamiltonian bot | Beats the game consistently using cycle planning and safe shortcuts |
-| Search-Based bot | Plans future moves and checks for a safe route after food; may still lose |
-
-### Feature Set v3 experiment
-
-Feature Set v3 (ADR 0009) adds three "can I still reach my tail?" features and
-counts open space as the tail moves away. This experiment checks whether that
-helps Q Learning and DQN, and which of the two learns better with it.
-
-**Setup.** Every bot trained on the 24 × 25 board with a 5000-move limit,
-starting from an empty table or a new network. Each bot was trained three
-times with the same three seeds, so one lucky or unlucky run cannot decide the
-result and v2 and v3 get exactly the same chances. Every bot then played the
-same 200 evaluation games (seeds 200000–200199), which no bot trained on, in
-Evaluation Mode.
-
-| Bot | Training games | Training seeds |
-| --- | --- | --- |
-| Q Learning v2 | 2000 each | 9000, 12000, 15000 |
-| DQN v2 | 2000 each | 9000, 12000, 15000 |
-| Q Learning v3 | 2000 each | 9000, 12000, 15000 |
-| DQN v3 | 2000 each | 9000, 12000, 15000 |
-
-**v2 against v3 (5000-move limit).** Mean score over the 200 games:
-
-| Bot | Each training seed | Average | Best game |
-| --- | --- | --- | --- |
-| Q Learning v2 | 43.6, 44.1, 43.1 | 43.6 | 87 |
-| DQN v2 | 32.9, 37.8, 31.1 | 33.9 | 76 |
-| Q Learning v3 | 105.3, 123.6, 127.7 | 118.9 | 173 |
-| DQN v3 | 140.8, 139.6, 128.3 | 136.2 | 176 |
-
-Compared game by game, Q Learning v3 scores 75.3 more than v2 (95% range
-72.6 to 78.0) and DQN v3 scores 102.3 more (100.0 to 104.6). v3 scores higher
-in all 200 games for both bots. Many v3 games reached the 5000-move limit
-while the snake was still alive (up to 159 of 200), so these v3 scores are
-lower than the bots' real results; no v2 game reached the limit.
-
-With v2, Q Learning scores 9.7 more than DQN (95% range 8.1 to 11.3) and is
-ahead in 159 of the 200 games. With v3 the order flips: DQN v3 scores 17.4
-more than Q Learning v3 (14.4 to 20.3) at this limit, and 60.0 more at the
-20,000-move limit below.
-
-**Q Learning v3 against DQN v3 (20,000-move limit).** The same six v3 bots
-were evaluated again with room to play on:
-
-| Bot | Each training seed | Average | Best game |
-| --- | --- | --- | --- |
-| Q Learning v3 | 108.7, 132.1, 155.4 | 132.1 | 302 |
-| DQN v3 | 236.4, 196.8, 143.0 | 192.0 | 356 |
-
-Game by game, DQN v3 scores 60.0 more than Q Learning v3 (95% range 53.0 to
-66.9) and wins 171 of the 200 games. Even 20,000 moves cut off 100 games for
-one DQN model; those were its best games (316 food on average), so DQN's real
-lead is larger still. No bot filled the board.
-
-**Verdict.**
-
-- v3 breaks the v2 ceiling: Q Learning scores about 2.7 times higher and DQN
-  about 4 times higher, because knowing whether the tail is still reachable
-  stops the snake trapping itself.
-- The better learner depends on the Feature Set. With v2, the table beats the
-  network by about 10 points; with v3, DQN is clearly better. v2 has few
-  possible situations, so a table can learn each one; v3 has many more, and the
-  neural network generalises between similar ones where the table must learn
-  each one separately.
-- The training seed matters a lot for v3. DQN v3 models differ by up to 93
-  points at the 20,000-move limit, so compare several runs rather than one.
-  The v2 runs agree within about 7 points.
-
-**Notes.** The v2 bots above were trained and evaluated on a Windows computer
-and the v3 bots on a Mac; the 20,000-move evaluations also ran on a different
-computer, and every game that ended before move 5000 matched the 5000-move run
-exactly.
-
-An earlier baseline used an older local Q Learning v2 table (about 2000
-games) and DQN v2 runs with other seeds (1000, 3000, 6000; 2000, 1200 and 1200
-games). That DQN v2 baseline scored 33.0, the same as the matched runs above.
-The old Q Learning v2 table scored only 33.1, 10.5 less than the matched
-tables (95% range 8.6 to 12.3). A Q-table does not record how it was trained,
-so the reason is unknown.
-
-To repeat a result, train with the seeds above and evaluate with, for example:
-
-```bash
-uv run python -m snake.sessions.TrainQLearning --new-table --q-table learning_data/q_table_v2_seed9000.json --seed 9000 --games 2000
-uv run --group dqn python -m snake.sessions.TrainDQN --features v2 --seed 9000 --games 2000
-uv run --group dqn python -m snake.sessions.RunExperiment --bots q_learning dqn --q-table learning_data/q_table_v2_seed9000.json --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 200 --seed 200000 --max-moves 5000
-uv run python -m snake.sessions.RunExperiment --bots q_learning_v3 --q-table-v3 learning_data/q_table_v3_seed9000.json --games 200 --seed 200000 --max-moves 20000
-uv run --group dqn python -m snake.sessions.RunExperiment --bots dqn --dqn-model learning_data/dqn_runs/<run-id>/model.pt --games 200 --seed 200000 --max-moves 20000
-```
-
-## Demo
-
-### App Screens
-
-These screenshots were taken before the move to Arcade and before Human Play
-was added, so the screens look different now. The Play, Replay, and Records
-screens now also offer Human Play.
-
-**Main Menu**
-
-![Main Menu](/img/Main_Menu.png)
-
-**Play Screen**
-
-![Play Screen](/img/Play_Screen.png)
-
-**Settings Screen**
-
-![Settings Screen](/img/Settings_Screen.png)
-
-**Records Screen**
-
-![Records Screen](/img/Logs_Screen.png)
-
-**Replay Screen**
-
-![Replay Screen](/img/Replay_Screen.png)
-
-### Bot Demos
-
-1. Rule-based Bot
-
-![demo_rule_based_bot](/img/Demo_RuleBasedBot.gif)
-
-_Display_
-
-![result_rule_based_bot](/img/Result_RuleBasedBot.png)
-
-_Results on the terminal_
-
-2. Q-learning Bot
-
-![demo_q_learning_bot](/img/Demo_QLearningBot.gif)
-
-_Display_
-
-![result_q_learning_bot](/img/Result_QLearningBot.png)
-
-_Results on the terminal_
-
-3. Hamiltonian Bot
-
-![demo_hamiltonian_bot](/img/Demo_HamiltonianBot.gif)
-
-_Display_
-
-![result_hamiltonian_bot](/img/Result_HamiltonianBot.png)
-
-_Results on the terminal_
+The comparison can take ten minutes or more, mostly because Search-Based plans
+every move. Add `--bots rule q_learning hamiltonian` to leave it out.
+
+- [Training the Learning Bots](docs/training.md): Q Learning v2 and v3, the
+  Training History, and DQN training, resuming, and evaluation.
+- [Bot Experiments](docs/bot-experiments.md): choosing bots, adding DQN, and
+  what each JSON report records.
+
+## Where Your Data Is Saved
+
+Games played in the app, by a bot or by you, save game records in `records/`
+and each Player's best replay in `replays/`, for example
+`replays/search_based_best.json`. Each record and replay names its Player: a
+bot, or `human` for Human Play. Hamiltonian saves only games it wins. Q
+Learning saves its progress in `learning_data/`, and Bot Experiments save
+reports in `experiments/`. These folders hold local Runtime Data that Git
+ignores, so a fresh clone starts with no records or replays.
 
 ## Project Structure
 
 ```text
 SnakeApp.py          # Starts the app: the Arcade window and the App Views
 snake/
-  engine/            # GameConfig, GameTypes, SnakeEngine: board rules and state
-  bots/              # BotMode, BotFactory, and the four Bot Modes
+  engine/            # SnakeEngine, GameConfig, GameTypes: board rules and state
+  bots/              # BotMode, BotFactory, and the bots: Rule Based, Q Learning
+                     # (v2 and v3), Hamiltonian, Search-Based, and DQN
   sessions/          # GameSession, ReplaySession, SessionSettings, HumanPlayer,
-                     # PlayerFactory, and the TrainQLearning and RunExperiment
-                     # commands
-  storage/           # RecordManager and ReplayManager
+                     # PlayerFactory, and the TrainQLearning, TrainDQN,
+                     # EvaluateDQN, and RunExperiment commands
+  storage/           # Records, replays, DQN files, and code version for reports
   ui/                # AppShell, Theme, WindowLayout, MotionRules, BoardRenderer,
-                     # RecordsBrowser, and PlayerLabels
-    views/           # Menu, Settings, Play, Game, Replay, ReplayPlayback,
+                     # RecordsBrowser, Charts, and PlayerLabels
+    views/           # Menu, Play, Settings, Game, Replay, ReplayPlayback,
                      # and Records App Views
-tests/               # Behavior and regression tests
-assets/              # Bundled fonts
-records/             # Saved game result CSV data
-replays/             # Saved replay JSON files
-learning_data/       # Saved Q-table data
+tests/               # Automated tests (pytest)
+docs/                # Training, Bot Experiments, Results, and decisions
+assets/fonts/        # Bundled Inter font and its licence
+img/                 # Screenshots and the GIF in this README
 starter_data/        # Bundled Starter Q-table
-experiments/         # Saved Bot Experiment reports
-docs/                # Architecture decisions and the smoke checklist
 DEVLOG.md            # Development diary
 ```
 
-## Development Diary
+`records/`, `replays/`, `learning_data/`, and `experiments/` are created when
+you play, train, or run Bot Experiments.
 
-I documented the learning process, bugs, experiments, and results in [DEVLOG.md](DEVLOG.md).
+## Documentation
+
+- [Training the Learning Bots](docs/training.md)
+- [Bot Experiments](docs/bot-experiments.md)
+- [Results](docs/results.md)
+- [Architecture Decision Log](docs/adr/README.md): why the project is built the
+  way it is
+- [Arcade smoke checklist](docs/arcade-smoke-checklist.md): manual checks the
+  automated tests cannot cover
+- [Development diary](DEVLOG.md): the learning process, bugs, experiments, and
+  results along the way
+
+## License
+
+This project is released under the [MIT License](LICENSE). The bundled Inter
+font in `assets/fonts/` is not covered by it: it keeps its own
+[SIL Open Font License](assets/fonts/Inter-LICENSE.txt).

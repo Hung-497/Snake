@@ -1,5 +1,10 @@
 # Upgrade old records files in place, keeping a backup
 
+- Status: Accepted
+- Category: Saved Data
+- Recorded: 2026-09-26
+- Discussed in: [#58](https://github.com/Hung-497/Snake/issues/58)
+
 Records Analytics needs a Game Outcome for every new game record, which adds a column to the records CSV. The CSV reader expects every row to match the header, so rows with the new column cannot be appended to a file that has the old header. The first time the app writes to an old records file, it saves a copy as `game_records.csv.bak` and rewrites the file with the new header. Old rows get an empty outcome, which means unknown.
 
 ## Considered Options

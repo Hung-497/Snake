@@ -1,5 +1,10 @@
 # Separate Runtime Data from the Starter Q-table
 
+- Status: Accepted
+- Category: Saved Data
+- Recorded: 2026-09-25
+- Discussed in: [#47](https://github.com/Hung-497/Snake/issues/47)
+
 The app, training command, and Bot Experiments write results into project folders. Keep those generated Q-tables, watched-game records, replays, and experiment results as local Runtime Data rather than tracked files. Bundle a separate Starter Q-table from the committed Q-table snapshot so a fresh clone has an explicit starting point without making that starter writable during normal use.
 
 ## Considered Options

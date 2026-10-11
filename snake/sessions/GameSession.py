@@ -10,7 +10,7 @@ class GameSession:
     """
     Runs repeated Snake games for one Player, without drawing anything.
 
-    The session owns the bookkeeping the old Tkinter loop kept: the score, the
+    The session owns the bookkeeping around each game: the score, the
     match count, the best score, the rolling averages, saving records and
     replays, and starting the next game. All Snake rules stay in the Game
     Engine, and all drawing stays in the Game App View, which just asks the
@@ -21,8 +21,8 @@ class GameSession:
     them to restart it.
     """
 
-    # The result of a finished game shows for a moment before the next one
-    # starts, which is what the Tkinter loop did with after(10, ...).
+    # The result of a finished game shows for a moment (10 ms) before the
+    # next game starts.
     RESULT_PAUSE_SECONDS = 0.01
     # One long frame must not freeze the window by trying to catch up forever.
     MOVES_PER_UPDATE_LIMIT = 50

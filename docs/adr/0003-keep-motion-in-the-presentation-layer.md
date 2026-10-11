@@ -1,5 +1,11 @@
 # Keep motion in the presentation layer, and do not animate snake movement
 
+- Status: Accepted
+- Category: Game & UI
+- Recorded: 2026-09-25
+- Updated: 2026-09-25, for Human Play ([#52](https://github.com/Hung-497/Snake/issues/52))
+- Discussed in: [#32](https://github.com/Hung-497/Snake/issues/32)
+
 The app adds motion to the interface: hover and press feedback, a short cross-fade between App Views, and time-based board effects such as a pulsing food and an end-of-game flash. Every effect is driven by elapsed wall-clock time inside an App View. The snake itself is not animated between cells.
 
 Cell-to-cell animation was ruled out by the speed settings rather than by taste. A game step is 1 millisecond on Fast, 5 on Normal and 10 on Slow, while a frame is about 17 milliseconds, so the snake advances roughly sixteen, three and two cells per frame respectively. No frame ever shows a single step in progress, so there is nothing to interpolate without adding a speed far slower than any the app offers.

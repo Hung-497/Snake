@@ -1,5 +1,12 @@
 # Manage Dependencies with uv
 
+- Status: Accepted
+- Category: Project Setup
+- Recorded: 2026-10-09
+- Updated: 2026-10-10, CI runs every test on Linux, Windows, and macOS ([#100](https://github.com/Hung-497/Snake/pull/100))
+- Discussed in: [#85](https://github.com/Hung-497/Snake/issues/85)
+- Related: [ADR 0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md), why PyTorch is CPU-only
+
 Setup used pip with three requirements files, CI ran Python 3.13 while local environments drifted to other versions, and the docs mixed `python3`, `pip`, and `.venv/bin/python3` commands. Declare all dependencies in one `pyproject.toml`, commit a `uv.lock`, pin Python 3.13 in `.python-version`, and run everything (app, tests, CI, training, experiments) through `uv sync` and `uv run` so every machine resolves the same versions.
 
 ## Considered Options

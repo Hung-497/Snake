@@ -1,5 +1,12 @@
 # Use Arcade for the presentation layer
 
+- Status: Accepted
+- Category: Game & UI
+- Recorded: 2026-09-18
+- Discussed in: [#1](https://github.com/Hung-497/Snake/issues/1)
+- Amended by: [ADR 0002](0002-resizable-window-with-a-scaled-board.md), which made the window resizable
+- Note: "will not add human controls" applied to this migration only; Human Play was added later ([#52](https://github.com/Hung-497/Snake/issues/52))
+
 Replace Tkinter and CustomTkinter with Arcade 3.x after the headless Game Engine has been extracted. The Snake app is game-first, and Arcade provides game rendering, a game loop, GUI widgets, and switchable views in one framework without the desktop-application complexity of Qt.
 
 ## Considered Options

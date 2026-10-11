@@ -1,5 +1,11 @@
 # Keep DQN headless with separate training and evaluation artifacts
 
+- Status: Accepted
+- Category: Bots & Training
+- Recorded: 2026-09-26
+- Discussed in: [#77](https://github.com/Hung-497/Snake/issues/77)
+- Extended by: [ADR 0009](0009-version-learned-artifacts-by-feature-set.md), which adds the Feature Set to DQN models
+
 DQN is an optional, CPU-only headless Bot Mode in its first version. Its PyTorch dependency stays outside normal app startup and default Bot Experiments; a user explicitly selects DQN and its evaluation model. Training saves a full resumable checkpoint separately from the smaller evaluation model, so evaluation cannot accidentally change learning state and a later run can resume meaningfully.
 
 ## Considered Options

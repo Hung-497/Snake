@@ -1,5 +1,10 @@
 # Run Bot Experiments headlessly and keep their records separate
 
+- Status: Accepted
+- Category: Bots & Training
+- Recorded: 2026-09-25
+- Discussed in: [#42](https://github.com/Hung-497/Snake/issues/42)
+
 Bot Experiments run through the Game Engine and Bot Mode contract without an Arcade window. A headless runner can use fixed seeds and compare Bot Modes without the frame timing, replay saving, and watched-game records owned by `GameSession`. Each experiment saves its own JSON result instead of adding benchmark games to the existing game-record CSV.
 
 ## Considered Options

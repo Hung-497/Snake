@@ -8,8 +8,7 @@ class BotMode:
     """Common responsibilities shared by every Bot Mode.
 
     A Bot Mode decides from presentation-neutral Game Engine state and
-    previewed transitions. It never reads the window, canvas, or the mutable
-    snake, food, and movement objects.
+    previewed transitions. It never reads the window or the Board Area.
     """
 
     # The session may ask a costly bot for fewer decisions in one frame.
