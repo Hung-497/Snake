@@ -29,7 +29,7 @@ mkdir -p learning_data
 cp -n starter_data/q_table_space_state_v2.json learning_data/q_table_space_state_v2.json
 ```
 
-On Windows (PowerShell):
+On Windows (PowerShell; if your prompt does not start with `PS`, type `powershell` first):
 
 ```powershell
 New-Item -ItemType Directory -Force learning_data
