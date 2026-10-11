@@ -79,6 +79,11 @@ def main(argv=None):
             require_saved_table=not options.new_table,
             q_table_file=options.q_table,
             feature_set=feature_set,
+            session={
+                "source": "train_command",
+                "seed": options.seed,
+                "max_moves": options.max_moves,
+            },
         )
     except ValueError as error:
         parser.error(str(error))

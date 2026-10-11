@@ -8,7 +8,6 @@ from pathlib import Path
 import platform
 import random
 import statistics
-import subprocess
 import time
 import uuid
 
@@ -19,6 +18,7 @@ from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.engine.SnakeEngine import SnakeEngine
 from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE, play_game
+from snake.storage.CodeIdentity import code_identity
 
 
 BOT_NAMES = {
@@ -64,29 +64,6 @@ def summarize_games(games, elapsed_seconds):
     }
 
 
-def code_identity():
-    """Identify both the Git revision and the current Python source files."""
-    project_root = Path(__file__).resolve().parents[2]
-    try:
-        revision = subprocess.run(
-            ["git", "-C", str(project_root), "rev-parse", "HEAD"],
-            capture_output=True, text=True, check=False,
-        )
-        git_commit = revision.stdout.strip() if revision.returncode == 0 else None
-    except OSError:
-        git_commit = None
-    source_hash = hashlib.sha256()
-    for source_path in sorted((project_root / "snake").rglob("*.py")):
-        source_hash.update(str(source_path.relative_to(project_root)).encode())
-        source_hash.update(b"\0")
-        source_hash.update(source_path.read_bytes())
-
-    return {
-        "git_commit": git_commit,
-        "source_sha256": source_hash.hexdigest(),
-    }
-
-
 def q_learning_identity(bot):
     """Identify the policy file and settings used for Evaluation Mode."""
     return {
@@ -100,6 +77,8 @@ def q_learning_identity(bot):
         "min_epsilon": bot.min_epsilon,
         "epsilon_decay": bot.epsilon_decay,
         "evaluation_mode": bot.evaluation_mode,
+        # How the table was trained, as it stood when this experiment ran.
+        "training_history": bot.training_history,
     }
 
 

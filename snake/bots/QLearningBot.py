@@ -1,8 +1,15 @@
+from datetime import datetime, timezone
 import json
 import math
 import os
+import platform
 
 from snake.bots.LearningBot import FEATURE_COUNTS, LearningBot
+from snake.storage.CodeIdentity import code_identity
+
+
+# A session with no description is app play: no fixed seed or move limit.
+APP_SESSION = {"source": "app", "seed": None, "max_moves": None}
 
 
 class QLearningBot(LearningBot):
@@ -16,7 +23,7 @@ class QLearningBot(LearningBot):
 
     def __init__(
         self, engine, random_source=None, require_saved_table=False,
-        evaluation_mode=False, q_table_file=None, feature_set="v2",
+        evaluation_mode=False, q_table_file=None, feature_set="v2", session=None,
     ):
         super().__init__(engine, random_source, feature_set=feature_set)
 
@@ -33,10 +40,20 @@ class QLearningBot(LearningBot):
         self.current_state = None
         self.current_action = None
         self.distance_before_move = 0
+        self.training_history = [] # one entry per training session (ADR 0010)
 
         loaded = self.load_q_table()
         if (require_saved_table or evaluation_mode) and not loaded:
             raise ValueError(self._load_error_message())
+
+        self.session = dict(APP_SESSION if session is None else session)
+        self.session_started_from = "existing" if loaded else "empty"
+        self.session_started_at = self._now()
+        self.session_games_at_start = self.game_trained
+        self.session_epsilon_at_start = self.epsilon
+        self.session_scores = []
+        self.session_move_limit_games = 0
+        self.session_entry = None
 
     def choose_action(self, state):
         self.current_state = self._get_state(state)
@@ -79,7 +96,52 @@ class QLearningBot(LearningBot):
 
         self.game_trained += 1
         self.decay_epsilon()
+        self._record_session_game(result)
         self.save_q_table()
+
+    def _now(self):
+        return datetime.now(timezone.utc).isoformat()
+
+    def _record_session_game(self, result):
+        """Add this session to the Training History, or bring it up to date."""
+        self.session_scores.append(result.score)
+        # Only a move limit stops a game that is not over.
+        self.session_move_limit_games += int(not result.game_over)
+
+        if self.session_entry is None:
+            # Games trained before the history existed stay visible as a gap.
+            if not self.training_history and self.session_games_at_start > 0:
+                self.training_history.append(
+                    {"source": "unrecorded", "games": self.session_games_at_start}
+                )
+            self.session_entry = {
+                "source": self.session["source"],
+                "started_from": self.session_started_from,
+                "started_at": self.session_started_at,
+                "seed": self.session["seed"],
+                "board": {"width": result.board_width, "height": result.board_height},
+                "max_moves": self.session["max_moves"],
+                "learning": {
+                    "learning_rate": self.learning_rate,
+                    "discount_rate": self.discount_rate,
+                    "epsilon_decay": self.epsilon_decay,
+                    "min_epsilon": self.min_epsilon,
+                },
+                "games_at_start": self.session_games_at_start,
+                "epsilon_at_start": self.session_epsilon_at_start,
+                "code": code_identity(),
+                "python_version": platform.python_version(),
+            }
+            self.training_history.append(self.session_entry)
+
+        self.session_entry.update({
+            "ended_at": self._now(),
+            "games_at_end": self.game_trained,
+            "epsilon_at_end": self.epsilon,
+            "average_score": sum(self.session_scores) / len(self.session_scores),
+            "best_score": max(self.session_scores),
+            "move_limit_games": self.session_move_limit_games,
+        })
 
     def _state_to_key(self, state):
         key_parts = [str(value) for value in state]
@@ -109,7 +171,8 @@ class QLearningBot(LearningBot):
             "feature_set": self.feature_set,
             "q_table": q_table_to_save,
             "epsilon": epsilon_to_save,
-            "game_trained": self.game_trained
+            "game_trained": self.game_trained,
+            "training_history": self.training_history,
         }
 
         with open(self.q_table_file, "w") as file:
@@ -161,10 +224,19 @@ class QLearningBot(LearningBot):
         ):
             return False
 
+        # Tables saved before the Training History existed have none.
+        training_history = saved_data.get("training_history", [])
+        if (
+            not isinstance(training_history, list)
+            or not all(isinstance(entry, dict) for entry in training_history)
+        ):
+            return False
+
         loaded_q_table = self._parse_q_table(saved_data["q_table"])
         if (loaded_q_table is None):
             return False
 
+        self.training_history = training_history
         self.q_table = loaded_q_table
         self.epsilon = epsilon
         self.game_trained = game_trained
