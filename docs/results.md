@@ -91,6 +91,9 @@ lead is larger still. No bot filled the board.
   Q-tables kept a Training History
   ([ADR 0010](adr/0010-keep-q-learning-training-history-inside-the-q-table.md)),
   so the reason is unknown.
+- Re-checked on 2026-10-11 at commit `e2a6d8f`: the Q Learning v2 table from
+  training seed 12000 replayed all 200 evaluation games exactly as before, game
+  for game, so these results still hold for the current code.
 
 ### How to repeat
 
@@ -114,3 +117,67 @@ uv run --group dqn python -m snake.sessions.TrainDQN --features v3 --seed 9000 -
 
 Repeat for seeds 12000 and 15000. Training uses the default 24 × 25 board and
 5000-move limit.
+
+## Reference bots (no learning)
+
+Rule Based, Search-Based, and Hamiltonian do not learn, so training games
+would not change them. They are reference points for the learning bots above,
+not competitors: Rule Based shows what simple hand-written rules reach, and
+Hamiltonian shows the other extreme, a bot that always fills the board but
+needs far more moves.
+
+All runs used the same 24 × 25 board and evaluation seeds as the experiment
+above, with code at commit `e2a6d8f` (after the Search-Based loop fix in PR
+#133), Python 3.13.16, on a Windows virtual machine on 2026-10-11.
+
+### Rule Based and Search-Based (seeds 200000–200199)
+
+Both bots play until they crash. Their longest games lasted 685 and 1,762
+moves, so the 5000-move limit never ended one of their games.
+
+| Bot | Games | Mean score | Median | Best | Mean moves | Moves per food | How the games ended |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Rule Based | 200 | 13.9 | 13 | 37 | 229 | 16.5 | 200 collisions |
+| Search-Based | 200 | 38.0 | 36 | 85 | 696 | 18.3 | 200 collisions |
+
+On the same 200 games, the learning bots above average 43.6 (Q Learning v2),
+33.9 (DQN v2), 118.9 (Q Learning v3), and 136.2 (DQN v3).
+
+### Hamiltonian (seeds 200000–200019)
+
+Hamiltonian does not crash: it follows a route through every cell, so the
+question is how long it takes to win. It ran with a 100,000-move limit, which
+no game came near.
+
+| Games | Wins | Mean moves per win | Fewest | Most | Moves per food | Time per win |
+| --- | --- | --- | --- | --- | --- | --- |
+| 20 | 20 (board filled, score 599) | 46,572 | 43,992 | 49,150 | 77.7 | about 1 min 49 s |
+
+These are the first 20 of the 200 seeds above. More games would not change
+the picture: every game filled the board.
+
+### Notes
+
+- Moves per food is the mean number of moves divided by the mean score. It
+  shows how directly a bot reaches food: Hamiltonian needs about 4 to 5 times
+  more moves per food than Rule Based or Search-Based, which is the price of
+  never crashing.
+- Hamiltonian is not compared at the 5000-move limit used above: it needs
+  about 46,600 moves to fill the board, so a 5000-move cut-off would only show
+  how far it got, not how it plays.
+- Search-Based is slow per move because it plans ahead: its 200 games took
+  about 71 minutes on the virtual machine. Rule Based's time is left out
+  because the console was paused during its run. Times depend on the machine;
+  scores do not.
+- These bots use no randomness, so the same code and seeds give the same
+  games: the first 9 games of an earlier, interrupted Hamiltonian run matched
+  the 20-game run move for move.
+
+### How to repeat
+
+```bash
+uv run python -m snake.sessions.RunExperiment --bots rule search_based --games 200 --seed 200000 --max-moves 5000
+uv run python -m snake.sessions.RunExperiment --bots hamiltonian --games 20 --seed 200000 --max-moves 100000
+```
+
+No Q-table is needed for these bots.

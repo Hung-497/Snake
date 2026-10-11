@@ -112,17 +112,21 @@ the Slow, Normal, and Fast Replay Speeds. The buttons on screen do the same.
 
 | Bot | How it decides | How well it plays |
 | --- | --- | --- |
-| Rule Based | Follows a safe path to the food, else its tail, else the largest open space | Can play, but may still trap itself |
-| Search-Based | Searches future moves for food it can reach and still keep moving afterwards | Plans ahead, but may still lose |
-| Hamiltonian | Follows a route through every cell, taking safe shortcuts | Wins consistently in the app, which has no move limit |
+| Rule Based | Follows a safe path to the food, else its tail, else the largest open space | Average score 13.9; may still trap itself (reference, no learning) |
+| Search-Based | Searches future moves for food it can reach and still keep moving afterwards | Average score 38.0; plans ahead, but may still lose (reference, no learning) |
+| Hamiltonian | Follows a route through every cell, taking safe shortcuts | Fills the board every time, but needs about 46,600 moves (reference, no learning) |
 | Q Learning | Learns which move is best for each of the situations it can see (9 features) | Average score 43.6 |
 | Q Learning v3 | Q Learning that also checks whether its tail stays reachable (12 features) | Average score 118.9 |
 | DQN | A small neural network instead of a table, with either feature set; terminal only | Average score 33.9 (v2), 136.2 (v3) |
 
-The average scores come from the Feature Set v3 experiment: bots trained for
-2000 games, then evaluated on 200 new games on the 24 × 25 board with a
-5000-move limit. See [Results](docs/results.md) for the setup, the full
-results, and their limitations.
+The learning bots are the real comparison: each was trained for 2000 games,
+then evaluated on the same 200 new games on the 24 × 25 board with a
+5000-move limit. Rule Based, Search-Based, and Hamiltonian do not learn and
+are shown only as reference points. Rule Based and Search-Based played the
+same 200 games and always crashed well before the move limit; Hamiltonian
+played 20 of them to the end and filled the board every time, but very
+slowly. See [Results](docs/results.md) for the setup, the full results, and
+their limitations.
 
 ## Run the Tests
 
