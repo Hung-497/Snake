@@ -109,6 +109,11 @@ class QLearningBot(LearningBot):
         self.session_move_limit_games += int(not result.game_over)
 
         if self.session_entry is None:
+            # Games trained before the history existed stay visible as a gap.
+            if not self.training_history and self.session_games_at_start > 0:
+                self.training_history.append(
+                    {"source": "unrecorded", "games": self.session_games_at_start}
+                )
             self.session_entry = {
                 "source": self.session["source"],
                 "started_from": self.session_started_from,

@@ -156,3 +156,60 @@ def test_q_learning_v3_tables_record_their_sessions_too(tmp_path):
     assert saved["feature_set"] == "v3"
     assert entry["seed"] == 5
     assert entry["games_at_end"] == 1
+
+
+STARTER_TABLE = PROJECT_ROOT / "starter_data" / "q_table_space_state_v2.json"
+
+
+def test_earlier_games_without_history_are_recorded_as_unrecorded(tmp_path):
+    table_path = tmp_path / "old.json"
+    table_path.write_text(json.dumps(OLD_TABLE))
+
+    train(tmp_path, "--q-table", "old.json", "--games", "2")
+
+    saved = read_table(table_path)
+    unrecorded, session = saved["training_history"]
+    assert unrecorded == {"source": "unrecorded", "games": 3}
+    assert session["games_at_start"] == 3
+    assert session["games_at_end"] == 5 == saved["game_trained"]
+
+
+def test_unrecorded_games_are_recorded_only_once(tmp_path):
+    table_path = tmp_path / "old.json"
+    table_path.write_text(json.dumps(OLD_TABLE))
+
+    train(tmp_path, "--q-table", "old.json", "--games", "1")
+    train(tmp_path, "--q-table", "old.json", "--games", "1")
+
+    history = read_table(table_path)["training_history"]
+    assert [entry["source"] for entry in history] == [
+        "unrecorded", "train_command", "train_command",
+    ]
+
+
+def test_a_table_with_no_games_has_nothing_unrecorded(tmp_path):
+    table_path = tmp_path / "empty.json"
+    table_path.write_text(json.dumps({**OLD_TABLE, "game_trained": 0}))
+
+    train(tmp_path, "--q-table", "empty.json", "--games", "1")
+
+    [entry] = read_table(table_path)["training_history"]
+    assert entry["source"] == "train_command"
+
+
+def test_a_starter_table_copy_accounts_for_its_bundled_games(tmp_path):
+    table_path = tmp_path / "learning_data" / "q_table_space_state_v2.json"
+    table_path.parent.mkdir()
+    table_path.write_bytes(STARTER_TABLE.read_bytes())
+    starter_games = json.loads(STARTER_TABLE.read_text())["game_trained"]
+
+    result = train(tmp_path, "--games", "1")
+
+    assert result.returncode == 0, result.stderr
+    saved = read_table(table_path)
+    unrecorded, session = saved["training_history"]
+    assert unrecorded == {"source": "unrecorded", "games": starter_games}
+    games_in_history = unrecorded["games"] + (
+        session["games_at_end"] - session["games_at_start"]
+    )
+    assert games_in_history == saved["game_trained"]

@@ -148,8 +148,10 @@ inside the table with one entry per training session. An entry records the
 seed, board, move limit, learning settings, code version, and the games,
 epsilon, and scores at the start and end of the session. It is updated after
 every game, so a run stopped part-way is still described. Tables saved before
-this feature have no history and still load; a table whose history is broken
-is refused.
+this feature have no history and still load. The first time one is trained
+again, an `unrecorded` entry counts the games it already had, so the history
+always adds up to the table's game count. A table whose history is broken is
+refused.
 
 ### Q Learning v3
 
