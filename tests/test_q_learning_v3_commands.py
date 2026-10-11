@@ -93,11 +93,24 @@ def test_new_table_never_overwrites_an_existing_table(tmp_path):
     assert table_path.read_text() == "keep me"
 
 
-def test_new_table_is_only_for_q_learning_v3(tmp_path):
+def test_new_table_also_starts_an_empty_v2_table(tmp_path):
+    result = train(tmp_path, "--new-table", "--q-table", "runs/v2_seed_7.json")
+
+    assert result.returncode == 0, result.stderr
+    saved = json.loads((tmp_path / "runs" / "v2_seed_7.json").read_text())
+    assert saved["feature_set"] == "v2"
+    assert saved["game_trained"] == 2
+    assert all(len(key.split("_")) == 9 for key in saved["q_table"])
+
+
+def test_new_v2_table_never_overwrites_the_saved_v2_table(tmp_path):
+    v2_table = write_v2_table(tmp_path)
+
     result = train(tmp_path, "--new-table")
 
     assert result.returncode != 0
-    assert "--new-table" in result.stderr
+    assert "already exists" in result.stderr
+    assert v2_table.read_text() == V2_TABLE
 
 
 def test_experiment_compares_q_learning_versions_on_the_same_seeds(tmp_path):

@@ -135,7 +135,8 @@ uv run python -m snake.sessions.TrainQLearning --games 100 --width 24 --height 2
 
 This resumes the existing saved Q-table and saves learning progress back to it
 after each game. A missing or malformed table stops the command with an error;
-training does not start a new table. The command prints score and learning
+training does not start a new table unless you ask for one with `--new-table`
+(see below). The command prints score and learning
 progress in the terminal. It does not add game records or replays.
 
 `--games` is required. The default board is 24 × 25, the default Tile Size is
@@ -160,7 +161,9 @@ uv run python -m snake.sessions.TrainQLearning --bot q_learning_v3 --new-table -
 
 `--new-table` never overwrites an existing table. Leave it out to continue
 training the saved v3 table, and add `--q-table path/to/table.json` to keep
-several v3 tables apart, for example one per training seed.
+several v3 tables apart, for example one per training seed. `--new-table` also
+starts an empty v2 table when `--bot` is left out; give it its own
+`--q-table` path, because the default v2 table already exists after setup.
 
 ## Headless DQN Experiment
 

@@ -45,7 +45,7 @@ def main(argv=None):
     parser.add_argument("--q-table", help="Q-table to train (defaults to the saved table)")
     parser.add_argument(
         "--new-table", action="store_true",
-        help="Start an empty Q Learning v3 table instead of resuming one",
+        help="Start an empty Q-table instead of resuming one",
     )
     options = parser.parse_args(argv)
 
@@ -64,11 +64,10 @@ def main(argv=None):
         start_position=None,
         random_source=random.Random(options.seed),
     )
+    feature_set = FEATURE_SET_BY_BOT_MODE[options.bot]
     if options.new_table:
-        if options.bot != "q_learning_v3":
-            parser.error("--new-table only starts a Q Learning v3 table")
         new_table_path = options.q_table or os.path.join(
-            "learning_data", "q_table_space_state_v3.json"
+            "learning_data", f"q_table_space_state_{feature_set}.json"
         )
         if os.path.exists(new_table_path):
             parser.error(f"Q-table already exists: {new_table_path}")
@@ -79,7 +78,7 @@ def main(argv=None):
             random_source=random.Random(options.seed + 1),
             require_saved_table=not options.new_table,
             q_table_file=options.q_table,
-            feature_set=FEATURE_SET_BY_BOT_MODE[options.bot],
+            feature_set=feature_set,
         )
     except ValueError as error:
         parser.error(str(error))
