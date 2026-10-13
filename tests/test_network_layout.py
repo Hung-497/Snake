@@ -3,7 +3,7 @@
 import pytest
 
 from snake.ui.NetworkLayout import (
-    GRAPH_WIDTH, INPUT_LABELS, LIVE_TRAINING_HUD_HEIGHT, MAX_ROW_GAP, MIN_ROW_GAP, Area,
+    BOARD_MARGIN, GRAPH_WIDTH, INPUT_LABELS, LIVE_TRAINING_HUD_HEIGHT, MAX_ROW_GAP, MIN_ROW_GAP, Area,
     activation_strength, connection_style, live_training_minimum_size,
     live_training_preferred_size,
     live_training_window, neuron_positions, screen_containing, side_by_side_areas,
@@ -15,7 +15,9 @@ from snake.ui.WindowLayout import MIN_READABLE_TILE_SIZE
 def test_the_graph_sits_left_of_the_board_without_overlapping():
     window_width, window_height = live_training_minimum_size(24, 25)
 
-    graph, board = side_by_side_areas(window_width, window_height, LIVE_TRAINING_HUD_HEIGHT)
+    graph, board = side_by_side_areas(
+        window_width, window_height, LIVE_TRAINING_HUD_HEIGHT, 24, 25, tile_size=25
+    )
 
     assert graph.left == 0
     assert graph.width == GRAPH_WIDTH
@@ -30,7 +32,8 @@ def test_the_minimum_size_fits_the_graph_and_a_readable_board():
     for board_width, board_height in [(16, 16), (24, 25), (30, 30)]:
         window_width, window_height = live_training_minimum_size(board_width, board_height)
         graph, board = side_by_side_areas(
-            window_width, window_height, LIVE_TRAINING_HUD_HEIGHT
+            window_width, window_height, LIVE_TRAINING_HUD_HEIGHT,
+            board_width, board_height, tile_size=25,
         )
 
         assert board.width >= board_width * MIN_READABLE_TILE_SIZE
@@ -168,7 +171,9 @@ def test_the_window_uses_the_screen_it_is_on_now():
 
 def test_the_preferred_size_fits_the_board_at_its_settings_tile_size():
     width, height = live_training_preferred_size(24, 25, tile_size=25)
-    graph, board = side_by_side_areas(width, height, LIVE_TRAINING_HUD_HEIGHT)
+    graph, board = side_by_side_areas(
+        width, height, LIVE_TRAINING_HUD_HEIGHT, 24, 25, tile_size=25
+    )
 
     assert board.width >= 24 * 25 and board.height >= 25 * 25
     assert (width, height) >= live_training_minimum_size(24, 25)
@@ -191,3 +196,14 @@ def test_the_preferred_size_is_cut_to_the_screen():
     )
 
     assert size == (1710, 1107)
+
+
+def test_a_wider_window_gives_the_extra_width_to_the_graph():
+    # The board never draws bigger than its Tile Size, so extra width would
+    # otherwise be an empty gap between the graph and the board.
+    graph, board = side_by_side_areas(1600, 1000, LIVE_TRAINING_HUD_HEIGHT, 24, 25, tile_size=25)
+
+    assert board.width == 24 * 25
+    assert board.left + board.width + BOARD_MARGIN == 1600
+    assert graph.width == board.left - BOARD_MARGIN
+    assert graph.width > GRAPH_WIDTH

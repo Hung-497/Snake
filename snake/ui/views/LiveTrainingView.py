@@ -189,13 +189,13 @@ class LiveTrainingView(arcade.gui.UIView):
         return focus_area(self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        if self.session is None or not self.focus_layout or scroll_y == 0:
+        if self.session is None or not self.graph_fills_window() or scroll_y == 0:
             return
         factor = ZOOM_STEP if scroll_y > 0 else 1 / ZOOM_STEP
         self.zoom_pan = zoom_at(self.zoom_pan, factor, (x, y), self.graph_focus_area())
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        if self.session is None or not self.focus_layout:
+        if self.session is None or not self.graph_fills_window():
             return
         self.zoom_pan = pan_by(self.zoom_pan, dx, dy, self.graph_focus_area())
 
@@ -237,7 +237,7 @@ class LiveTrainingView(arcade.gui.UIView):
             self.message_label.draw()
             return
 
-        if not self.background_mode and self.focus_layout:
+        if self.graph_fills_window():
             snapshot = self.session.network_snapshot()
             if snapshot is not None:
                 self.network_renderer.draw(snapshot, self.graph_focus_area(), self.zoom_pan)
@@ -246,10 +246,11 @@ class LiveTrainingView(arcade.gui.UIView):
                 0, self.window.height - LIVE_TRAINING_HUD_HEIGHT,
                 self.window.width, LIVE_TRAINING_HUD_HEIGHT, Theme.SURFACE,
             )
-        elif not self.background_mode:
+        else:
             state = self.session.engine.state
             graph_area, board_area = side_by_side_areas(
-                self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT
+                self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT,
+                state.board_width, state.board_height, state.tile_size,
             )
             self.board_renderer.draw(
                 state.board_width,
@@ -277,12 +278,17 @@ class LiveTrainingView(arcade.gui.UIView):
         self.controls_label.text = self.controls_text()
         self.controls_label.draw()
 
+    def graph_fills_window(self):
+        """Background mode and the Network focus layout both hide the board."""
+        return self.background_mode or self.focus_layout
+
     def layout_text(self):
+        if not self.graph_fills_window():
+            return "N network focus"
+        zoom = f"zoom {self.zoom_pan.zoom:.1f}x \u00b7 wheel zoom \u00b7 drag pan \u00b7 R reset"
         if self.background_mode:
-            return ""
-        if self.focus_layout:
-            return "Network focus \u00b7 wheel zoom \u00b7 drag pan \u00b7 R reset \u00b7 N board"
-        return "N network focus"
+            return zoom
+        return f"Network focus \u00b7 {zoom} \u00b7 N board"
 
     def controls_text(self):
         if self.background_mode:
