@@ -35,10 +35,16 @@ def start_live_training(settings, checkpoint_path=DEFAULT_CHECKPOINT_PATH):
     Raises LiveTrainingCheckpointError when the save does not fit, so it is
     never overwritten by a fresh start.
     """
-    from snake.sessions.LiveTrainingSession import LiveTrainingSession
+    from snake.sessions.LiveTrainingSession import PLAYER, LiveTrainingSession
+    from snake.storage.RecordManager import RecordManager
 
     config = settings.build_game_config()
+    # Games are saved as Records with the Settings speed, like any Play game.
+    records = {
+        "record_manager": RecordManager(),
+        "speed_delay": settings.speed_delay_for(PLAYER),
+    }
     checkpoint_path = Path(checkpoint_path)
     if checkpoint_path.exists():
-        return LiveTrainingSession.load(checkpoint_path, config)
-    return LiveTrainingSession(config, checkpoint_path=checkpoint_path)
+        return LiveTrainingSession.load(checkpoint_path, config, **records)
+    return LiveTrainingSession(config, checkpoint_path=checkpoint_path, **records)
