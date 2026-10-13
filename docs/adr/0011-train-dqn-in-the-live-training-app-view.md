@@ -7,6 +7,7 @@
 - Discussed in: [#137](https://github.com/Hung-497/Snake/issues/137)
 - Amends: [ADR 0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md), which kept DQN headless
 - Amended by: [ADR 0012](0012-offer-dqn-in-play-with-one-network-for-all-boards.md), which opens Live Training from Play and keeps one DQN for all boards
+- Amended by: [ADR 0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md), which adds a Feature Set v2 DQN
 
 ADR 0007 kept DQN out of the app, so the only way to train it was the headless command and the network was never visible while it learned. The app now has one opt-in App View, Live Training, that trains a Feature Set v3 DQN Bot Mode in the window and shows the board as it learns. PyTorch stays optional: the app still starts without it, and Live Training explains how to install the `dqn` dependency group instead of failing.
 

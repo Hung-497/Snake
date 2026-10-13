@@ -1,7 +1,7 @@
 import arcade.gui
 
 from snake.sessions.HumanPlayer import HUMAN_PLAY
-from snake.ui.PlayerLabels import BOT_MODE_LABELS, player_label
+from snake.ui.PlayerLabels import bot_mode_choices, player_label
 from snake.storage.ReplayManager import ReplayManager
 from snake.sessions.ReplaySession import load_replay_session
 from snake.ui import Theme
@@ -35,8 +35,10 @@ class ReplayView(arcade.gui.UIView):
                                            font_size=sizes.body, color=Theme.TEXT_MUTED))
         replay_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
 
-        for bot_mode, button_text in BOT_MODE_LABELS.items():
-            replay_box.add(Theme.create_primary_button(button_text, self.watch_replay(bot_mode),
+        for choice in bot_mode_choices():
+            action = (self.choose_version(choice.key) if choice.is_family
+                      else self.watch_replay(choice.key))
+            replay_box.add(Theme.create_primary_button(choice.label, action,
                                                        font_size=sizes.heading))
 
         # Human Play is a Player but not a Bot Mode, so it has its own button.
@@ -63,18 +65,27 @@ class ReplayView(arcade.gui.UIView):
 
     def watch_replay(self, player):
         def watch():
-            session, message = load_replay_session(self.replay_manager, player)
-
-            if (session is None):
-                self.message_text = message
-                self.message_label.text = message
-                return
-
-            self.message_text = ""
-            self.message_label.text = ""
-            self.shell.show_view("replay_playback", session=session, player=player)
+            message = self.open_replay(player)
+            self.message_text = message or ""
+            self.message_label.text = self.message_text
 
         return watch
+
+    def open_replay(self, player):
+        """Play a Player's saved replay, or return why it cannot be shown."""
+        session, message = load_replay_session(self.replay_manager, player)
+
+        if (session is None):
+            return message
+
+        self.shell.show_view("replay_playback", session=session, player=player)
+        return None
+
+    def choose_version(self, family):
+        return lambda: self.shell.show_view(
+            "choose_version", family=family, choose=self.open_replay,
+            back=lambda: self.shell.show_view("replay"),
+        )
 
     def on_resize(self, width, height):
         if layout_step(width) != self.current_layout_step:

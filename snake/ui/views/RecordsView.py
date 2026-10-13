@@ -3,28 +3,26 @@ import arcade.gui
 from snake.sessions.HumanPlayer import HUMAN_PLAY
 from snake.ui.RecordsBrowser import ALL_PLAYERS, RecordsBrowser
 from snake.ui import Theme
-from snake.ui.PlayerLabels import player_label
+from snake.ui.PlayerLabels import BOT_MODE_LABELS, player_label
 from snake.ui.Charts import ScoreBarChart, TrendChart
 from snake.ui.WindowLayout import (
     CHART_WIDTH,
     TREND_LEGEND_PER_ROW,
     compare_chart_height,
     layout_step,
+    filter_row_sizes,
     record_rows_per_page,
     trend_chart_height,
     trend_legend_rows,
 )
 
 
-# Button label -> the filter value the browser uses.
+# Button label -> the filter value the browser uses: every Bot Mode and Human
+# Play, with the same labels as Play and Replay.
 FILTER_CHOICES = (
     ("All Players", ALL_PLAYERS),
-    ("Rule", "rule"),
-    ("Q-Learning", "q_learning"),
-    ("Hamiltonian", "hamiltonian"),
-    ("Search-Based", "search_based"),
-    ("Q-Learning v3", "q_learning_v3"),
-    ("Human", HUMAN_PLAY),
+    *((label, bot_mode) for bot_mode, label in BOT_MODE_LABELS.items()),
+    (player_label(HUMAN_PLAY), HUMAN_PLAY),
 )
 
 NOTHING_TO_SHOW = "-"
@@ -78,7 +76,7 @@ class RecordsView(arcade.gui.UIView):
         self.background_color = Theme.SURFACE
 
         self.current_layout_step = layout_step(self.window.width)
-        self.current_page_size = record_rows_per_page(self.window.height)
+        self.current_page_size = self.page_size_for(self.window.width, self.window.height)
         # How many Player rows the Compare table has; the bar chart's height
         # depends on it. Kept up to date whenever the screen is rebuilt.
         self.compare_row_count = 0
@@ -332,25 +330,38 @@ class RecordsView(arcade.gui.UIView):
 
         return f"{row['win_rate'] * 100:.0f}% of {row['known_outcomes']}"
 
+    def filter_rows(self, window_width):
+        """How many Player filters go on each row, so every row fits the window."""
+        return filter_row_sizes(len(FILTER_CHOICES), window_width,
+                                Theme.filter_button_width(window_width), Theme.SPACE_TIGHT)
+
     def create_filter_row(self):
-        filter_row = arcade.gui.UIBoxLayout(vertical=False,
-                                            space_between=Theme.SPACE_TIGHT)
+        filter_rows = arcade.gui.UIBoxLayout(space_between=Theme.SPACE_TIGHT)
+        choices = iter(FILTER_CHOICES)
 
-        for button_text, filter_value in FILTER_CHOICES:
-            is_selected = self.browser.selected_filter == filter_value
-            create_button = (Theme.create_primary_button if is_selected
-                             else Theme.create_secondary_button)
-            filter_row.add(
-                create_button(
-                    button_text,
-                    self.change_filter(filter_value),
-                    button_width=Theme.filter_button_width(self.window.width),
-                    button_height=Theme.FILTER_BUTTON_HEIGHT,
-                    font_size=self.sizes.caption,
+        for row_size in self.filter_rows(self.window.width):
+            filter_row = arcade.gui.UIBoxLayout(vertical=False,
+                                                space_between=Theme.SPACE_TIGHT)
+            for _ in range(row_size):
+                button_text, filter_value = next(choices)
+                is_selected = self.browser.selected_filter == filter_value
+                create_button = (Theme.create_primary_button if is_selected
+                                 else Theme.create_secondary_button)
+                filter_row.add(
+                    create_button(
+                        button_text,
+                        self.change_filter(filter_value),
+                        button_width=Theme.filter_button_width(self.window.width),
+                        button_height=Theme.FILTER_BUTTON_HEIGHT,
+                        font_size=self.sizes.caption,
+                    )
                 )
-            )
+            filter_rows.add(filter_row)
 
-        return filter_row
+        return filter_rows
+
+    def page_size_for(self, width, height):
+        return record_rows_per_page(height, filter_rows=len(self.filter_rows(width)))
 
     def change_filter(self, filter_value):
         def change():
@@ -488,7 +499,7 @@ class RecordsView(arcade.gui.UIView):
 
     def on_resize(self, width, height):
         new_step = layout_step(width)
-        new_page_size = record_rows_per_page(height)
+        new_page_size = self.page_size_for(width, height)
         new_chart_heights = self.chart_heights(height)
         if (new_step != self.current_layout_step or new_page_size != self.current_page_size
                 or new_chart_heights != self.current_chart_heights):

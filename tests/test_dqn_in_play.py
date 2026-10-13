@@ -8,9 +8,9 @@ from snake.ui.PlayerLabels import BOT_MODE_LABELS, app_view_for_bot_mode, player
 from snake.ui.views.MenuView import MENU_ACTIONS
 
 
-def test_dqn_is_a_bot_mode_labelled_dqn():
-    assert BOT_MODE_LABELS["dqn"] == "DQN"
-    assert player_label("dqn") == "DQN"
+def test_dqn_is_a_bot_mode_labelled_with_its_version():
+    assert BOT_MODE_LABELS["dqn"] == "DQN v3"
+    assert player_label("dqn") == "DQN v3"
     # Human Play is a Player, never a Bot Mode.
     assert HUMAN_PLAY not in BOT_MODE_LABELS
 

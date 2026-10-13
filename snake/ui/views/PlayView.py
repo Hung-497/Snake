@@ -3,7 +3,7 @@ import arcade.gui
 from snake.bots.BotFactory import supports_board
 from snake.sessions.HumanPlayer import HUMAN_PLAY
 from snake.ui import Theme
-from snake.ui.PlayerLabels import BOT_MODE_LABELS, app_view_for_bot_mode
+from snake.ui.PlayerLabels import app_view_for_bot_mode, bot_mode_choices
 from snake.ui.WindowLayout import layout_step
 
 UNSUPPORTED_BOARD_MESSAGE = "Hamiltonian Bot needs at least one even board side."
@@ -39,8 +39,10 @@ class PlayView(arcade.gui.UIView):
                                                  font_size=sizes.heading))
         play_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
 
-        for bot_mode, button_text in BOT_MODE_LABELS.items():
-            play_box.add(Theme.create_primary_button(button_text, self.start_game(bot_mode),
+        for choice in bot_mode_choices():
+            action = (self.choose_version(choice.key) if choice.is_family
+                      else self.start_game(choice.key))
+            play_box.add(Theme.create_primary_button(choice.label, action,
                                                      font_size=sizes.heading))
 
         self.message_label = Theme.create_label(self.message_text,
@@ -62,23 +64,32 @@ class PlayView(arcade.gui.UIView):
 
     def start_game(self, bot_mode):
         def start():
-            game_config = self.settings.build_game_config()
-
-            if (not supports_board(bot_mode, game_config.width, game_config.height)):
-                self.message_text = UNSUPPORTED_BOARD_MESSAGE
-                self.message_label.text = self.message_text
-                return
-
-            self.message_text = ""
-            self.message_label.text = ""
-            view_name = app_view_for_bot_mode(bot_mode)
-            if view_name == "live_training":
-                # Live Training builds its own DQN session from Settings.
-                self.shell.show_view(view_name)
-            else:
-                self.shell.show_view(view_name, bot_mode=bot_mode)
+            message = self.start_bot_mode(bot_mode)
+            self.message_text = message or ""
+            self.message_label.text = self.message_text
 
         return start
+
+    def start_bot_mode(self, bot_mode):
+        """Open the App View for a Bot Mode, or return why it cannot play here."""
+        game_config = self.settings.build_game_config()
+
+        if (not supports_board(bot_mode, game_config.width, game_config.height)):
+            return UNSUPPORTED_BOARD_MESSAGE
+
+        view_name = app_view_for_bot_mode(bot_mode)
+        if view_name == "live_training":
+            # Live Training builds its own DQN session from Settings.
+            self.shell.show_view(view_name)
+        else:
+            self.shell.show_view(view_name, bot_mode=bot_mode)
+        return None
+
+    def choose_version(self, family):
+        return lambda: self.shell.show_view(
+            "choose_version", family=family, choose=self.start_bot_mode,
+            back=lambda: self.shell.show_view("play"),
+        )
 
     def on_resize(self, width, height):
         if layout_step(width) != self.current_layout_step:
