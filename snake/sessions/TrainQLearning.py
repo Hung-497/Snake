@@ -12,18 +12,28 @@ from snake.engine.SnakeEngine import SnakeEngine
 # Each Q Learning Bot Mode observes the board with its own Feature Set.
 FEATURE_SET_BY_BOT_MODE = {"q_learning": "v2", "q_learning_v3": "v3"}
 
+def play_move(engine, bot):
+    """Make one move through the Game Engine and Bot Mode contract.
+
+    Returns True when this move ended the game. Calling on_game_end is left
+    to the caller, because only it knows when a game stops at a move limit.
+    """
+    direction = bot.choose_action(engine.state)
+    if direction is not None:
+        engine.change_direction(direction)
+
+    transition = engine.preview()
+    engine.step()
+    bot.observe(transition)
+    return engine.game_over
+
+
 def play_game(engine, bot, max_moves):
     """Play one bounded game through the Game Engine and Bot Mode contract."""
     moves = 0
 
     while not engine.game_over and moves < max_moves:
-        direction = bot.choose_action(engine.state)
-        if direction is not None:
-            engine.change_direction(direction)
-
-        transition = engine.preview()
-        engine.step()
-        bot.observe(transition)
+        play_move(engine, bot)
         moves += 1
 
     bot.on_game_end(engine.state)
