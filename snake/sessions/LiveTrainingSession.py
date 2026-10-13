@@ -95,7 +95,7 @@ class LiveTrainingSession:
         """Continue a saved Live Training on this board, starting its next game.
 
         Raises LiveTrainingCheckpointError, leaving the file untouched, when
-        the save cannot be read or was made for another board or Feature Set.
+        the save cannot be read or was made for another Feature Set.
         """
         try:
             data = load_artifact(checkpoint_path, "dqn_training_checkpoint")
@@ -112,13 +112,9 @@ class LiveTrainingSession:
                 f"but Live Training uses Feature Set {FEATURE_SET}.\n"
                 f"Delete {checkpoint_path} to start over."
             )
-        board = metadata["training_board"]
-        if (board["width"], board["height"]) != (config.width, config.height):
-            raise LiveTrainingCheckpointError(
-                f"Saved Live Training is for the {board['width']} x {board['height']} board.\n"
-                f"Choose that board in Settings to continue it, "
-                f"or delete {checkpoint_path} to start over."
-            )
+        # The save may come from another board size. Feature Set inputs do not
+        # depend on the board, so the same DQN keeps learning here (ADR 0012),
+        # and the next save records this board.
 
         session = cls(
             config, seed=metadata["base_seed"], max_moves=metadata["max_moves"],

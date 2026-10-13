@@ -105,15 +105,51 @@ def test_a_game_left_halfway_keeps_its_learning_and_starts_fresh(tmp_path):
         assert torch.equal(saved_weights[name], weights), name
 
 
-def test_a_save_for_another_board_is_reported_and_left_untouched(tmp_path):
+def test_a_save_continues_on_another_board(tmp_path):
+    path = tmp_path / "dqn_live_training.pt"
+    session = make_session(path)
+    play_games(session, 3)
+    session.save()
+
+    continued = LiveTrainingSession.load(path, GameConfig(16, 16, 20))
+
+    # The same DQN keeps learning: Feature Set v3 does not depend on the board size.
+    assert continued.stats().games_played == 3
+    assert continued.stats().epsilon == session.stats().epsilon
+    assert len(continued.bot.replay) == len(session.bot.replay)
+    saved_weights = session.bot.network.state_dict()
+    for name, weights in continued.bot.network.state_dict().items():
+        assert torch.equal(saved_weights[name], weights), name
+    assert (continued.engine.board_width, continued.engine.board_height) == (16, 16)
+    play_games(continued, 1)
+    assert continued.stats().games_played == 4
+
+
+def test_saving_after_a_board_change_records_the_new_board(tmp_path):
     path = tmp_path / "dqn_live_training.pt"
     make_session(path).save()
-    saved_bytes = path.read_bytes()
+    continued = LiveTrainingSession.load(path, GameConfig(16, 16, 20))
+    play_games(continued, 1)
 
-    with pytest.raises(LiveTrainingCheckpointError, match="6 x 6"):
-        LiveTrainingSession.load(path, GameConfig(16, 16, 20))
+    continued.save()
 
-    assert path.read_bytes() == saved_bytes
+    board = load_artifact(path, "dqn_training_checkpoint")["metadata"]["training_board"]
+    assert (board["width"], board["height"]) == (16, 16)
+
+
+def test_opening_live_training_on_another_board_continues_the_save(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    path = tmp_path / "dqn_live_training.pt"
+    session = make_session(path)
+    play_games(session, 2)
+    session.save()
+    settings = SessionSettings()
+    settings.select_board_size("Large 30 x 30")
+
+    continued = start_live_training(settings, checkpoint_path=path)
+
+    assert continued.stats().games_played == 2
+    assert (continued.engine.board_width, continued.engine.board_height) == (30, 30)
 
 
 def test_a_save_for_another_feature_set_is_reported(tmp_path):
