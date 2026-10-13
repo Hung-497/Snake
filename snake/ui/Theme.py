@@ -85,6 +85,7 @@ PLAYER_COLORS = {
     "search_based": Color.from_hex_string("#F472B6"),
     "q_learning_v3": Color.from_hex_string("#22D3EE"),
     "human": Color.from_hex_string("#C084FC"),
+    "dqn": Color.from_hex_string("#FB923C"),
 }
 
 

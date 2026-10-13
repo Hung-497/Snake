@@ -3,7 +3,7 @@ import arcade.gui
 from snake.bots.BotFactory import supports_board
 from snake.sessions.HumanPlayer import HUMAN_PLAY
 from snake.ui import Theme
-from snake.ui.PlayerLabels import BOT_MODE_LABELS
+from snake.ui.PlayerLabels import BOT_MODE_LABELS, app_view_for_bot_mode
 from snake.ui.WindowLayout import layout_step
 
 UNSUPPORTED_BOARD_MESSAGE = "Hamiltonian Bot needs at least one even board side."
@@ -71,7 +71,12 @@ class PlayView(arcade.gui.UIView):
 
             self.message_text = ""
             self.message_label.text = ""
-            self.shell.show_view("game", bot_mode=bot_mode)
+            view_name = app_view_for_bot_mode(bot_mode)
+            if view_name == "live_training":
+                # Live Training builds its own DQN session from Settings.
+                self.shell.show_view(view_name)
+            else:
+                self.shell.show_view(view_name, bot_mode=bot_mode)
 
         return start
 
