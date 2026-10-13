@@ -6,6 +6,7 @@
 - Discussed in: [#77](https://github.com/Hung-497/Snake/issues/77)
 - Extended by: [ADR 0009](0009-version-learned-artifacts-by-feature-set.md), which adds the Feature Set to DQN models
 - Amended by: [ADR 0011](0011-train-dqn-in-the-live-training-app-view.md), which lets the Live Training App View train DQN
+- Amended by: [ADR 0012](0012-offer-dqn-in-play-with-one-network-for-all-boards.md), which offers DQN in Play and Replay
 
 DQN is an optional, CPU-only headless Bot Mode in its first version. Its PyTorch dependency stays outside normal app startup and default Bot Experiments; a user explicitly selects DQN and its evaluation model. Training saves a full resumable checkpoint separately from the smaller evaluation model, so evaluation cannot accidentally change learning state and a later run can resume meaningfully.
 
