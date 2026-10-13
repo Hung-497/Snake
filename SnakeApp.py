@@ -14,6 +14,7 @@ from snake.ui.views.ReplayPlaybackView import ReplayPlaybackView
 from snake.ui.views.ReplayView import ReplayView
 from snake.sessions.SessionSettings import SessionSettings
 from snake.ui.views.SettingsView import SettingsView
+from snake.ui.views.VersionView import VersionView
 from snake.ui import Theme
 from snake.ui.WindowLayout import minimum_window_size
 
@@ -104,6 +105,10 @@ def create_app():
     shell.register_view("records", lambda: RecordsView(shell, settings))
     shell.register_view("replay", lambda: ReplayView(shell))
     shell.register_view("live_training", lambda: LiveTrainingView(shell, settings))
+    shell.register_view(
+        "choose_version",
+        lambda family, choose, back: VersionView(shell, family, choose, back),
+    )
     shell.register_view(
         "replay_playback",
         lambda session, player: ReplayPlaybackView(shell, session, player),

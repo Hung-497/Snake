@@ -5,6 +5,7 @@
 - Recorded: 2026-10-13
 - Discussed in: the modes redesign after [#137](https://github.com/Hung-497/Snake/issues/137); the spec issue follows
 - Amends: [ADR 0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md), which kept DQN out of Play and Replay, and [ADR 0011](0011-train-dqn-in-the-live-training-app-view.md), which gave Live Training its own menu entry and one board per save
+- Amended by: [ADR 0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md), which keeps one DQN per Feature Set and groups learning Bot Modes by version
 
 Live Training trained DQN behind its own menu button that did not say which bot it trained, while Play offered the Q Learning Bot Modes, which already learn while watched, but not DQN. The app now has one place for every Bot Mode: Play lists DQN beside the others, and choosing it opens the Live Training App View, so learning Bot Modes follow one rule: they learn while you watch them. The separate Live Training menu entry goes away. DQN games count like any Play game: they add Records and keep a best Replay, and Replay offers DQN with the board only. PyTorch stays optional: without it, DQN still appears in Play and explains how to install the `dqn` group.
 

@@ -20,6 +20,10 @@ COMPACT_WIDTH = 800
 # filters, summary, paging and Back. Whole record rows fill the rest.
 RECORDS_FIXED_HEIGHT = 494
 RECORD_ROW_HEIGHT = 48
+# One more row of Player filters: a filter button's height and the gap above it.
+FILTER_ROW_STEP = 46
+# Space kept clear on each side of a row of Player filters.
+FILTER_ROW_MARGIN = 16
 
 
 def layout_step(window_width):
@@ -27,9 +31,23 @@ def layout_step(window_width):
     return "compact" if window_width < COMPACT_WIDTH else "regular"
 
 
-def record_rows_per_page(window_height):
-    """Leave room for Records controls and fit whole two-line rows below them."""
-    return max(1, (window_height - RECORDS_FIXED_HEIGHT) // RECORD_ROW_HEIGHT)
+def record_rows_per_page(window_height, filter_rows=1):
+    """Leave room for Records controls and fit whole two-line rows below them.
+
+    RECORDS_FIXED_HEIGHT counts one row of Player filters; each extra row
+    takes its height from the records list.
+    """
+    controls_height = RECORDS_FIXED_HEIGHT + (filter_rows - 1) * FILTER_ROW_STEP
+    return max(1, (window_height - controls_height) // RECORD_ROW_HEIGHT)
+
+
+def filter_row_sizes(count, window_width, button_width, gap):
+    """Split the Player filters into as few rows as fit the window, as evenly as possible."""
+    usable_width = window_width - 2 * FILTER_ROW_MARGIN
+    per_row = max(1, (usable_width + gap) // (button_width + gap))
+    rows = -(-count // per_row)
+    base, extra = divmod(count, rows)
+    return [base + 1 if row < extra else base for row in range(rows)]
 
 
 # Records Analytics charts are this wide, which fits the minimum window width.

@@ -14,6 +14,7 @@ from snake.ui.WindowLayout import (
     layout_board,
     layout_step,
     minimum_window_size,
+    filter_row_sizes,
     record_rows_per_page,
     trend_chart_height,
     trend_legend_rows,
@@ -130,3 +131,16 @@ def test_the_trends_legend_wraps_after_4_players(players, rows):
 
 def test_each_extra_legend_row_takes_height_from_the_trend_chart():
     assert trend_chart_height(700, legend_rows=3) == 266      # 2 more rows of 27 px
+
+
+def test_player_filters_wrap_into_even_rows_when_they_do_not_fit():
+    # Eight filters 102 px wide with 8 px gaps need 872 px, more than 700.
+    assert filter_row_sizes(8, 700, button_width=102, gap=8) == [4, 4]
+    assert filter_row_sizes(7, 700, button_width=102, gap=8) == [4, 3]
+    # A wide window keeps every filter on one row.
+    assert filter_row_sizes(8, 1400, button_width=124, gap=8) == [8]
+
+
+def test_each_extra_filter_row_takes_room_from_the_records_list():
+    assert record_rows_per_page(1000, filter_rows=2) < record_rows_per_page(1000)
+    assert record_rows_per_page(700, filter_rows=2) >= 1
