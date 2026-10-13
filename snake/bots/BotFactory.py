@@ -42,7 +42,7 @@ def supports_board(bot_mode, board_width, board_height):
     cycle only exists when at least one side is even. Learning bots need a
     free cell for food when a game starts.
     """
-    if bot_mode in ("q_learning", "q_learning_v3", "dqn") and board_width * board_height < 2:
+    if bot_mode in ("q_learning", "q_learning_v3", "dqn", "dqn_v2") and board_width * board_height < 2:
         return False
 
     if (bot_mode == "hamiltonian"):

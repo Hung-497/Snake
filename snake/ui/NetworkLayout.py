@@ -11,13 +11,15 @@ import math
 from snake.ui.WindowLayout import MIN_READABLE_TILE_SIZE
 
 
-# Feature Set v3 inputs, in the order the network receives them.
-INPUT_LABELS = (
+# Feature Set v3 inputs, in the order the network receives them. Feature Set
+# v2 has the same inputs without the last three Tail checks.
+V3_INPUT_LABELS = (
     "Danger straight", "Danger left", "Danger right",
     "Food straight", "Food left", "Food right",
     "Space straight", "Space left", "Space right",
     "Tail straight", "Tail left", "Tail right",
 )
+INPUT_LABELS = {"v2": V3_INPUT_LABELS[:9], "v3": V3_INPUT_LABELS}
 # The graph's width in the side-by-side layout; the board gets the rest.
 GRAPH_WIDTH = 520
 # Room at the top of Live Training for the title, stats and controls lines.
@@ -40,6 +42,11 @@ class Area:
     bottom: float
     width: float
     height: float
+
+
+def input_labels(feature_set):
+    """The graph's input labels for a Feature Set, one per network input."""
+    return INPUT_LABELS[feature_set]
 
 
 def side_by_side_areas(window_width, window_height, hud_height,

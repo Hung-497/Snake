@@ -3,7 +3,7 @@ from arcade.types import Color
 
 from snake.ui import Theme
 from snake.ui.NetworkLayout import (
-    INPUT_LABELS, Area, ZoomPan, activation_strength, connection_style,
+    Area, ZoomPan, activation_strength, connection_style,
     neuron_positions, strongest_connections, to_screen,
 )
 
@@ -38,9 +38,9 @@ class NetworkRenderer:
     Where everything goes comes from NetworkLayout; this only draws.
     """
 
-    def __init__(self, font_size):
+    def __init__(self, font_size, input_labels):
         self.input_labels = [self.make_label(text, font_size, "right")
-                             for text in INPUT_LABELS]
+                             for text in input_labels]
         self.output_labels = [self.make_label("", font_size, "left") for _ in range(3)]
         self.random_label = self.make_label("random move", font_size, "left")
         self.random_label.color = Theme.WARNING

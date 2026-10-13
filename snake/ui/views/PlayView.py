@@ -77,12 +77,7 @@ class PlayView(arcade.gui.UIView):
         if (not supports_board(bot_mode, game_config.width, game_config.height)):
             return UNSUPPORTED_BOARD_MESSAGE
 
-        view_name = app_view_for_bot_mode(bot_mode)
-        if view_name == "live_training":
-            # Live Training builds its own DQN session from Settings.
-            self.shell.show_view(view_name)
-        else:
-            self.shell.show_view(view_name, bot_mode=bot_mode)
+        self.shell.show_view(app_view_for_bot_mode(bot_mode), bot_mode=bot_mode)
         return None
 
     def choose_version(self, family):
