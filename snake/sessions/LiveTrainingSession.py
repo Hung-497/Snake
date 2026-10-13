@@ -57,6 +57,7 @@ class LiveTrainingSession:
         self, config, seed=0, max_moves=5000,
         checkpoint_path=DEFAULT_CHECKPOINT_PATH, settings=None,
         record_manager=None, speed_delay=None, player=PLAYER, now=time.perf_counter,
+        replay_manager=None,
     ):
         self.config = config
         self.seed = seed
@@ -67,6 +68,8 @@ class LiveTrainingSession:
         # Games are saved as Records only when a record manager is given, with
         # the Settings speed, like every other Bot Mode in Play.
         self.record_manager = record_manager
+        # The best game is kept as a Replay only when a replay manager is given.
+        self.replay_manager = replay_manager
         self.speed_delay = speed_delay
         self.player = player
         self.now = now
@@ -85,6 +88,7 @@ class LiveTrainingSession:
             settings=dict(DEFAULT_DQN_SETTINGS if settings is None else settings),
             feature_set=FEATURE_SET,
         )
+        self._start_replay()
 
     @classmethod
     def load(cls, checkpoint_path, config, **session_options):
@@ -144,6 +148,7 @@ class LiveTrainingSession:
         # halfway keeps what it taught the network.
         session.engine = session._make_engine(game_number=bot.game_trained)
         bot.engine = session.engine
+        session._start_replay()
         return session
 
     def save(self):
@@ -160,8 +165,15 @@ class LiveTrainingSession:
 
     def make_move(self):
         """Make one training move, and start the next game if this one ended."""
+        score_before = self.engine.score
         game_ended = play_move(self.engine, self.bot)
         self.moves_this_game += 1
+        if self.replay_manager is not None:
+            # A replay plays back one direction per move; after the move the
+            # snake faces the direction it really moved in.
+            self.replay_manager.record_move(self.engine.state.direction)
+            if self.engine.score > score_before and self.engine.food_position is not None:
+                self.replay_manager.record_food(self.engine.food_position)
         if game_ended or self.moves_this_game >= self.max_moves:
             self._finish_game()
 
@@ -236,9 +248,24 @@ class LiveTrainingSession:
         self.bot.take_game_loss()
         self.scores.append(self.engine.score)
         self._save_record()
+        if self.replay_manager is not None:
+            self.replay_manager.save_replay(
+                self.player, self.engine.score, self.engine.game_won
+            )
         self.engine = self._make_engine(game_number=self.bot.game_trained)
         self.bot.engine = self.engine
         self.moves_this_game = 0
+        self._start_replay()
+
+    def _start_replay(self):
+        if self.replay_manager is None:
+            return
+        self.replay_manager.start_recording(
+            self.player, self.config.width, self.config.height, self.config.tile_size,
+            # Replays need a delay; Replay plays back at its own Replay Speed.
+            self.speed_delay if self.speed_delay is not None else 0,
+            engine=self.engine,
+        )
 
     def _save_record(self):
         if self.record_manager is None:

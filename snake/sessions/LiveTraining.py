@@ -37,11 +37,14 @@ def start_live_training(settings, checkpoint_path=DEFAULT_CHECKPOINT_PATH):
     """
     from snake.sessions.LiveTrainingSession import PLAYER, LiveTrainingSession
     from snake.storage.RecordManager import RecordManager
+    from snake.storage.ReplayManager import ReplayManager
 
     config = settings.build_game_config()
-    # Games are saved as Records with the Settings speed, like any Play game.
+    # Games are saved as Records with the Settings speed, and the best one as a
+    # Replay, like any Play game.
     records = {
         "record_manager": RecordManager(),
+        "replay_manager": ReplayManager(),
         "speed_delay": settings.speed_delay_for(PLAYER),
     }
     checkpoint_path = Path(checkpoint_path)
