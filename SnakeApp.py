@@ -74,6 +74,11 @@ class SnakeWindow(arcade.Window):
 
     def on_close(self):
         self.view_fade.clear()
+        # Arcade only hides an App View when another one is shown, not when the
+        # window closes, so hide it here: Live Training saves its progress and
+        # the Game App View stops its games.
+        if self.current_view is not None:
+            self.current_view.on_hide_view()
         if self.shell is None:
             super().on_close()
             return

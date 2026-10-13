@@ -4,6 +4,12 @@ Nothing here imports PyTorch when the module loads, so the App View can use
 it while the app still starts on installs without the dqn group (ADR 0007).
 """
 
+from pathlib import Path
+
+
+# Live Training keeps its own DQN Training Checkpoint, apart from the
+# headless commands' runs.
+DEFAULT_CHECKPOINT_PATH = Path("learning_data") / "dqn_live_training.pt"
 MISSING_PYTORCH_MESSAGE = (
     "Live Training needs PyTorch, which is not installed.\n"
     "Install it with: uv sync --group dqn"
@@ -19,8 +25,20 @@ def missing_dependency_message():
     return None
 
 
-def start_live_training(settings):
-    """Start a fresh Live Training session on the board chosen in Settings."""
+class LiveTrainingCheckpointError(ValueError):
+    """The saved Live Training cannot continue on this board; the file is kept."""
+
+
+def start_live_training(settings, checkpoint_path=DEFAULT_CHECKPOINT_PATH):
+    """Continue the saved Live Training, or start fresh on the Settings board.
+
+    Raises LiveTrainingCheckpointError when the save does not fit, so it is
+    never overwritten by a fresh start.
+    """
     from snake.sessions.LiveTrainingSession import LiveTrainingSession
 
-    return LiveTrainingSession(settings.build_game_config())
+    config = settings.build_game_config()
+    checkpoint_path = Path(checkpoint_path)
+    if checkpoint_path.exists():
+        return LiveTrainingSession.load(checkpoint_path, config)
+    return LiveTrainingSession(config, checkpoint_path=checkpoint_path)

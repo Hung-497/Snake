@@ -13,11 +13,11 @@ def test_nothing_is_missing_when_pytorch_is_installed():
     assert missing_dependency_message() is None
 
 
-def test_live_training_trains_on_the_board_chosen_in_settings():
+def test_live_training_trains_on_the_board_chosen_in_settings(tmp_path):
     settings = SessionSettings()
     settings.select_board_size("Small 16 x 16")
 
-    session = start_live_training(settings)
+    session = start_live_training(settings, checkpoint_path=tmp_path / "live.pt")
 
     assert session.config == settings.build_game_config()
     assert (session.engine.board_width, session.engine.board_height) == (16, 16)
