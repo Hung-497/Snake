@@ -42,13 +42,23 @@ class Area:
     height: float
 
 
-def side_by_side_areas(window_width, window_height, hud_height):
-    """Split the space under the HUD: the graph on the left, the board on the right."""
+def side_by_side_areas(window_width, window_height, hud_height,
+                       board_width, board_height, tile_size):
+    """Split the space under the HUD: the graph on the left, the board on the right.
+
+    The board never draws bigger than its Tile Size, so it takes only the
+    width it needs at that size and the graph gets all the rest. In a narrow
+    window the graph keeps GRAPH_WIDTH and the board shrinks instead.
+    """
     usable_height = window_height - hud_height
-    graph = Area(0, 0, GRAPH_WIDTH, usable_height)
+    board_area_width = min(
+        window_width - GRAPH_WIDTH, board_width * tile_size + 2 * BOARD_MARGIN
+    )
+    graph_width = window_width - board_area_width
+    graph = Area(0, 0, graph_width, usable_height)
     board = Area(
-        GRAPH_WIDTH + BOARD_MARGIN, BOARD_MARGIN,
-        max(1, window_width - GRAPH_WIDTH - 2 * BOARD_MARGIN),
+        graph_width + BOARD_MARGIN, BOARD_MARGIN,
+        max(1, board_area_width - 2 * BOARD_MARGIN),
         max(1, usable_height - 2 * BOARD_MARGIN),
     )
     return graph, board

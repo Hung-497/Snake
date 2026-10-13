@@ -9,9 +9,9 @@ from snake.ui.NetworkLayout import (
 
 
 ACTION_LABELS = {"Straight": "Straight", "Turn_Left": "Left", "Turn_Right": "Right"}
-# Room beside the neuron columns for the input and output labels.
-INPUT_LABEL_WIDTH = 118
-OUTPUT_LABEL_WIDTH = 92
+# Space between a label and its neuron, and between the labels and the area edge.
+LABEL_GAP = 6
+LABEL_PADDING = 18
 # Connections are drawn in this many strength steps per colour, so all lines of
 # one step go to the GPU together instead of one draw call per line.
 STRENGTH_STEPS = 5
@@ -58,9 +58,15 @@ class NetworkRenderer:
 
     def draw(self, snapshot, area, view=ZoomPan()):
         """Draw the graph in an area; the focus layout passes its zoom and pan."""
+        self.set_output_texts(snapshot)
+        # Leave room for the widest labels as drawn, so none is cut off at the edges.
+        input_width = max(label.content_width for label in self.input_labels) + LABEL_PADDING
+        output_width = max(
+            label.content_width for label in self.output_labels + [self.random_label]
+        ) + LABEL_PADDING
         neuron_area = Area(
-            area.left + INPUT_LABEL_WIDTH, area.bottom,
-            max(1, area.width - INPUT_LABEL_WIDTH - OUTPUT_LABEL_WIDTH), area.height,
+            area.left + input_width, area.bottom,
+            max(1, area.width - input_width - output_width), area.height,
         )
         layer_sizes = [len(layer) for layer in snapshot.activations]
         positions = [
@@ -118,22 +124,25 @@ class NetworkRenderer:
         x, y = positions[-1][chosen]
         arcade.draw_circle_outline(x, y, radius + 3, CHOSEN_RING, 2)
 
-    def draw_labels(self, snapshot, positions, radius):
-        for label, (x, y) in zip(self.input_labels, positions[0]):
-            label.x, label.y = x - radius - 6, y
-            label.draw()
-
+    def set_output_texts(self, snapshot):
         chosen = snapshot.actions.index(snapshot.chosen_action)
         q_values = snapshot.activations[-1]
-        for index, (label, (x, y)) in enumerate(zip(self.output_labels, positions[-1])):
+        for index, label in enumerate(self.output_labels):
             label.text = f"{ACTION_LABELS[snapshot.actions[index]]} {q_values[index]:+.1f}"
             label.color = Theme.TEXT if index == chosen else Theme.TEXT_MUTED
-            label.x, label.y = x + radius + 6, y
+
+    def draw_labels(self, snapshot, positions, radius):
+        for label, (x, y) in zip(self.input_labels, positions[0]):
+            label.x, label.y = x - radius - LABEL_GAP, y
+            label.draw()
+
+        for label, (x, y) in zip(self.output_labels, positions[-1]):
+            label.x, label.y = x + radius + LABEL_GAP, y
             label.draw()
 
         if snapshot.explored:
             # Under the outputs, so a random move is not read as the network's choice.
             x, y = positions[-1][-1]
-            self.random_label.x = x + radius + 6
+            self.random_label.x = x + radius + LABEL_GAP
             self.random_label.y = y - 2 * self.random_label.font_size - radius
             self.random_label.draw()
