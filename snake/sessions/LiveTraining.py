@@ -26,7 +26,7 @@ def missing_dependency_message():
 
 
 class LiveTrainingCheckpointError(ValueError):
-    """The saved Live Training cannot continue on this board; the file is kept."""
+    """The saved Live Training cannot be read or is for another Feature Set; the file is kept."""
 
 
 def start_live_training(settings, checkpoint_path=DEFAULT_CHECKPOINT_PATH):
