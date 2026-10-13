@@ -49,6 +49,7 @@ class DQNBot(LearningBot):
         self.game_trained = 0
         self.current_features = None
         self.current_action = None
+        self.current_action_values = None
         self.distance_before_move = 0
         self.game_losses = []
 
@@ -65,6 +66,8 @@ class DQNBot(LearningBot):
         with torch.no_grad():
             values = self.network(features).tolist()
         action_values = dict(zip(self.actions, values))
+        # Kept so Live Training can tell a random move from the best one.
+        self.current_action_values = action_values
         self.current_action = self.select_action(
             state, action_values, self.evaluation_mode
         )

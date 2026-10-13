@@ -30,6 +30,17 @@ class LiveTrainingStats:
     epsilon: float
 
 
+@dataclass(frozen=True)
+class NetworkSnapshot:
+    # One list per layer: the inputs, each hidden layer after ReLU, the Q-values.
+    activations: list
+    # One matrix per pair of layers, as weights[layer][to_neuron][from_neuron].
+    weights: list
+    actions: list
+    chosen_action: str
+    explored: bool
+
+
 class LiveTrainingSession:
     def __init__(self, config, seed=0, max_moves=5000):
         self.config = config
@@ -71,6 +82,47 @@ class LiveTrainingSession:
             moves += 1
             if clock() - started_at >= budget_seconds:
                 return moves
+
+    def network_snapshot(self):
+        """What the network saw and decided on the last move, for drawing.
+
+        Activations and weights use the network as it is now. Whether the move
+        was exploration compares it with the best safe action when it was
+        chosen, because learning after the move may already change that.
+        Returns None before the first move.
+        """
+        features = self.bot.current_features
+        if features is None:
+            return None
+
+        with torch.no_grad():
+            values = torch.tensor(features, dtype=torch.float32)
+            activations = [values.tolist()]
+            for layer in self.bot.network:
+                values = layer(values)
+                if not isinstance(layer, torch.nn.Linear):
+                    # Replace the Linear output with the value after its ReLU.
+                    activations.pop()
+                activations.append(values.tolist())
+            weights = [
+                layer.weight.tolist() for layer in self.bot.network
+                if isinstance(layer, torch.nn.Linear)
+            ]
+
+        actions = list(self.bot.actions)
+        # Every Feature Set starts with one danger flag per action.
+        safe_actions = [
+            action for action, danger in zip(actions, features) if not danger
+        ] or actions
+        decision_values = self.bot.current_action_values
+        best_action = max(safe_actions, key=lambda action: decision_values[action])
+        return NetworkSnapshot(
+            activations=activations,
+            weights=weights,
+            actions=actions,
+            chosen_action=self.bot.current_action,
+            explored=self.bot.current_action != best_action,
+        )
 
     def stats(self):
         recent_scores = self.scores[-RECENT_GAMES:]
