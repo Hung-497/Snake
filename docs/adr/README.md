@@ -24,9 +24,10 @@ How the bots learn, are saved, and are compared.
 | ADR | Decision | Status | Recorded | Related |
 | --- | --- | --- | --- | --- |
 | [0004](0004-run-bot-experiments-headlessly.md) | Run Bot Experiments headlessly and keep their records separate | Accepted | 2026-09-25 | |
-| [0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md) | Keep DQN headless with separate training and evaluation artifacts | Accepted | 2026-09-26 | Extended by 0009 |
+| [0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md) | Keep DQN headless with separate training and evaluation artifacts | Accepted | 2026-09-26 | Extended by 0009, amended by 0011 |
 | [0009](0009-version-learned-artifacts-by-feature-set.md) | Version Learned Artifacts by Feature Set | Accepted | 2026-10-09 | Extends 0007 |
 | [0010](0010-keep-q-learning-training-history-inside-the-q-table.md) | Keep Q Learning Training History Inside the Q-table | Accepted | 2026-10-11 | Related to 0007 |
+| [0011](0011-train-dqn-in-the-live-training-app-view.md) | Train DQN in the Live Training App View | Accepted | 2026-10-13 | Amends 0007 |
 
 ### Saved Data
 
@@ -49,7 +50,7 @@ Dependencies, tools, and continuous integration.
 
 | Status | ADRs |
 | --- | --- |
-| Accepted | 0001–0010 |
+| Accepted | 0001–0011 |
 | Proposed | none |
 | Rejected | none |
 | Deprecated | none |
