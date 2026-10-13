@@ -80,3 +80,21 @@ def test_explicit_dqn_selection_reports_missing_optional_dependency(tmp_path):
     assert result.returncode != 0
     assert "DQN requires optional PyTorch" in result.stderr
     assert not (tmp_path / "experiments").exists()
+
+
+def test_live_training_explains_how_to_install_missing_pytorch(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable, "-c",
+            "from snake.sessions.LiveTraining import missing_dependency_message; "
+            "print(missing_dependency_message())",
+        ],
+        cwd=tmp_path,
+        env=environment_with_blocked_torch(tmp_path, "ImportError"),
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "uv sync --group dqn" in result.stdout

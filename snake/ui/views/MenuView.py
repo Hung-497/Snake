@@ -11,6 +11,7 @@ MENU_ACTIONS = (
     ("Settings", "settings", False),
     ("Replay", "replay", False),
     ("Records", "records", False),
+    ("Live Training", "live_training", False),
 )
 
 
