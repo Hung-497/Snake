@@ -104,7 +104,9 @@ def create_app():
     shell.register_view("game", lambda bot_mode: GameView(shell, settings, bot_mode))
     shell.register_view("records", lambda: RecordsView(shell, settings))
     shell.register_view("replay", lambda: ReplayView(shell))
-    shell.register_view("live_training", lambda: LiveTrainingView(shell, settings))
+    shell.register_view(
+        "live_training", lambda bot_mode: LiveTrainingView(shell, settings, bot_mode)
+    )
     shell.register_view(
         "choose_version",
         lambda family, choose, back: VersionView(shell, family, choose, back),

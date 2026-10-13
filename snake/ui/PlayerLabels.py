@@ -22,6 +22,7 @@ BOT_MODE_LABELS = {
     "search_based": "Search-Based",
     "q_learning_v3": "Q Learning v3",
     "dqn": "DQN v3",
+    "dqn_v2": "DQN v2",
 }
 
 
@@ -37,6 +38,7 @@ class LearningFamily:
 # Play and Replay show one button per family, then a Choose a version screen.
 LEARNING_FAMILIES = {
     "q_learning": LearningFamily("Q Learning", {"v2": "q_learning", "v3": "q_learning_v3"}),
+    "dqn": LearningFamily("DQN", {"v2": "dqn_v2", "v3": "dqn"}),
 }
 
 # What each Feature Set version sees, shown on the Choose a version screen.
@@ -74,7 +76,7 @@ def bot_mode_choices():
     return choices
 
 # Bot Modes that Play opens in Live Training instead of the Game App View.
-LIVE_TRAINING_BOT_MODES = ("dqn",)
+LIVE_TRAINING_BOT_MODES = ("dqn", "dqn_v2")
 
 # Every Player the app can show, keyed by the name saved in records and replays.
 PLAYER_LABELS = dict(BOT_MODE_LABELS)

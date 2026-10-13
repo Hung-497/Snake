@@ -4,15 +4,18 @@ import arcade.gui
 from snake.ui import Theme
 from snake.ui.BoardRenderer import BoardRenderer
 from snake.ui.NetworkLayout import (
-    LIVE_TRAINING_HUD_HEIGHT, Area, ZoomPan, focus_area, live_training_minimum_size,
+    LIVE_TRAINING_HUD_HEIGHT, Area, ZoomPan, focus_area, input_labels,
+    live_training_minimum_size,
     pan_by, zoom_at,
     live_training_preferred_size, live_training_window,
     screen_containing, side_by_side_areas,
 )
 from snake.ui.NetworkRenderer import NetworkRenderer
+from snake.ui.PlayerLabels import player_label
 from snake.ui.WindowLayout import view_label_positions
 from snake.sessions.LiveTraining import (
-    LiveTrainingCheckpointError, missing_dependency_message, start_live_training,
+    DQN_VERSIONS, LiveTrainingCheckpointError, missing_dependency_message,
+    start_live_training,
 )
 
 
@@ -36,22 +39,25 @@ class LiveTrainingView(arcade.gui.UIView):
     """
     The Live Training App View: watch a DQN Bot Mode learn on the board.
 
+    Each DQN version (DQN v2 or DQN v3) trains its own network with its own save.
+
     This view only draws, keeps time and passes key presses on. Training
     belongs to the Live Training session, which is only loaded when PyTorch
     is installed, so the app still starts without it.
     """
 
-    def __init__(self, shell, settings):
+    def __init__(self, shell, settings, bot_mode="dqn"):
         super().__init__()
         self.shell = shell
         self.settings = settings
+        self.bot_mode = bot_mode
         self.background_color = Theme.SURFACE
         self.board_renderer = BoardRenderer(self.window)
         self.message = missing_dependency_message()
         self.session = None
         if self.message is None:
             try:
-                self.session = start_live_training(settings)
+                self.session = start_live_training(settings, bot_mode)
             except LiveTrainingCheckpointError as error:
                 self.message = str(error)
         self.background_mode = False
@@ -59,7 +65,10 @@ class LiveTrainingView(arcade.gui.UIView):
         self.speed_index = 0
         self.focus_layout = False
         self.zoom_pan = ZoomPan()
-        self.network_renderer = NetworkRenderer(Theme.type_sizes(self.window.width).caption)
+        self.network_renderer = NetworkRenderer(
+            Theme.type_sizes(self.window.width).caption,
+            input_labels(DQN_VERSIONS[bot_mode].feature_set),
+        )
 
         sizes = Theme.type_sizes(self.window.width)
         back_layout = arcade.gui.UIAnchorLayout()
@@ -90,7 +99,7 @@ class LiveTrainingView(arcade.gui.UIView):
             font_name=Theme.FONT_REGULAR,
         )
         self.title_label = arcade.Text(
-            "Live Training · DQN",
+            f"Live Training · {player_label(bot_mode)}",
             x=positions["bot_mode"][0],
             y=positions["bot_mode"][1],
             color=Theme.TEXT_MUTED,

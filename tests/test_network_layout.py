@@ -3,10 +3,10 @@
 import pytest
 
 from snake.ui.NetworkLayout import (
-    BOARD_MARGIN, GRAPH_WIDTH, INPUT_LABELS, LIVE_TRAINING_HUD_HEIGHT, MAX_ROW_GAP, MIN_ROW_GAP, Area,
+    BOARD_MARGIN, GRAPH_WIDTH, LIVE_TRAINING_HUD_HEIGHT, MAX_ROW_GAP, MIN_ROW_GAP, Area,
     activation_strength, connection_style, live_training_minimum_size,
     live_training_preferred_size,
-    live_training_window, neuron_positions, screen_containing, side_by_side_areas,
+    input_labels, live_training_window, neuron_positions, screen_containing, side_by_side_areas,
     strongest_connections,
 )
 from snake.ui.WindowLayout import MIN_READABLE_TILE_SIZE
@@ -141,8 +141,19 @@ def test_activation_strength_is_between_zero_and_one():
 
 
 def test_every_feature_set_v3_input_has_a_label():
-    assert len(INPUT_LABELS) == 12
-    assert INPUT_LABELS[:3] == ("Danger straight", "Danger left", "Danger right")
+    labels = input_labels("v3")
+
+    assert len(labels) == 12
+    assert labels[:3] == ("Danger straight", "Danger left", "Danger right")
+    assert labels[9:] == ("Tail straight", "Tail left", "Tail right")
+
+
+def test_feature_set_v2_has_nine_labelled_inputs_without_tail():
+    assert input_labels("v2") == (
+        "Danger straight", "Danger left", "Danger right",
+        "Food straight", "Food left", "Food right",
+        "Space straight", "Space left", "Space right",
+    )
 
 
 def test_small_layers_spread_out_more_than_large_ones():

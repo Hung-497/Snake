@@ -13,7 +13,7 @@ import torch
 
 from snake.bots.DQNBot import DEFAULT_DQN_SETTINGS, DQNBot
 from snake.engine.SnakeEngine import SnakeEngine
-from snake.sessions.LiveTraining import DEFAULT_CHECKPOINT_PATH, LiveTrainingCheckpointError
+from snake.sessions.LiveTraining import DQN_VERSIONS, LiveTrainingCheckpointError
 from snake.sessions.TrainQLearning import play_move
 from snake.storage.DQNArtifacts import (
     artifact_feature_set, checkpoint_data, common_metadata, load_artifact,
@@ -21,8 +21,7 @@ from snake.storage.DQNArtifacts import (
 )
 
 
-FEATURE_SET = "v3"
-# The Player name DQN games are saved under in Records.
+# The Player name games are saved under unless another DQN version is chosen.
 PLAYER = "dqn"
 # The average score covers this many of the most recent games.
 RECENT_GAMES = 50
@@ -55,13 +54,17 @@ class NetworkSnapshot:
 class LiveTrainingSession:
     def __init__(
         self, config, seed=0, max_moves=5000,
-        checkpoint_path=DEFAULT_CHECKPOINT_PATH, settings=None,
+        checkpoint_path=None, settings=None,
         record_manager=None, speed_delay=None, player=PLAYER, now=time.perf_counter,
         replay_manager=None,
     ):
         self.config = config
         self.seed = seed
         self.max_moves = max_moves
+        # The Player name picks the Feature Set and, by default, the save.
+        self.feature_set = DQN_VERSIONS[player].feature_set
+        if checkpoint_path is None:
+            checkpoint_path = DQN_VERSIONS[player].checkpoint_path
         self.checkpoint_path = checkpoint_path
         self.moves_this_game = 0
         self.scores = []
@@ -86,7 +89,7 @@ class LiveTrainingSession:
             random_source=random.Random(seed + 1),
             replay_random_source=random.Random(seed + 2),
             settings=dict(DEFAULT_DQN_SETTINGS if settings is None else settings),
-            feature_set=FEATURE_SET,
+            feature_set=self.feature_set,
         )
         self._start_replay()
 
@@ -97,6 +100,8 @@ class LiveTrainingSession:
         Raises LiveTrainingCheckpointError, leaving the file untouched, when
         the save cannot be read or was made for another Feature Set.
         """
+        player = session_options.get("player", PLAYER)
+        expected_feature_set = DQN_VERSIONS[player].feature_set
         try:
             data = load_artifact(checkpoint_path, "dqn_training_checkpoint")
         except ValueError as error:
@@ -106,10 +111,10 @@ class LiveTrainingSession:
             ) from error
         metadata = data["metadata"]
         feature_set = artifact_feature_set(metadata, checkpoint_path)
-        if feature_set != FEATURE_SET:
+        if feature_set != expected_feature_set:
             raise LiveTrainingCheckpointError(
                 f"Saved Live Training uses Feature Set {feature_set}, "
-                f"but Live Training uses Feature Set {FEATURE_SET}.\n"
+                f"but this DQN uses Feature Set {expected_feature_set}.\n"
                 f"Delete {checkpoint_path} to start over."
             )
         # The save may come from another board size. Feature Set inputs do not
@@ -151,7 +156,7 @@ class LiveTrainingSession:
         """Save this Live Training as a DQN Training Checkpoint at its own path."""
         metadata = common_metadata(
             self.config, self.bot.settings, self.seed, self.max_moves,
-            LIVE_TRAINING_RUN_ID, None, FEATURE_SET,
+            LIVE_TRAINING_RUN_ID, None, self.feature_set,
         )
         metadata["checkpoint_every"] = CHECKPOINT_EVERY
         metadata["live_training_scores"] = list(self.scores)
