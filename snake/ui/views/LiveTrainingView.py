@@ -10,7 +10,9 @@ from snake.ui.NetworkLayout import (
 )
 from snake.ui.NetworkRenderer import NetworkRenderer
 from snake.ui.WindowLayout import view_label_positions
-from snake.sessions.LiveTraining import missing_dependency_message, start_live_training
+from snake.sessions.LiveTraining import (
+    LiveTrainingCheckpointError, missing_dependency_message, start_live_training,
+)
 
 
 # Live mode speeds, in training moves per frame; S cycles through them.
@@ -41,7 +43,12 @@ class LiveTrainingView(arcade.gui.UIView):
         self.background_color = Theme.SURFACE
         self.board_renderer = BoardRenderer(self.window)
         self.message = missing_dependency_message()
-        self.session = None if self.message else start_live_training(settings)
+        self.session = None
+        if self.message is None:
+            try:
+                self.session = start_live_training(settings)
+            except LiveTrainingCheckpointError as error:
+                self.message = str(error)
         self.background_mode = False
         self.paused = False
         self.speed_index = 0
@@ -134,9 +141,15 @@ class LiveTrainingView(arcade.gui.UIView):
             self.window.set_location(*location)
 
     def on_hide_view(self):
+        self.save_progress()
         # Other App Views keep the normal minimum from Settings.
         self.window.update_board_minimum(self.settings.build_game_config())
         super().on_hide_view()
+
+    def save_progress(self):
+        """Keep what the bot has learned, so Live Training continues next time."""
+        if self.session is not None:
+            self.session.save()
 
     def back_to_menu(self):
         self.shell.show_view("menu")
