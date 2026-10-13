@@ -128,7 +128,9 @@ def test_a_save_for_another_feature_set_is_reported(tmp_path):
         LiveTrainingSession.load(path, CONFIG)
 
 
-def test_opening_live_training_starts_fresh_then_continues(tmp_path):
+def test_opening_live_training_starts_fresh_then_continues(tmp_path, monkeypatch):
+    # Opening Live Training saves Records in the current folder.
+    monkeypatch.chdir(tmp_path)
     path = tmp_path / "dqn_live_training.pt"
     settings = SessionSettings()
     settings.select_board_size("Small 16 x 16")

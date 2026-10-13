@@ -22,6 +22,8 @@ from snake.storage.DQNArtifacts import (
 
 
 FEATURE_SET = "v3"
+# The Player name DQN games are saved under in Records.
+PLAYER = "dqn"
 # The average score covers this many of the most recent games.
 RECENT_GAMES = 50
 # The run id and checkpoint interval saved with the checkpoint; TrainDQN reads
@@ -54,6 +56,7 @@ class LiveTrainingSession:
     def __init__(
         self, config, seed=0, max_moves=5000,
         checkpoint_path=DEFAULT_CHECKPOINT_PATH, settings=None,
+        record_manager=None, speed_delay=None, player=PLAYER, now=time.perf_counter,
     ):
         self.config = config
         self.seed = seed
@@ -61,6 +64,14 @@ class LiveTrainingSession:
         self.checkpoint_path = checkpoint_path
         self.moves_this_game = 0
         self.scores = []
+        # Games are saved as Records only when a record manager is given, with
+        # the Settings speed, like every other Bot Mode in Play.
+        self.record_manager = record_manager
+        self.speed_delay = speed_delay
+        self.player = player
+        self.now = now
+        self.session_start_time = now()
+        self.game_start_time = now()
 
         # The same CPU settings and seed offsets as TrainDQN keep runs repeatable.
         torch.set_num_threads(1)
@@ -76,7 +87,7 @@ class LiveTrainingSession:
         )
 
     @classmethod
-    def load(cls, checkpoint_path, config):
+    def load(cls, checkpoint_path, config, **session_options):
         """Continue a saved Live Training on this board, starting its next game.
 
         Raises LiveTrainingCheckpointError, leaving the file untouched, when
@@ -108,6 +119,7 @@ class LiveTrainingSession:
         session = cls(
             config, seed=metadata["base_seed"], max_moves=metadata["max_moves"],
             checkpoint_path=checkpoint_path, settings=metadata["learning_settings"],
+            **session_options,
         )
         state = data["state"]
         bot = session.bot
@@ -223,9 +235,39 @@ class LiveTrainingSession:
         self.bot.on_game_end(self.engine.state)
         self.bot.take_game_loss()
         self.scores.append(self.engine.score)
+        self._save_record()
         self.engine = self._make_engine(game_number=self.bot.game_trained)
         self.bot.engine = self.engine
         self.moves_this_game = 0
+
+    def _save_record(self):
+        if self.record_manager is None:
+            return
+        if self.engine.game_won:
+            outcome = "won"
+        elif self.engine.game_over:
+            outcome = "died"
+        else:
+            # Stopped at the move limit: neither won nor died, so unknown.
+            outcome = ""
+        stats = self.stats()
+        now = self.now()
+        self.record_manager.save_game_result(
+            self.player,
+            stats.games_played,
+            self.engine.score,
+            stats.best_score,
+            stats.average_score,
+            self.moves_this_game,
+            now - self.game_start_time,
+            now - self.session_start_time,
+            self.config.width,
+            self.config.height,
+            self.config.tile_size,
+            self.speed_delay,
+            outcome=outcome,
+        )
+        self.game_start_time = now
 
     def _make_engine(self, game_number):
         return SnakeEngine(

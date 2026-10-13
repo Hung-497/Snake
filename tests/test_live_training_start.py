@@ -13,7 +13,9 @@ def test_nothing_is_missing_when_pytorch_is_installed():
     assert missing_dependency_message() is None
 
 
-def test_live_training_trains_on_the_board_chosen_in_settings(tmp_path):
+def test_live_training_trains_on_the_board_chosen_in_settings(tmp_path, monkeypatch):
+    # Opening Live Training saves Records in the current folder.
+    monkeypatch.chdir(tmp_path)
     settings = SessionSettings()
     settings.select_board_size("Small 16 x 16")
 
