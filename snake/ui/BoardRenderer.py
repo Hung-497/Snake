@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import arcade
 from arcade.types import Color
 
@@ -28,11 +30,22 @@ class BoardRenderer:
             self.hud_height,
         )
 
+    def area_layout(self, area, board_width, board_height, tile_size):
+        """Fit and centre the board inside one area of the window instead."""
+        layout = layout_board(
+            area.width, area.height, board_width, board_height, tile_size, hud_height=0
+        )
+        return replace(layout, left=area.left + layout.left,
+                       bottom=area.bottom + layout.bottom)
+
     def draw(
         self, board_width, board_height, tile_size, snake_position, snake_body,
-        food_position, food_scale=1.0, flash_alpha=0,
+        food_position, food_scale=1.0, flash_alpha=0, area=None,
     ):
-        layout = self.board_layout(board_width, board_height, tile_size)
+        if area is None:
+            layout = self.board_layout(board_width, board_height, tile_size)
+        else:
+            layout = self.area_layout(area, board_width, board_height, tile_size)
 
         arcade.draw_lbwh_rectangle_filled(
             layout.left, layout.bottom, layout.width, layout.height, Theme.BOARD_BACKGROUND

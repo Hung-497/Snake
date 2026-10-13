@@ -3,6 +3,12 @@ import arcade.gui
 
 from snake.ui import Theme
 from snake.ui.BoardRenderer import BoardRenderer
+from snake.ui.NetworkLayout import (
+    LIVE_TRAINING_HUD_HEIGHT, Area, live_training_minimum_size,
+    live_training_preferred_size, live_training_window,
+    screen_containing, side_by_side_areas,
+)
+from snake.ui.NetworkRenderer import NetworkRenderer
 from snake.ui.WindowLayout import view_label_positions
 from snake.sessions.LiveTraining import missing_dependency_message, start_live_training
 
@@ -31,6 +37,7 @@ class LiveTrainingView(arcade.gui.UIView):
     def __init__(self, shell, settings):
         super().__init__()
         self.shell = shell
+        self.settings = settings
         self.background_color = Theme.SURFACE
         self.board_renderer = BoardRenderer(self.window)
         self.message = missing_dependency_message()
@@ -38,6 +45,7 @@ class LiveTrainingView(arcade.gui.UIView):
         self.background_mode = False
         self.paused = False
         self.speed_index = 0
+        self.network_renderer = NetworkRenderer(Theme.type_sizes(self.window.width).caption)
 
         sizes = Theme.type_sizes(self.window.width)
         back_layout = arcade.gui.UIAnchorLayout()
@@ -61,12 +69,11 @@ class LiveTrainingView(arcade.gui.UIView):
         positions = view_label_positions(self.window.width, self.window.height, 60)
         self.stats_label = arcade.Text(
             "",
-            x=positions["score"][0],
+            x=positions["bot_mode"][0],
             y=positions["score"][1],
             color=Theme.TEXT,
             font_size=sizes.body,
             font_name=Theme.FONT_REGULAR,
-            anchor_x="center",
         )
         self.title_label = arcade.Text(
             "Live Training · DQN",
@@ -78,12 +85,11 @@ class LiveTrainingView(arcade.gui.UIView):
         )
         self.controls_label = arcade.Text(
             "",
-            x=positions["score"][0],
+            x=positions["bot_mode"][0],
             y=positions["score"][1] - CONTROLS_GAP,
             color=Theme.TEXT_MUTED,
             font_size=sizes.body,
             font_name=Theme.FONT_REGULAR,
-            anchor_x="center",
         )
         self.message_label = arcade.Text(
             self.message or "",
@@ -98,6 +104,39 @@ class LiveTrainingView(arcade.gui.UIView):
             width=max(1, self.window.width - 2 * Theme.SPACE_WIDE),
             align="center",
         )
+
+    def on_show_view(self):
+        super().on_show_view()
+        if self.session is None:
+            return
+        # Live Training needs room for the graph beside a readable board, so it
+        # grows the window and raises the minimum only while it is open.
+        config = self.session.config
+        current_size = (self.window.width, self.window.height)
+        current_location = self.window.get_location()
+        # window.screen is the screen the window opened on, not the one it is on now.
+        screens = [
+            Area(screen.x, screen.y, screen.width, screen.height)
+            for screen in self.window.display.get_screens()
+        ]
+        size, minimum, location = live_training_window(
+            size=current_size,
+            location=current_location,
+            minimum=live_training_minimum_size(config.width, config.height),
+            screen=screen_containing(current_location, current_size, screens),
+            preferred=live_training_preferred_size(
+                config.width, config.height, config.tile_size
+            ),
+        )
+        self.window.set_minimum_size(*minimum)
+        if size != (self.window.width, self.window.height):
+            self.window.set_size(*size)
+            self.window.set_location(*location)
+
+    def on_hide_view(self):
+        # Other App Views keep the normal minimum from Settings.
+        self.window.update_board_minimum(self.settings.build_game_config())
+        super().on_hide_view()
 
     def back_to_menu(self):
         self.shell.show_view("menu")
@@ -125,15 +164,17 @@ class LiveTrainingView(arcade.gui.UIView):
                 self.session.make_move()
 
     def on_resize(self, width, height):
+        self.network_renderer.set_font_size(Theme.type_sizes(width).caption)
         positions = view_label_positions(width, height, 60)
         sizes = Theme.type_sizes(width)
         self.back_button.shared_style.font_size = sizes.body
         self.back_button.trigger_full_render()
-        self.stats_label.x, self.stats_label.y = positions["score"]
+        self.stats_label.x = positions["bot_mode"][0]
+        self.stats_label.y = positions["score"][1]
         self.stats_label.font_size = sizes.body
         self.title_label.x, self.title_label.y = positions["bot_mode"]
         self.title_label.font_size = sizes.bot_mode
-        self.controls_label.x = positions["score"][0]
+        self.controls_label.x = positions["bot_mode"][0]
         self.controls_label.y = positions["score"][1] - CONTROLS_GAP
         self.controls_label.font_size = sizes.body
         self.message_label.x, self.message_label.y = positions["result"]
@@ -148,6 +189,9 @@ class LiveTrainingView(arcade.gui.UIView):
 
         if not self.background_mode:
             state = self.session.engine.state
+            graph_area, board_area = side_by_side_areas(
+                self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT
+            )
             self.board_renderer.draw(
                 state.board_width,
                 state.board_height,
@@ -155,7 +199,11 @@ class LiveTrainingView(arcade.gui.UIView):
                 state.snake_position,
                 state.snake_body,
                 state.food_position,
+                area=board_area,
             )
+            snapshot = self.session.network_snapshot()
+            if snapshot is not None:
+                self.network_renderer.draw(snapshot, graph_area)
         stats = self.session.stats()
         self.stats_label.text = (
             f"Game {stats.games_played + 1}  Score: {stats.score}  "

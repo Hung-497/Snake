@@ -3,6 +3,7 @@
 - Status: Accepted
 - Category: Bots & Training
 - Recorded: 2026-10-13
+- Updated: 2026-10-13, Live Training sets its own larger window minimum
 - Discussed in: [#137](https://github.com/Hung-497/Snake/issues/137)
 - Amends: [ADR 0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md), which kept DQN headless
 
@@ -22,3 +23,7 @@ Training in the app was chosen because watching the network learn is the point o
 - Live Training makes each move through the same single training move as the headless commands, with the same seeds and CPU settings as DQN training, so watching never changes what is learned. A test checks it reaches the same network as the headless command.
 - The Live Training App View reaches DQN only through a module that imports PyTorch when called, never when loaded, and the optional-dependency tests keep app startup free of PyTorch.
 - The rest of ADR 0007 still holds, including the separate DQN Training Checkpoint and DQN Evaluation Model.
+
+## Update
+
+2026-10-13: Live Training draws the network graph beside the board, which does not fit in the app's 700 x 700 minimum window from ADR 0002. While Live Training is open, it grows the window to fit the graph and the board at the Tile Size from Settings, never past the screen the window is on, and raises the minimum to fit the graph and a readable board. Leaving it restores the usual minimum, so every other App View keeps ADR 0002's small-window support.
