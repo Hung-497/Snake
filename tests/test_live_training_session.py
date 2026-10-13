@@ -114,3 +114,63 @@ def test_live_training_learns_exactly_like_the_headless_command(tmp_path):
     live_weights = session.bot.network.state_dict()
     for name, weights in headless["online_weights"].items():
         assert torch.equal(live_weights[name], weights), name
+
+
+class FakeClock:
+    """A clock that moves forward one second every time it is read."""
+
+    def __init__(self):
+        self.now = 0.0
+
+    def __call__(self):
+        self.now += 1.0
+        return self.now
+
+
+def test_a_time_budget_makes_moves_until_the_budget_runs_out():
+    session = make_session()
+
+    # Start at 1; each move reads the clock once more, so 3 moves reach 4.
+    moves = session.make_moves_for(3.0, clock=FakeClock())
+
+    assert moves == 3
+    assert len(session.bot.replay) == 3
+
+
+def test_a_tiny_time_budget_still_makes_one_move_and_stops():
+    session = make_session()
+
+    moves = session.make_moves_for(0.0, clock=FakeClock())
+
+    assert moves == 1
+    assert len(session.bot.replay) == 1
+
+
+def test_watching_live_or_in_background_learns_the_same_network():
+    one_at_a_time = make_session()
+    in_batches = make_session()
+    mixed = make_session()
+
+    batch_moves = 0
+    while in_batches.stats().games_played < 3:
+        batch_moves += in_batches.make_moves_for(25.0, clock=FakeClock())
+    for _ in range(batch_moves):
+        one_at_a_time.make_move()
+    mixed_moves = 0
+    while mixed_moves < batch_moves:
+        if mixed_moves % 2:
+            mixed.make_move()
+            mixed_moves += 1
+        else:
+            mixed_moves += mixed.make_moves_for(
+                min(7.0, batch_moves - mixed_moves - 1), clock=FakeClock()
+            )
+
+    assert mixed_moves == batch_moves
+    for other in (in_batches, mixed):
+        assert other.stats() == one_at_a_time.stats()
+        assert other.scores == one_at_a_time.scores
+        assert other.engine.state == one_at_a_time.engine.state
+        live_weights = one_at_a_time.bot.network.state_dict()
+        for name, weights in other.bot.network.state_dict().items():
+            assert torch.equal(live_weights[name], weights), name

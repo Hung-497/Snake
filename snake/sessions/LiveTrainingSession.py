@@ -7,6 +7,7 @@ is learned.
 
 from dataclasses import dataclass
 import random
+import time
 
 import torch
 
@@ -56,6 +57,20 @@ class LiveTrainingSession:
         self.moves_this_game += 1
         if game_ended or self.moves_this_game >= self.max_moves:
             self._finish_game()
+
+    def make_moves_for(self, budget_seconds, clock=time.perf_counter):
+        """Make training moves until the time budget runs out; return how many.
+
+        At least one move is always made, so a slow frame still makes progress.
+        Only the number of moves depends on time, never what is learned.
+        """
+        started_at = clock()
+        moves = 0
+        while True:
+            self.make_move()
+            moves += 1
+            if clock() - started_at >= budget_seconds:
+                return moves
 
     def stats(self):
         recent_scores = self.scores[-RECENT_GAMES:]
