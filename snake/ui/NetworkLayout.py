@@ -147,3 +147,61 @@ def activation_strength(value, largest):
     if largest <= 0:
         return 0.0
     return min(1.0, max(0.0, value / largest))
+
+
+# --- Network focus layout: zoom and pan ------------------------------------
+
+MIN_ZOOM = 1.0
+MAX_ZOOM = 8.0
+
+
+@dataclass(frozen=True)
+class ZoomPan:
+    """How far the focus layout is zoomed in, and how far it has been dragged."""
+
+    zoom: float = 1.0
+    offset_x: float = 0
+    offset_y: float = 0
+
+
+def focus_area(window_width, window_height, hud_height):
+    """In the focus layout the graph gets the whole window under the HUD."""
+    return Area(0, 0, window_width, window_height - hud_height)
+
+
+def to_screen(view, point, area):
+    """Where a graph point is drawn: scaled from the area's centre, then moved."""
+    centre_x = area.left + area.width / 2
+    centre_y = area.bottom + area.height / 2
+    return (
+        centre_x + (point[0] - centre_x) * view.zoom + view.offset_x,
+        centre_y + (point[1] - centre_y) * view.zoom + view.offset_y,
+    )
+
+
+def zoom_at(view, factor, point, area):
+    """Zoom by a factor while the graph point under the mouse stays put."""
+    centre_x = area.left + area.width / 2
+    centre_y = area.bottom + area.height / 2
+    # The graph point currently drawn at the mouse position.
+    graph_x = (point[0] - centre_x - view.offset_x) / view.zoom + centre_x
+    graph_y = (point[1] - centre_y - view.offset_y) / view.zoom + centre_y
+    zoom = min(MAX_ZOOM, max(MIN_ZOOM, view.zoom * factor))
+    zoomed = ZoomPan(
+        zoom,
+        point[0] - centre_x - (graph_x - centre_x) * zoom,
+        point[1] - centre_y - (graph_y - centre_y) * zoom,
+    )
+    return pan_by(zoomed, 0, 0, area)
+
+
+def pan_by(view, dx, dy, area):
+    """Drag the graph, stopping when its edge reaches the area's edge."""
+    # A graph zoom times as big can move this far from the centre each way.
+    limit_x = (view.zoom - 1) * area.width / 2
+    limit_y = (view.zoom - 1) * area.height / 2
+    return ZoomPan(
+        view.zoom,
+        min(limit_x, max(-limit_x, view.offset_x + dx)),
+        min(limit_y, max(-limit_y, view.offset_y + dy)),
+    )

@@ -3,8 +3,8 @@ from arcade.types import Color
 
 from snake.ui import Theme
 from snake.ui.NetworkLayout import (
-    INPUT_LABELS, Area, activation_strength, connection_style, neuron_positions,
-    strongest_connections,
+    INPUT_LABELS, Area, ZoomPan, activation_strength, connection_style,
+    neuron_positions, strongest_connections, to_screen,
 )
 
 
@@ -56,26 +56,31 @@ class NetworkRenderer:
         for label in self.input_labels + self.output_labels + [self.random_label]:
             label.font_size = font_size
 
-    def draw(self, snapshot, area):
+    def draw(self, snapshot, area, view=ZoomPan()):
+        """Draw the graph in an area; the focus layout passes its zoom and pan."""
         neuron_area = Area(
             area.left + INPUT_LABEL_WIDTH, area.bottom,
             max(1, area.width - INPUT_LABEL_WIDTH - OUTPUT_LABEL_WIDTH), area.height,
         )
         layer_sizes = [len(layer) for layer in snapshot.activations]
-        positions = neuron_positions(layer_sizes, neuron_area)
-        radius = self.neuron_radius(positions)
+        positions = [
+            [to_screen(view, point, area) for point in layer]
+            for layer in neuron_positions(layer_sizes, neuron_area)
+        ]
+        radius = self.neuron_radius(positions, view.zoom)
 
         self.draw_connections(snapshot, positions)
         self.draw_neurons(snapshot, positions, radius)
         self.draw_labels(snapshot, positions, radius)
 
     @staticmethod
-    def neuron_radius(positions):
+    def neuron_radius(positions, zoom=1.0):
         tallest = max(positions, key=len)
         if len(tallest) < 2:
             return 6
         gap = abs(tallest[0][1] - tallest[1][1])
-        return max(2, min(8, gap * 0.4))
+        # Neurons grow as the graph is zoomed in, so they stay easy to pick out.
+        return max(2, min(8 * zoom, gap * 0.4))
 
     def draw_connections(self, snapshot, positions):
         connections = strongest_connections(snapshot.weights)

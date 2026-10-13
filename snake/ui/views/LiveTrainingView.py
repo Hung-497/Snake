@@ -4,7 +4,8 @@ import arcade.gui
 from snake.ui import Theme
 from snake.ui.BoardRenderer import BoardRenderer
 from snake.ui.NetworkLayout import (
-    LIVE_TRAINING_HUD_HEIGHT, Area, live_training_minimum_size,
+    LIVE_TRAINING_HUD_HEIGHT, Area, ZoomPan, focus_area, live_training_minimum_size,
+    pan_by, zoom_at,
     live_training_preferred_size, live_training_window,
     screen_containing, side_by_side_areas,
 )
@@ -23,6 +24,10 @@ LIVE_SPEEDS = (1, 5, 25, 100)
 # a second.
 BACKGROUND_BUDGET_SECONDS = 0.05
 PAUSE_KEYS = (arcade.key.P, arcade.key.SPACE)
+# Each mouse wheel step zooms the Network focus layout in or out by this factor.
+ZOOM_STEP = 1.2
+# The layout hint sits on the title line, this far right of the title.
+LAYOUT_HINT_GAP = 24
 # How far below the stats line the controls line sits.
 CONTROLS_GAP = 28
 
@@ -52,6 +57,8 @@ class LiveTrainingView(arcade.gui.UIView):
         self.background_mode = False
         self.paused = False
         self.speed_index = 0
+        self.focus_layout = False
+        self.zoom_pan = ZoomPan()
         self.network_renderer = NetworkRenderer(Theme.type_sizes(self.window.width).caption)
 
         sizes = Theme.type_sizes(self.window.width)
@@ -84,6 +91,14 @@ class LiveTrainingView(arcade.gui.UIView):
         )
         self.title_label = arcade.Text(
             "Live Training · DQN",
+            x=positions["bot_mode"][0],
+            y=positions["bot_mode"][1],
+            color=Theme.TEXT_MUTED,
+            font_size=sizes.bot_mode,
+            font_name=Theme.FONT_REGULAR,
+        )
+        self.layout_label = arcade.Text(
+            "",
             x=positions["bot_mode"][0],
             y=positions["bot_mode"][1],
             color=Theme.TEXT_MUTED,
@@ -165,6 +180,24 @@ class LiveTrainingView(arcade.gui.UIView):
             self.paused = not self.paused
         elif symbol == arcade.key.S:
             self.speed_index = (self.speed_index + 1) % len(LIVE_SPEEDS)
+        elif symbol == arcade.key.N:
+            self.focus_layout = not self.focus_layout
+        elif symbol == arcade.key.R:
+            self.zoom_pan = ZoomPan()
+
+    def graph_focus_area(self):
+        return focus_area(self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT)
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        if self.session is None or not self.focus_layout or scroll_y == 0:
+            return
+        factor = ZOOM_STEP if scroll_y > 0 else 1 / ZOOM_STEP
+        self.zoom_pan = zoom_at(self.zoom_pan, factor, (x, y), self.graph_focus_area())
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self.session is None or not self.focus_layout:
+            return
+        self.zoom_pan = pan_by(self.zoom_pan, dx, dy, self.graph_focus_area())
 
     def on_update(self, delta_time):
         self.ui.on_update(delta_time)
@@ -187,6 +220,10 @@ class LiveTrainingView(arcade.gui.UIView):
         self.stats_label.font_size = sizes.body
         self.title_label.x, self.title_label.y = positions["bot_mode"]
         self.title_label.font_size = sizes.bot_mode
+        self.layout_label.y = positions["bot_mode"][1]
+        self.layout_label.font_size = sizes.bot_mode
+        # The graph area changes size, so keep the zoomed graph inside it.
+        self.zoom_pan = pan_by(self.zoom_pan, 0, 0, self.graph_focus_area())
         self.controls_label.x = positions["bot_mode"][0]
         self.controls_label.y = positions["score"][1] - CONTROLS_GAP
         self.controls_label.font_size = sizes.body
@@ -195,12 +232,21 @@ class LiveTrainingView(arcade.gui.UIView):
         self.message_label.font_size = sizes.body
 
     def on_draw_before_ui(self):
-        self.title_label.draw()
         if self.session is None:
+            self.title_label.draw()
             self.message_label.draw()
             return
 
-        if not self.background_mode:
+        if not self.background_mode and self.focus_layout:
+            snapshot = self.session.network_snapshot()
+            if snapshot is not None:
+                self.network_renderer.draw(snapshot, self.graph_focus_area(), self.zoom_pan)
+            # A zoomed graph can reach under the top lines, so cover it there.
+            arcade.draw_lbwh_rectangle_filled(
+                0, self.window.height - LIVE_TRAINING_HUD_HEIGHT,
+                self.window.width, LIVE_TRAINING_HUD_HEIGHT, Theme.SURFACE,
+            )
+        elif not self.background_mode:
             state = self.session.engine.state
             graph_area, board_area = side_by_side_areas(
                 self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT
@@ -217,6 +263,10 @@ class LiveTrainingView(arcade.gui.UIView):
             snapshot = self.session.network_snapshot()
             if snapshot is not None:
                 self.network_renderer.draw(snapshot, graph_area)
+        self.title_label.draw()
+        self.layout_label.x = self.title_label.x + self.title_label.content_width + LAYOUT_HINT_GAP
+        self.layout_label.text = self.layout_text()
+        self.layout_label.draw()
         stats = self.session.stats()
         self.stats_label.text = (
             f"Game {stats.games_played + 1}  Score: {stats.score}  "
@@ -226,6 +276,13 @@ class LiveTrainingView(arcade.gui.UIView):
         self.stats_label.draw()
         self.controls_label.text = self.controls_text()
         self.controls_label.draw()
+
+    def layout_text(self):
+        if self.background_mode:
+            return ""
+        if self.focus_layout:
+            return "Network focus \u00b7 wheel zoom \u00b7 drag pan \u00b7 R reset \u00b7 N board"
+        return "N network focus"
 
     def controls_text(self):
         if self.background_mode:
