@@ -139,6 +139,19 @@ group. The DQN tests are skipped unless PyTorch is installed with
 `uv sync --group dqn`. GitHub Actions runs every test, including the DQN tests,
 on Linux, Windows, and macOS for pull requests and pushes to `main`.
 
+## Check Python Code
+
+Ruff checks the app and tests for unused imports, undefined names, and syntax
+errors. It is installed with the development dependencies by `uv sync`.
+
+```bash
+uv run ruff check .
+```
+
+This local check preserves the current formatting style. It skips the virtual
+environment and local agent worktrees. Tests still check behavior; Ruff only
+checks the source code.
+
 ## Train and Compare Bots
 
 Training and Bot Experiments run in the terminal without opening the app. The

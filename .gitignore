@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
+.ruff_cache/
 .DS_Store
 
 # Local Runtime Data from play, training, and Bot Experiments

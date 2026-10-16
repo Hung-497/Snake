@@ -10,6 +10,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "ruff>=0.17.1",
 ]
 # Install only for headless DQN training and evaluation.
 dqn = [
@@ -21,6 +22,16 @@ dqn = [
 # Put the project root on sys.path so tests can `import snake`
 # when run as `uv run pytest` (not only `python -m pytest`).
 pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py313"
+# Agent tools and their separate checkouts are not part of the app.
+extend-exclude = [".agents", ".claude", ".codex"]
+
+[tool.ruff.lint]
+# Start with unused imports, undefined names, and syntax checks. Keep the
+# current formatting style; formatting and import sorting are separate work.
+select = ["F", "E9"]
 
 [tool.uv]
 # This is an app, not a package to install or publish.
