@@ -1,6 +1,5 @@
 import arcade.gui
 
-from snake.sessions.LiveTraining import start_over
 from snake.ui import Theme
 from snake.ui.PlayerLabels import player_label
 from snake.ui.WindowLayout import layout_step
@@ -11,8 +10,8 @@ class TrainingStartView(arcade.gui.UIView):
     The Start Live Training App View: continue a DQN's saved Live Training,
     or start it over from game 0.
 
-    Play opens it only when the chosen DQN already has a save. Starting over
-    keeps the old save as a dated backup, so no training is ever deleted here.
+    Play opens it only when the chosen DQN already has a save. Start new opens
+    the Set up training App View, where the old save becomes a backup.
     """
 
     def __init__(self, shell, bot_mode, summary, back):
@@ -60,15 +59,21 @@ class TrainingStartView(arcade.gui.UIView):
         text = f"Saved training: {self.summary.games} games"
         if self.summary.best_score is not None:
             text += f", best {self.summary.best_score}"
+        if self.summary.game_limit is not None:
+            text += f", stops at {self.summary.game_limit}"
         return text
 
     def continue_training(self):
         self.shell.show_view("live_training", bot_mode=self.bot_mode)
 
     def start_new_training(self):
-        # With the save moved aside, Live Training starts again from game 0.
-        start_over(self.bot_mode)
-        self.shell.show_view("live_training", bot_mode=self.bot_mode)
+        self.shell.show_view(
+            "training_setup", bot_mode=self.bot_mode,
+            back=lambda: self.shell.show_view(
+                "training_start", bot_mode=self.bot_mode, summary=self.summary,
+                back=self.back,
+            ),
+        )
 
     def on_resize(self, width, height):
         if layout_step(width) != self.current_layout_step:

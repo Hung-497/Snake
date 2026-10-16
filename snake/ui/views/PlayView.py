@@ -79,16 +79,18 @@ class PlayView(arcade.gui.UIView):
             return UNSUPPORTED_BOARD_MESSAGE
 
         app_view = app_view_for_bot_mode(bot_mode)
-        summary = saved_training(bot_mode) if app_view == "live_training" else None
-        if summary is not None:
-            # A saved Live Training asks first whether to continue or start over.
-            self.shell.show_view(
-                "training_start", bot_mode=bot_mode, summary=summary,
-                back=self.choose_version(family_of(bot_mode)),
-            )
+        if app_view != "live_training":
+            self.shell.show_view(app_view, bot_mode=bot_mode)
             return None
 
-        self.shell.show_view(app_view, bot_mode=bot_mode)
+        # Live Training asks first: continue a save, or set up a new training.
+        back = self.choose_version(family_of(bot_mode))
+        summary = saved_training(bot_mode)
+        if summary is None:
+            self.shell.show_view("training_setup", bot_mode=bot_mode, back=back)
+        else:
+            self.shell.show_view("training_start", bot_mode=bot_mode,
+                                 summary=summary, back=back)
         return None
 
     def choose_version(self, family):

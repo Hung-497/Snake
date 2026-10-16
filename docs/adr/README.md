@@ -31,7 +31,7 @@ How the bots learn, are saved, and are compared.
 | [0011](0011-train-dqn-in-the-live-training-app-view.md) | Train DQN in the Live Training App View | Accepted | 2026-10-13 | Amends 0007, amended by 0012, 0013, 0014 and 0015 |
 | [0012](0012-offer-dqn-in-play-with-one-network-for-all-boards.md) | Offer DQN in Play with one network for all boards | Accepted | 2026-10-13 | Amends 0007 and 0011, amended by 0013 |
 | [0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md) | Choose a Feature Set version for learning Bot Modes | Accepted | 2026-10-13 | Amends 0011 and 0012 |
-| [0015](0015-let-live-training-start-over-and-keep-a-backup.md) | Let Live Training start over and keep the old save as a backup | Accepted | 2026-10-16 | Amends 0011 |
+| [0015](0015-let-live-training-start-over-and-keep-a-backup.md) | Let Live Training start over with a game limit and keep the old save as a backup | Accepted | 2026-10-16 | Amends 0011 |
 
 ### Saved Data
 

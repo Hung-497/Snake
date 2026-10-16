@@ -4,10 +4,18 @@ from datetime import datetime
 
 import pytest
 
-from snake.sessions.LiveTraining import SavedTraining, saved_training, start_over
+from snake.sessions.LiveTraining import (
+    TRAINING_LIMITS, SavedTraining, saved_training, start_over,
+)
 
 
 NOW = datetime(2026, 10, 16, 20, 11, 3)
+
+
+def test_every_training_limit_is_offered_with_off_first():
+    assert TRAINING_LIMITS == {
+        "Off": None, "1000 games": 1000, "2000 games": 2000, "5000 games": 5000,
+    }
 
 
 def test_there_is_no_saved_training_without_a_save(tmp_path):
@@ -20,12 +28,13 @@ def test_a_saved_training_shows_its_games_and_best_score(tmp_path):
     from snake.sessions.LiveTrainingSession import LiveTrainingSession
 
     checkpoint_path = tmp_path / "live.pt"
-    session = LiveTrainingSession(GameConfig(6, 6, 20), checkpoint_path=checkpoint_path)
+    session = LiveTrainingSession(GameConfig(6, 6, 20), checkpoint_path=checkpoint_path,
+                                  game_limit=2000)
     session.bot.game_trained = 3
     session.scores = [4, 9, 2]
     session.save()
 
-    assert saved_training("dqn", checkpoint_path=checkpoint_path) == SavedTraining(3, 9)
+    assert saved_training("dqn", checkpoint_path=checkpoint_path) == SavedTraining(3, 9, 2000)
 
 
 def test_an_unreadable_save_still_counts_as_saved_training(tmp_path):
@@ -33,7 +42,7 @@ def test_an_unreadable_save_still_counts_as_saved_training(tmp_path):
     checkpoint_path.write_bytes(b"not a checkpoint")
 
     # Live Training explains the problem when it opens; the choice stays offered.
-    assert saved_training("dqn", checkpoint_path=checkpoint_path) == SavedTraining(None, None)
+    assert saved_training("dqn", checkpoint_path=checkpoint_path) == SavedTraining(None, None, None)
 
 
 def test_starting_over_keeps_the_old_save_as_a_dated_backup(tmp_path):

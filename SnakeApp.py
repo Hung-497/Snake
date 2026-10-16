@@ -6,6 +6,7 @@ from arcade.types import Color
 from snake.ui.AppShell import AppShell
 from snake.ui.views.GameView import GameView
 from snake.ui.views.LiveTrainingView import LiveTrainingView
+from snake.ui.views.TrainingSetupView import TrainingSetupView
 from snake.ui.views.TrainingStartView import TrainingStartView
 from snake.ui.views.MenuView import MenuView
 from snake.ui.MotionRules import ViewFade
@@ -106,11 +107,16 @@ def create_app():
     shell.register_view("records", lambda: RecordsView(shell, settings))
     shell.register_view("replay", lambda: ReplayView(shell))
     shell.register_view(
-        "live_training", lambda bot_mode: LiveTrainingView(shell, settings, bot_mode)
+        "live_training",
+        lambda bot_mode, game_limit=None: LiveTrainingView(shell, settings, bot_mode, game_limit),
     )
     shell.register_view(
         "training_start",
         lambda bot_mode, summary, back: TrainingStartView(shell, bot_mode, summary, back),
+    )
+    shell.register_view(
+        "training_setup",
+        lambda bot_mode, back: TrainingSetupView(shell, bot_mode, back),
     )
     shell.register_view(
         "choose_version",
