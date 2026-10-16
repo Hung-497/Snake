@@ -40,6 +40,27 @@ SAVE_PATHS = {
 
 
 @dataclass(frozen=True)
+class ShowcaseBot:
+    """A finished study bot shipped read-only with the app (ADR 0017)."""
+
+    path: Path
+    seed: int
+
+    @property
+    def label(self):
+        return f"Best of 3 study runs (seed {self.seed})"
+
+
+# The best of each bot's three Study 1 training runs, by their 200-game
+# results in docs/results.md. The app only reads these files.
+SHOWCASE_DIRECTORY = Path("starter_data") / "showcase"
+SHOWCASE_BOTS = {
+    "q_learning": ShowcaseBot(SHOWCASE_DIRECTORY / "q_table_v2_seed12000.json", 12000),
+    "q_learning_v3": ShowcaseBot(SHOWCASE_DIRECTORY / "q_table_v3_seed15000.json", 15000),
+}
+
+
+@dataclass(frozen=True)
 class SavedTraining:
     """How far a saved training got, and the game limit it stops at.
 

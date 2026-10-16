@@ -120,7 +120,9 @@ def create_app():
     )
     shell.register_view(
         "evaluate",
-        lambda bot_mode, game_count: EvaluateView(shell, bot_mode, game_count),
+        lambda bot_mode, game_count, source="training": EvaluateView(
+            shell, bot_mode, game_count, source
+        ),
     )
     shell.register_view(
         "training_setup",
