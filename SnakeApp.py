@@ -5,6 +5,7 @@ from arcade.types import Color
 
 from snake.ui.AppShell import AppShell
 from snake.ui.views.GameView import GameView
+from snake.ui.views.EvaluateView import EvaluateView
 from snake.ui.views.LiveTrainingView import LiveTrainingView
 from snake.ui.views.TrainingSetupView import TrainingSetupView
 from snake.ui.views.TrainingStartView import TrainingStartView
@@ -116,6 +117,10 @@ def create_app():
     shell.register_view(
         "training_start",
         lambda bot_mode, summary, back: TrainingStartView(shell, bot_mode, summary, back),
+    )
+    shell.register_view(
+        "evaluate",
+        lambda bot_mode, game_count: EvaluateView(shell, bot_mode, game_count),
     )
     shell.register_view(
         "training_setup",
