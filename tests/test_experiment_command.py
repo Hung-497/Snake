@@ -272,7 +272,7 @@ def test_report_summarizes_known_games_and_identifies_the_workload(tmp_path):
     assert report["q_learning"]["game_trained"] == 3
     assert report["q_learning"]["evaluation_mode"] is True
     assert "Rule Based:" in result.stdout
-    assert "Q Learning:" in result.stdout
+    assert "Q Learning v2:" in result.stdout
     assert "Hamiltonian:" in result.stdout
     assert "Search-Based:" in result.stdout
     assert str(report_path.relative_to(tmp_path)) in result.stdout
