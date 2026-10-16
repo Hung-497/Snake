@@ -1,7 +1,7 @@
 import arcade.gui
 
 from snake.sessions.EvaluationSession import GAME_COUNTS
-from snake.sessions.TrainingSaves import SHOWCASE_BOTS
+from snake.sessions.TrainingSaves import SHOWCASE_BOTS, backup_summary
 from snake.ui import Theme
 from snake.ui.PlayerLabels import app_view_for_bot_mode, player_label
 from snake.ui.WindowLayout import layout_step
@@ -27,6 +27,7 @@ class TrainingStartView(arcade.gui.UIView):
         self.shell = shell
         self.bot_mode = bot_mode
         self.summary = summary
+        self.backups = backup_summary(bot_mode)
         self.back = back
         self.background_color = Theme.SURFACE
         # While Evaluate asks how many games to play, this names what is
@@ -64,6 +65,8 @@ class TrainingStartView(arcade.gui.UIView):
     def add_training_choices(self, start_box, sizes):
         start_box.add(Theme.create_label(self.summary_text(),
                                          font_size=sizes.body, color=Theme.TEXT_MUTED))
+        start_box.add(Theme.create_label(self.backup_text(),
+                                         font_size=sizes.caption, color=Theme.TEXT_MUTED))
         if self.has_readable_save():
             start_box.add(Theme.create_primary_button("Continue training",
                                                       self.continue_training,
@@ -135,6 +138,12 @@ class TrainingStartView(arcade.gui.UIView):
         if self.summary.game_limit is not None:
             text += f", stops at {self.summary.game_limit}"
         return text
+
+    def backup_text(self):
+        if self.backups.unreadable_count:
+            return f"Saved backups: {self.backups.count} readable · Some sizes unavailable"
+        megabytes = self.backups.total_bytes / (1024 * 1024)
+        return f"Saved backups: {self.backups.count} · {megabytes:.2f} MB"
 
     def continue_training(self):
         self.shell.show_view(app_view_for_bot_mode(self.bot_mode), bot_mode=self.bot_mode)

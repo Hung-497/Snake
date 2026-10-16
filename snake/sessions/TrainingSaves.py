@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import json
 from pathlib import Path
+import re
 import shutil
 
 from snake.sessions.LiveTraining import DQN_VERSIONS
@@ -72,6 +73,37 @@ class SavedTraining:
     games: int | None
     best_score: int | None
     game_limit: int | None
+
+
+@dataclass(frozen=True)
+class BackupSummary:
+    count: int = 0
+    total_bytes: int = 0
+    unreadable_count: int = 0
+
+
+def backup_summary(bot_mode, save_path=None):
+    """Count this mode's dated backups and bytes, without loading or deleting them."""
+    path = Path(SAVE_PATHS[bot_mode] if save_path is None else save_path)
+    pattern = re.compile(
+        re.escape(path.stem) + r"_\d{4}-\d{2}-\d{2}_\d{6}(?:_\d+)?" + re.escape(path.suffix)
+    )
+    count = total_bytes = unreadable_count = 0
+    try:
+        backups = list(path.parent.glob(f"{path.stem}_*{path.suffix}"))
+    except OSError:
+        return BackupSummary(unreadable_count=1)
+    for backup in backups:
+        if not pattern.fullmatch(backup.name):
+            continue
+        try:
+            if not backup.is_file():
+                continue
+            total_bytes += backup.stat().st_size
+            count += 1
+        except OSError:
+            unreadable_count += 1
+    return BackupSummary(count, total_bytes, unreadable_count)
 
 
 def valid_game_limit(limit):
