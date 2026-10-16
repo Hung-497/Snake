@@ -17,6 +17,7 @@ The app window, its screens, and how they look and move.
 | [0002](0002-resizable-window-with-a-scaled-board.md) | Make the window resizable and scale the board to fit it | Accepted | 2026-09-25 | Amends 0001, amended by 0014 |
 | [0003](0003-keep-motion-in-the-presentation-layer.md) | Keep motion in the presentation layer, and do not animate snake movement | Accepted | 2026-09-25 | |
 | [0014](0014-split-live-training-in-half-and-fill-the-board-half.md) | Split Live Training in half and let the board fill its half | Accepted | 2026-10-16 | Amends 0002 and 0011 |
+| [0019](0019-browse-completed-evaluations-in-records.md) | Browse completed evaluations in Records | Accepted | 2026-10-17 | Extends 0017, related to 0004 |
 
 ### Bots & Training
 
@@ -33,7 +34,7 @@ How the bots learn, are saved, and are compared.
 | [0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md) | Choose a Feature Set version for learning Bot Modes | Accepted | 2026-10-13 | Amends 0011 and 0012 |
 | [0015](0015-let-live-training-start-over-and-keep-a-backup.md) | Let Live Training start over with a game limit and keep the old save as a backup | Accepted | 2026-10-16 | Amends 0011, extended by 0016, amended by 0017 |
 | [0016](0016-train-q-learning-in-play-on-its-own-app-q-table.md) | Train Q Learning in Play on its own app Q-table | Accepted | 2026-10-16 | Amends 0005, extends 0015 |
-| [0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md) | Ship Showcase Bots and evaluate them on the study's games | Accepted | 2026-10-16 | Extends 0005, amends 0015, related to 0004 |
+| [0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md) | Ship Showcase Bots and evaluate them on the study's games | Accepted | 2026-10-16 | Extends 0005, amends 0015, extended by 0019, related to 0004 |
 
 ### Saved Data
 
@@ -56,7 +57,7 @@ Dependencies, tools, and continuous integration.
 
 | Status | ADRs |
 | --- | --- |
-| Accepted | 0001–0017 |
+| Accepted | 0001–0017, 0019 (0018 is in open PR #182) |
 | Proposed | none |
 | Rejected | none |
 | Deprecated | none |

@@ -59,6 +59,18 @@ uv run python SnakeApp.py
 | 42 | Evaluate DQN | With `uv sync --group dqn` and a DQN v2 or v3 Live Training save, the start screen shows Evaluate like Q Learning. A run is titled "Evaluate · DQN v3 (your training)" (or DQN v2), runs on the 24 × 25 study board, and W watches the board. When it finishes it shows the result and the saved report, and `learning_data/dqn_live_training.pt` (or the DQN v2 save) is unchanged, so Continue training carries on from the same game. |
 | 43 | Showcase Bots | Play → Q Learning → v2 or v3 always opens the start screen, even with no training: "Your training: none yet" offers only Start new training. Under it, "Showcase bot: Best of 3 study runs (seed 12000)" (v2) or "(seed 15000)" (v3) has Evaluate showcase, which asks for 20 or 200 games and opens "Evaluate · Q Learning v3 (showcase, seed 15000)". The title shrinks to stay clear of Back to Menu at 700 x 700. A finished 200-game run averages 44.1 (v2) or 127.7 (v3), as in `docs/results.md`, and `starter_data/showcase/` is unchanged. With `uv sync --group dqn`, DQN → v3 shows "Showcase bot: Best of 3 study runs (seed 9000)", and a finished 200-game run averages 140.8; DQN v2 shows no Showcase part. Without PyTorch, DQN opens Live Training's install message instead of the start screen. |
 
+## Saved Evaluate results
+
+- Finish an app evaluation, then open Records → Evaluate. Its row shows the
+  version, Your bot or Showcase Bot, game count, average, best, and UTC date.
+- Each row shows its board, seed range, and move limit. Board and Speed
+  filters remain on the watched-game tabs and do not filter evaluations.
+- With enough reports, Newer and Older reach every page at 700 × 700 and
+  900 × 960; resizing keeps a nearby result visible.
+- An empty folder shows "No completed evaluations yet." An unreadable or
+  unsupported report adds to the skipped count without hiding valid runs.
+- Opening the tab changes no reports, learned saves, records, or replays.
+
 ## Results
 
 | System | Checked on | Result |

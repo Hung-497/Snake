@@ -2,6 +2,7 @@ import arcade.gui
 
 from snake.sessions.HumanPlayer import HUMAN_PLAY
 from snake.ui.RecordsBrowser import ALL_PLAYERS, RecordsBrowser
+from snake.ui.EvaluationBrowser import EvaluationBrowser
 from snake.ui import Theme
 from snake.ui.PlayerLabels import BOT_MODE_LABELS, player_label
 from snake.ui.Charts import ScoreBarChart, TrendChart
@@ -32,6 +33,12 @@ TABS = (
     ("Compare", "compare"),
     ("Trends", "trends"),
     ("Games", "games"),
+    ("Evaluate", "evaluate"),
+)
+
+EVALUATE_COLUMNS = (
+    ("Date (UTC)", 135), ("Player", 115), ("Source", 110),
+    ("Games", 55), ("Average", 70), ("Best", 55),
 )
 
 # The Compare table's columns: heading and width in pixels. Together they fit
@@ -70,7 +77,7 @@ class RecordsView(arcade.gui.UIView):
     belong to RecordsBrowser; this view only lays the result out.
     """
 
-    def __init__(self, shell, settings=None, record_manager=None):
+    def __init__(self, shell, settings=None, record_manager=None, evaluation_browser=None):
         super().__init__()
         self.shell = shell
         self.background_color = Theme.SURFACE
@@ -86,6 +93,9 @@ class RecordsView(arcade.gui.UIView):
                                       page_size=self.current_page_size,
                                       settings=settings)
         self.browser.load()
+        self.evaluations = EvaluationBrowser() if evaluation_browser is None else evaluation_browser
+        self.evaluations.set_page_size(self.evaluation_page_size(self.window.height))
+        self.evaluations.load()
         self.current_chart_heights = self.chart_heights(self.window.height)
         # A dropdown choice rebuilds the screen on the next frame, not inside
         # the dropdown's own change event.
@@ -103,8 +113,9 @@ class RecordsView(arcade.gui.UIView):
         records_box.add(Theme.create_label("Game Records", font_size=self.sizes.display,
                                            semibold=True))
         records_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
-        records_box.add(self.create_conditions_row())
-        records_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
+        if self.selected_tab != "evaluate":
+            records_box.add(self.create_conditions_row())
+            records_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
         records_box.add(self.create_tab_row())
         records_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
 
@@ -112,6 +123,8 @@ class RecordsView(arcade.gui.UIView):
             records_box.add(self.create_compare_table())
         elif (self.selected_tab == "trends"):
             records_box.add(self.create_trends())
+        elif self.selected_tab == "evaluate":
+            records_box.add(self.create_evaluations())
         else:
             records_box.add(self.create_filter_row())
             records_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
@@ -151,6 +164,63 @@ class RecordsView(arcade.gui.UIView):
         ))
 
         return conditions_row
+
+    @staticmethod
+    def evaluation_page_size(height):
+        # Reserve room for the skipped-report message, paging, and Back.
+        return max(1, (height - 430) // 74)
+
+    def create_evaluations(self):
+        rows = arcade.gui.UIBoxLayout(space_between=Theme.SPACE_TIGHT)
+        rows.add(Theme.create_label(
+            "Completed evaluations · newest first", font_size=self.sizes.body,
+            color=Theme.TEXT_MUTED,
+        ))
+        rows.add(Theme.create_label(
+            "Compare runs with the same board, seeds, and move limit.",
+            font_size=self.sizes.caption, color=Theme.TEXT_MUTED,
+        ))
+        if self.evaluations.skipped:
+            rows.add(Theme.create_label(
+                f"Skipped {self.evaluations.skipped} unreadable or unsupported reports.",
+                font_size=self.sizes.caption, color=Theme.WARNING,
+            ))
+        if not self.evaluations.results:
+            rows.add(Theme.create_label("No completed evaluations yet.", font_size=self.sizes.body))
+            return rows
+        heading = arcade.gui.UIBoxLayout(vertical=False)
+        for label, width in EVALUATE_COLUMNS:
+            heading.add(self.create_cell(label, width, color=Theme.TEXT_MUTED))
+        rows.add(heading)
+        for result in self.evaluations.visible_results():
+            row = arcade.gui.UIBoxLayout(vertical=False)
+            values = (
+                result.created_at.strftime("%Y-%m-%d %H:%M"), player_label(result.player),
+                result.source, str(result.game_count), f"{result.average_score:.1f}",
+                str(result.best_score),
+            )
+            for value, (_, width) in zip(values, EVALUATE_COLUMNS):
+                row.add(self.create_cell(value, width))
+            rows.add(row)
+            last_seed = result.base_seed + result.game_count - 1
+            rows.add(Theme.create_label(
+                f"Board {result.board_width} × {result.board_height} · "
+                f"Seeds {result.base_seed}–{last_seed} · Move limit {result.max_moves}",
+                font_size=self.sizes.caption, color=Theme.TEXT_MUTED,
+            ))
+            rows.add(Theme.create_spacer(Theme.SPACE_TIGHT))
+        paging = arcade.gui.UIBoxLayout(vertical=False, space_between=Theme.SPACE_CONTROL)
+        for label, action in (("Newer", self.evaluations.newer), ("Older", self.evaluations.older)):
+            paging.add(Theme.create_secondary_button(
+                label, self.show_page(action), button_width=Theme.PAGE_BUTTON_WIDTH,
+                button_height=Theme.PAGE_BUTTON_HEIGHT, font_size=self.sizes.body,
+            ))
+        paging.add(Theme.create_label(
+            f"Page {self.evaluations.page_index + 1} of {self.evaluations.page_count}",
+            font_size=self.sizes.caption,
+        ))
+        rows.add(paging)
+        return rows
 
     def create_condition_dropdown(self, selected_name, option_names, width, select_option):
         dropdown = arcade.gui.UIDropdown(
@@ -498,11 +568,14 @@ class RecordsView(arcade.gui.UIView):
                 trend_chart_height(window_height, self.trend_legend_row_count))
 
     def on_resize(self, width, height):
+        evaluation_size = self.evaluation_page_size(height)
+        evaluation_changed = evaluation_size != self.evaluations.page_size
+        self.evaluations.set_page_size(evaluation_size)
         new_step = layout_step(width)
         new_page_size = self.page_size_for(width, height)
         new_chart_heights = self.chart_heights(height)
         if (new_step != self.current_layout_step or new_page_size != self.current_page_size
-                or new_chart_heights != self.current_chart_heights):
+                or new_chart_heights != self.current_chart_heights or evaluation_changed):
             self.current_layout_step = new_step
             self.current_page_size = new_page_size
             self.current_chart_heights = new_chart_heights
