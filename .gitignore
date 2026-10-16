@@ -7,6 +7,8 @@ learning_data/
 records/
 replays/
 experiments/
+settings.json
+settings.json.saving
 
 # Local AI agent tooling and instructions, kept out of the repository
 .agents/

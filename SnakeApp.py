@@ -15,7 +15,7 @@ from snake.ui.views.PlayView import PlayView
 from snake.ui.views.RecordsView import RecordsView
 from snake.ui.views.ReplayPlaybackView import ReplayPlaybackView
 from snake.ui.views.ReplayView import ReplayView
-from snake.sessions.SessionSettings import SessionSettings
+from snake.storage.SettingsFile import SettingsFile
 from snake.ui.views.SettingsView import SettingsView
 from snake.ui.views.VersionView import VersionView
 from snake.ui import Theme
@@ -96,13 +96,13 @@ def create_app():
     window = SnakeWindow()
     shell = AppShell(window, {})
 
-    # One settings object for the whole session, so choices are kept when the
-    # user leaves Settings and opens it again.
-    settings = SessionSettings()
+    # Restore preferences once, then share this object between App Views.
+    settings_file = SettingsFile()
+    settings = settings_file.load()
     window.update_board_minimum(settings.build_game_config())
 
     shell.register_view("menu", lambda: MenuView(shell))
-    shell.register_view("settings", lambda: SettingsView(shell, settings))
+    shell.register_view("settings", lambda: SettingsView(shell, settings, settings_file))
     shell.register_view("play", lambda: PlayView(shell, settings))
     shell.register_view(
         "game",

@@ -63,7 +63,14 @@ Menu -> Play     -> Play Yourself / Rule Based / Q Learning / Hamiltonian / Sear
 ```
 
 A bot plays one game after another by itself; use **Back to Menu** to stop.
-Settings are kept for as long as the app is open. The speed names mean
+Board size, tile size, and speed are saved automatically in the local
+`settings.json` file and restored when the app starts again. Missing or
+unreadable settings use the defaults; an unsupported choice falls back to its
+default without discarding other valid choices. If saving fails, Settings
+shows a message and the choices still apply until the app closes. The file
+stays in the Snake folder and is not tracked by Git.
+
+The speed names mean
 different delays for bots and for you: bots move every 10, 5, or 1 ms on Slow,
 Normal, or Fast, and Human Play moves every 150, 100, or 70 ms so you can
 react.
