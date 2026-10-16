@@ -2,8 +2,9 @@ import arcade.gui
 
 from snake.bots.BotFactory import supports_board
 from snake.sessions.HumanPlayer import HUMAN_PLAY
+from snake.sessions.LiveTraining import saved_training
 from snake.ui import Theme
-from snake.ui.PlayerLabels import app_view_for_bot_mode, bot_mode_choices
+from snake.ui.PlayerLabels import LEARNING_FAMILIES, app_view_for_bot_mode, bot_mode_choices
 from snake.ui.WindowLayout import layout_step
 
 UNSUPPORTED_BOARD_MESSAGE = "Hamiltonian Bot needs at least one even board side."
@@ -77,7 +78,17 @@ class PlayView(arcade.gui.UIView):
         if (not supports_board(bot_mode, game_config.width, game_config.height)):
             return UNSUPPORTED_BOARD_MESSAGE
 
-        self.shell.show_view(app_view_for_bot_mode(bot_mode), bot_mode=bot_mode)
+        app_view = app_view_for_bot_mode(bot_mode)
+        summary = saved_training(bot_mode) if app_view == "live_training" else None
+        if summary is not None:
+            # A saved Live Training asks first whether to continue or start over.
+            self.shell.show_view(
+                "training_start", bot_mode=bot_mode, summary=summary,
+                back=self.choose_version(family_of(bot_mode)),
+            )
+            return None
+
+        self.shell.show_view(app_view, bot_mode=bot_mode)
         return None
 
     def choose_version(self, family):
@@ -93,3 +104,11 @@ class PlayView(arcade.gui.UIView):
 
     def on_update(self, delta_time):
         self.ui.on_update(delta_time)
+
+
+def family_of(bot_mode):
+    """The learning family a versioned Bot Mode belongs to."""
+    return next(
+        family_key for family_key, family in LEARNING_FAMILIES.items()
+        if bot_mode in family.versions.values()
+    )

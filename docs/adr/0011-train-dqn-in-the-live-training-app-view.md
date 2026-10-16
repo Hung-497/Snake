@@ -9,6 +9,7 @@
 - Amended by: [ADR 0012](0012-offer-dqn-in-play-with-one-network-for-all-boards.md), which opens Live Training from Play and keeps one DQN for all boards
 - Amended by: [ADR 0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md), which adds a Feature Set v2 DQN
 - Amended by: [ADR 0014](0014-split-live-training-in-half-and-fill-the-board-half.md), which splits the window in half and scales the board to fill its half
+- Amended by: [ADR 0015](0015-let-live-training-start-over-and-keep-a-backup.md), which lets Live Training start over and keeps the old save as a backup
 
 ADR 0007 kept DQN out of the app, so the only way to train it was the headless command and the network was never visible while it learned. The app now has one opt-in App View, Live Training, that trains a Feature Set v3 DQN Bot Mode in the window and shows the board as it learns. PyTorch stays optional: the app still starts without it, and Live Training explains how to install the `dqn` dependency group instead of failing.
 

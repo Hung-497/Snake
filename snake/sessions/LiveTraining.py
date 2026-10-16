@@ -5,6 +5,7 @@ it while the app still starts on installs without the dqn group (ADR 0007).
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 
@@ -37,6 +38,14 @@ def missing_dependency_message():
     return None
 
 
+@dataclass(frozen=True)
+class SavedTraining:
+    """How far a saved Live Training got; both are None when the save cannot be read."""
+
+    games: int | None
+    best_score: int | None
+
+
 class LiveTrainingCheckpointError(ValueError):
     """The saved Live Training cannot be read or is for another Feature Set; the file is kept."""
 
@@ -66,3 +75,48 @@ def start_live_training(settings, bot_mode="dqn", checkpoint_path=None):
     if checkpoint_path.exists():
         return LiveTrainingSession.load(checkpoint_path, config, **records)
     return LiveTrainingSession(config, checkpoint_path=checkpoint_path, **records)
+
+
+def saved_training(bot_mode, checkpoint_path=None):
+    """What this DQN's saved Live Training holds, or None when there is no save.
+
+    A save that cannot be read still counts, with unknown games and best
+    score, so the player can still choose to start over.
+    """
+    if checkpoint_path is None:
+        checkpoint_path = DQN_VERSIONS[bot_mode].checkpoint_path
+    checkpoint_path = Path(checkpoint_path)
+    if not checkpoint_path.exists():
+        return None
+    try:
+        from snake.storage.DQNArtifacts import load_artifact
+        data = load_artifact(checkpoint_path, "dqn_training_checkpoint")
+        games = data["state"]["game_trained"]
+        scores = data["metadata"].get("live_training_scores")
+    except (ImportError, ValueError, KeyError, TypeError):
+        return SavedTraining(None, None)
+    best_score = max(scores) if isinstance(scores, list) and scores else None
+    return SavedTraining(games, best_score)
+
+
+def start_over(bot_mode, checkpoint_path=None, now=datetime.now):
+    """Move this DQN's save aside as a dated backup, so Live Training starts at game 0.
+
+    Returns the backup's path, or None when there was no save. A backup is
+    never overwritten, so an earlier long run is not lost by starting over again.
+    """
+    if checkpoint_path is None:
+        checkpoint_path = DQN_VERSIONS[bot_mode].checkpoint_path
+    checkpoint_path = Path(checkpoint_path)
+    if not checkpoint_path.exists():
+        return None
+    stamp = now().strftime("%Y-%m-%d_%H%M%S")
+    backup_path = checkpoint_path.with_name(f"{checkpoint_path.stem}_{stamp}{checkpoint_path.suffix}")
+    copy_number = 2
+    while backup_path.exists():
+        backup_path = checkpoint_path.with_name(
+            f"{checkpoint_path.stem}_{stamp}_{copy_number}{checkpoint_path.suffix}"
+        )
+        copy_number += 1
+    checkpoint_path.rename(backup_path)
+    return backup_path
