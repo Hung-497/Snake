@@ -1,5 +1,7 @@
 import arcade.gui
 
+from snake.sessions.EvaluationSession import GAME_COUNTS
+from snake.sessions.TrainingSaves import APP_Q_TABLES
 from snake.ui import Theme
 from snake.ui.PlayerLabels import app_view_for_bot_mode, player_label
 from snake.ui.WindowLayout import layout_step
@@ -9,6 +11,9 @@ class TrainingStartView(arcade.gui.UIView):
     """
     The Start training App View: continue a learning Bot Mode's saved
     training, or start it over from game 0.
+
+    Q Learning training can also be measured with Evaluate, after choosing
+    how many of the study's games to play (ADR 0017).
 
     Play opens it only when the chosen DQN or Q Learning already has a save.
     Start new opens the Set up training App View, where the old save becomes
@@ -23,6 +28,8 @@ class TrainingStartView(arcade.gui.UIView):
         self.summary = summary
         self.back = back
         self.background_color = Theme.SURFACE
+        # Evaluate first asks how many games to play, in place of the buttons.
+        self.choosing_game_count = False
         self.current_layout_step = layout_step(self.window.width)
         self.build_ui()
 
@@ -36,14 +43,10 @@ class TrainingStartView(arcade.gui.UIView):
                                          font_size=sizes.body, color=Theme.TEXT_MUTED))
         start_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
 
-        if self.summary.games is not None:
-            start_box.add(Theme.create_primary_button("Continue training",
-                                                      self.continue_training,
-                                                      font_size=sizes.heading))
-        start_box.add(Theme.create_primary_button("Start new training", self.start_new_training,
-                                                  font_size=sizes.heading))
-        start_box.add(Theme.create_label("The old training is kept as a backup.",
-                                         font_size=sizes.body, color=Theme.TEXT_MUTED))
+        if self.choosing_game_count:
+            self.add_game_count_choice(start_box, sizes)
+        else:
+            self.add_training_choices(start_box, sizes)
 
         start_box.add(Theme.create_spacer(Theme.SPACE_TIGHT))
         start_box.add(
@@ -56,6 +59,56 @@ class TrainingStartView(arcade.gui.UIView):
         )
 
         Theme.center_focusable(self.ui, start_box)
+
+    def add_training_choices(self, start_box, sizes):
+        if self.summary.games is not None:
+            start_box.add(Theme.create_primary_button("Continue training",
+                                                      self.continue_training,
+                                                      font_size=sizes.heading))
+        start_box.add(Theme.create_primary_button("Start new training", self.start_new_training,
+                                                  font_size=sizes.heading))
+        start_box.add(Theme.create_label("The old training is kept as a backup.",
+                                         font_size=sizes.body, color=Theme.TEXT_MUTED))
+        if self.can_evaluate():
+            start_box.add(Theme.create_spacer(Theme.SPACE_CONTROL))
+            start_box.add(Theme.create_primary_button("Evaluate", self.choose_game_count,
+                                                      font_size=sizes.heading))
+            start_box.add(Theme.create_label(
+                "Measure it on the study's games, without learning.",
+                font_size=sizes.body, color=Theme.TEXT_MUTED,
+            ))
+
+    def add_game_count_choice(self, start_box, sizes):
+        start_box.add(Theme.create_label("How many of the study's games?",
+                                         font_size=sizes.body, color=Theme.TEXT_MUTED))
+        quick, full = GAME_COUNTS
+        start_box.add(Theme.create_primary_button(f"{quick} games (quick)",
+                                                  self.evaluate(quick),
+                                                  font_size=sizes.heading))
+        start_box.add(Theme.create_primary_button(f"{full} games (like the study)",
+                                                  self.evaluate(full),
+                                                  font_size=sizes.heading))
+        start_box.add(Theme.create_secondary_button(
+            "Cancel", self.cancel_game_count,
+            button_width=Theme.BACK_BUTTON_WIDTH, font_size=sizes.heading,
+        ))
+
+    def can_evaluate(self):
+        # DQN Evaluate comes later; only a readable save can be measured.
+        return self.bot_mode in APP_Q_TABLES and self.summary.games is not None
+
+    def choose_game_count(self):
+        self.choosing_game_count = True
+        self.build_ui()
+
+    def cancel_game_count(self):
+        self.choosing_game_count = False
+        self.build_ui()
+
+    def evaluate(self, game_count):
+        return lambda: self.shell.show_view(
+            "evaluate", bot_mode=self.bot_mode, game_count=game_count,
+        )
 
     def summary_text(self):
         if self.summary.games is None:
