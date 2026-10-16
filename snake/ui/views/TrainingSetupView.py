@@ -1,15 +1,16 @@
 import arcade.gui
 
-from snake.sessions.LiveTraining import TRAINING_LIMITS, start_over
+from snake.sessions.TrainingSaves import TRAINING_LIMITS, start_over
 from snake.ui import Theme
-from snake.ui.PlayerLabels import player_label
+from snake.ui.PlayerLabels import app_view_for_bot_mode, player_label
 from snake.ui.WindowLayout import layout_step
 
 
 class TrainingSetupView(arcade.gui.UIView):
     """
-    The Set up training App View: choose a game limit, then start a new Live
-    Training from game 0.
+    The Set up training App View: choose a game limit, then start a new
+    training from game 0, in Live Training for DQN or the Game App View for
+    Q Learning.
 
     The limit is saved with the training, so continuing it later stops at the
     same limit. Any old save is moved to a backup only when training starts,
@@ -79,10 +80,10 @@ class TrainingSetupView(arcade.gui.UIView):
         self.selected_limit_name = event.new_value
 
     def start_training(self):
-        # With any old save moved to a backup, Live Training starts at game 0.
+        # With any old save moved to a backup, training starts at game 0.
         start_over(self.bot_mode)
         self.shell.show_view(
-            "live_training", bot_mode=self.bot_mode,
+            app_view_for_bot_mode(self.bot_mode), bot_mode=self.bot_mode,
             game_limit=TRAINING_LIMITS[self.selected_limit_name],
         )
 

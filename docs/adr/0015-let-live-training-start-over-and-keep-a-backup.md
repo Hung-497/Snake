@@ -4,6 +4,7 @@
 - Category: Bots & Training
 - Recorded: 2026-10-16
 - Amends: [ADR 0011](0011-train-dqn-in-the-live-training-app-view.md), whose Live Training always continues its save
+- Extended by: [ADR 0016](0016-train-q-learning-in-play-on-its-own-app-q-table.md), which gives Q Learning in Play the same choices
 
 Live Training always continued a DQN's saved training and never stopped, so the only way to watch a DQN learn from game 0 again was to delete its DQN Training Checkpoint by hand. When the chosen DQN already has a save, Play now opens a Start Live Training App View first. It shows how many games the save holds, its best score and its game limit, and offers "Continue training" or "Start new training".
 
@@ -25,4 +26,4 @@ The choice before opening was chosen because it is visible: nobody has to know a
 - Records and Replays are not reset. Games from the new training are saved under the same Player name, after the old run's games.
 - The game limit is saved in the DQN Training Checkpoint, so continuing stops at the same limit. Saves from before game limits have none. The limit is not a Settings option, because it belongs to one training rather than to the app session.
 - No seed is offered: Live Training keeps seed 0, the same default as `TrainDQN`, so a new Live Training and a default headless run learn the same network.
-- Reading the save's summary needs PyTorch. A save that cannot be read still offers both choices, and Live Training explains the problem if the user continues.
+- Reading the save's summary needs PyTorch. Without it, Play opens Live Training straight away, which explains how to install it. A save that cannot be read offers only "Start new training", which keeps it as a backup, so it is never overwritten.

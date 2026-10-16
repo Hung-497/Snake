@@ -2,7 +2,8 @@ import arcade.gui
 
 from snake.bots.BotFactory import supports_board
 from snake.sessions.HumanPlayer import HUMAN_PLAY
-from snake.sessions.LiveTraining import saved_training
+from snake.sessions.LiveTraining import DQN_VERSIONS, missing_dependency_message
+from snake.sessions.TrainingSaves import SAVE_PATHS, copy_shared_q_table_once, saved_training
 from snake.ui import Theme
 from snake.ui.PlayerLabels import LEARNING_FAMILIES, app_view_for_bot_mode, bot_mode_choices
 from snake.ui.WindowLayout import layout_step
@@ -79,11 +80,16 @@ class PlayView(arcade.gui.UIView):
             return UNSUPPORTED_BOARD_MESSAGE
 
         app_view = app_view_for_bot_mode(bot_mode)
-        if app_view != "live_training":
+        # Without PyTorch, Live Training opens straight away to explain how
+        # to install it.
+        no_dqn = bot_mode in DQN_VERSIONS and missing_dependency_message()
+        if bot_mode not in SAVE_PATHS or no_dqn:
             self.shell.show_view(app_view, bot_mode=bot_mode)
             return None
 
-        # Live Training asks first: continue a save, or set up a new training.
+        # A learning Bot Mode asks first: continue a save, or set up a new
+        # training. Q Learning's app table starts as a copy of the shared one.
+        copy_shared_q_table_once(bot_mode)
         back = self.choose_version(family_of(bot_mode))
         summary = saved_training(bot_mode)
         if summary is None:

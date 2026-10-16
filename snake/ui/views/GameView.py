@@ -5,6 +5,8 @@ from snake.ui import Theme
 from snake.ui.BoardRenderer import BoardRenderer
 from snake.ui.WindowLayout import view_label_positions
 from snake.sessions.GameSession import GameSession
+from snake.sessions.QLearningTraining import start_q_learning_training
+from snake.sessions.TrainingSaves import APP_Q_TABLES
 from snake.ui.MotionRules import board_effects_enabled, end_flash_alpha, food_pulse_scale
 from snake.ui.PlayerLabels import player_label
 from snake.engine.GameTypes import Direction
@@ -48,16 +50,21 @@ class GameView(arcade.gui.UIView):
     replays belong to the GameSession it drives.
     """
 
-    def __init__(self, shell, settings, bot_mode):
+    def __init__(self, shell, settings, bot_mode, game_limit=None):
         super().__init__()
         self.shell = shell
         self.background_color = Theme.SURFACE
         self.board_renderer = BoardRenderer(self.window)
 
-        game_config = settings.build_game_config()
-        engine = SnakeEngine(game_config, start_position=None)
         speed_delay = settings.speed_delay_for(bot_mode)
-        self.session = GameSession(engine, bot_mode, speed_delay)
+        if bot_mode in APP_Q_TABLES:
+            # Q Learning trains its own app table, seeded like the headless
+            # command; a new training stops at game_limit (ADR 0016).
+            self.session = start_q_learning_training(settings, bot_mode, game_limit)
+        else:
+            game_config = settings.build_game_config()
+            engine = SnakeEngine(game_config, start_position=None)
+            self.session = GameSession(engine, bot_mode, speed_delay)
         self.session.start()
         self.effects_enabled = board_effects_enabled(speed_delay)
         self.motion_seconds = 0.0
@@ -225,6 +232,11 @@ class GameView(arcade.gui.UIView):
 
         if (self.session.is_human_play):
             self.draw_human_prompt()
+        elif (self.session.limit_reached()):
+            self.draw_prompt(
+                f"Limit reached: {self.session.game_limit} games \u00b7 "
+                "Start new from Play for another run"
+            )
 
     def draw_score_line(self):
         self.score_label.text = (
@@ -255,6 +267,9 @@ class GameView(arcade.gui.UIView):
         if (not prompt_text):
             return
 
+        self.draw_prompt(prompt_text)
+
+    def draw_prompt(self, prompt_text):
         if self.prompt_label.text != prompt_text:
             self.prompt_label.text = prompt_text
             self.fit_result_labels()

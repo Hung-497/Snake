@@ -633,3 +633,69 @@ def test_a_finished_human_game_records_its_outcome(game_won, outcome):
     session.advance_by(0.1)
 
     assert session.record_manager.saved_outcomes == [outcome]
+
+
+class CountingBot(FakeBot):
+    """A learning Bot Mode counts the games it has trained, even across sessions."""
+
+    def __init__(self, game_trained=0):
+        super().__init__()
+        self.game_trained = game_trained
+
+    def on_game_end(self, result):
+        super().on_game_end(result)
+        self.game_trained += 1
+
+
+def play_updates(session, updates):
+    for _ in range(updates):
+        session.advance_by(1.0)
+
+
+def test_a_game_stops_at_the_move_limit_without_dying():
+    session = make_session(engine=FakeEngine(moves_until_game_over=100), max_moves=3)
+
+    for _ in range(3):
+        session.advance()
+
+    assert session.games_played == 1
+    assert session.record_manager.saved_outcomes == [""]
+    assert session.bot.calls.count("on_game_end") == 1
+    assert session.status == "showing_result"
+
+
+def test_no_move_is_made_while_a_move_limit_result_shows():
+    session = make_session(engine=FakeEngine(moves_until_game_over=100), max_moves=3)
+    play_updates(session, 1)
+
+    assert session.engine.moves_made == 3
+    # Less time than the result pause: the finished game must not move on.
+    assert session.advance_by(GameSession.RESULT_PAUSE_SECONDS / 2) == 0
+    assert session.engine.moves_made == 3
+
+
+def test_a_bot_session_without_limits_never_stops():
+    session = make_session(bot=CountingBot())
+    play_updates(session, 20)
+
+    assert not session.limit_reached()
+    assert session.games_played > 2
+
+
+def test_training_stops_once_the_game_limit_is_reached():
+    session = make_session(bot=CountingBot(), game_limit=2)
+
+    play_updates(session, 20)
+
+    assert session.limit_reached()
+    assert session.games_played == 2
+    # The last game stays on screen instead of a new one starting.
+    assert session.engine.reset_count == 1
+    assert session.advance_by(1.0) == 0
+
+
+def test_a_training_already_at_its_limit_makes_no_moves():
+    session = make_session(bot=CountingBot(game_trained=5), game_limit=5)
+
+    assert session.advance_by(1.0) == 0
+    assert session.engine.moves_made == 0

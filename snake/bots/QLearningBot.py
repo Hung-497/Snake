@@ -133,6 +133,9 @@ class QLearningBot(LearningBot):
                 "code": code_identity(),
                 "python_version": platform.python_version(),
             }
+            # Only app training sets a game limit (ADR 0016); other entries keep their shape.
+            if "game_limit" in self.session:
+                self.session_entry["game_limit"] = self.session["game_limit"]
             self.training_history.append(self.session_entry)
 
         self.session_entry.update({

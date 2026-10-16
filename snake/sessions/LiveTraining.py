@@ -5,7 +5,6 @@ it while the app still starts on installs without the dqn group (ADR 0007).
 """
 
 from dataclasses import dataclass
-from datetime import datetime
 from pathlib import Path
 
 
@@ -23,13 +22,6 @@ DQN_VERSIONS = {
     "dqn": DQNVersion("v3", Path("learning_data") / "dqn_live_training.pt"),
     "dqn_v2": DQNVersion("v2", Path("learning_data") / "dqn_v2_live_training.pt"),
 }
-# The game limits a new Live Training can stop at; Off trains until you leave.
-TRAINING_LIMITS = {
-    "Off": None,
-    "1000 games": 1000,
-    "2000 games": 2000,
-    "5000 games": 5000,
-}
 MISSING_PYTORCH_MESSAGE = (
     "Live Training needs PyTorch, which is not installed.\n"
     "Install it with: uv sync --group dqn"
@@ -43,27 +35,6 @@ def missing_dependency_message():
     except ImportError:
         return MISSING_PYTORCH_MESSAGE
     return None
-
-
-@dataclass(frozen=True)
-class SavedTraining:
-    """How far a saved Live Training got, and the game limit it stops at.
-
-    Every field is None when the save cannot be read.
-    """
-
-    games: int | None
-    best_score: int | None
-    game_limit: int | None
-
-
-def saved_game_limit(metadata):
-    """The game limit saved with a Live Training, or None for no limit.
-
-    Saves from before game limits, or with a broken value, have no limit.
-    """
-    limit = metadata.get("game_limit")
-    return limit if type(limit) is int and limit > 0 else None
 
 
 class LiveTrainingCheckpointError(ValueError):
@@ -100,47 +71,3 @@ def start_live_training(settings, bot_mode="dqn", checkpoint_path=None, game_lim
         config, checkpoint_path=checkpoint_path, game_limit=game_limit, **session_options
     )
 
-
-def saved_training(bot_mode, checkpoint_path=None):
-    """What this DQN's saved Live Training holds, or None when there is no save.
-
-    A save that cannot be read still counts, with unknown games and best
-    score, so the player can still choose to start over.
-    """
-    if checkpoint_path is None:
-        checkpoint_path = DQN_VERSIONS[bot_mode].checkpoint_path
-    checkpoint_path = Path(checkpoint_path)
-    if not checkpoint_path.exists():
-        return None
-    try:
-        from snake.storage.DQNArtifacts import load_artifact
-        data = load_artifact(checkpoint_path, "dqn_training_checkpoint")
-        games = data["state"]["game_trained"]
-        scores = data["metadata"].get("live_training_scores")
-    except (ImportError, ValueError, KeyError, TypeError):
-        return SavedTraining(None, None, None)
-    best_score = max(scores) if isinstance(scores, list) and scores else None
-    return SavedTraining(games, best_score, saved_game_limit(data["metadata"]))
-
-
-def start_over(bot_mode, checkpoint_path=None, now=datetime.now):
-    """Move this DQN's save aside as a dated backup, so Live Training starts at game 0.
-
-    Returns the backup's path, or None when there was no save. A backup is
-    never overwritten, so an earlier long run is not lost by starting over again.
-    """
-    if checkpoint_path is None:
-        checkpoint_path = DQN_VERSIONS[bot_mode].checkpoint_path
-    checkpoint_path = Path(checkpoint_path)
-    if not checkpoint_path.exists():
-        return None
-    stamp = now().strftime("%Y-%m-%d_%H%M%S")
-    backup_path = checkpoint_path.with_name(f"{checkpoint_path.stem}_{stamp}{checkpoint_path.suffix}")
-    copy_number = 2
-    while backup_path.exists():
-        backup_path = checkpoint_path.with_name(
-            f"{checkpoint_path.stem}_{stamp}_{copy_number}{checkpoint_path.suffix}"
-        )
-        copy_number += 1
-    checkpoint_path.rename(backup_path)
-    return backup_path

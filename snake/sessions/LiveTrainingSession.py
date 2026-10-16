@@ -13,9 +13,8 @@ import torch
 
 from snake.bots.DQNBot import DEFAULT_DQN_SETTINGS, DQNBot
 from snake.engine.SnakeEngine import SnakeEngine
-from snake.sessions.LiveTraining import (
-    DQN_VERSIONS, LiveTrainingCheckpointError, saved_game_limit,
-)
+from snake.sessions.LiveTraining import DQN_VERSIONS, LiveTrainingCheckpointError
+from snake.sessions.TrainingSaves import valid_game_limit
 from snake.sessions.TrainQLearning import play_move
 from snake.storage.DQNArtifacts import (
     artifact_feature_set, checkpoint_data, common_metadata, load_artifact,
@@ -126,7 +125,7 @@ class LiveTrainingSession:
         # and the next save records this board.
 
         # Continuing keeps the game limit chosen when this training started.
-        session_options.setdefault("game_limit", saved_game_limit(metadata))
+        session_options.setdefault("game_limit", valid_game_limit(metadata.get("game_limit")))
         session = cls(
             config, seed=metadata["base_seed"], max_moves=metadata["max_moves"],
             checkpoint_path=checkpoint_path, settings=metadata["learning_settings"],

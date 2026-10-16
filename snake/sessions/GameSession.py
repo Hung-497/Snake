@@ -36,6 +36,8 @@ class GameSession:
         replay_manager=None,
         bot=None,
         now=time.perf_counter,
+        max_moves=None,
+        game_limit=None,
     ):
         self.engine = engine
         self.bot_mode = bot_mode
@@ -47,6 +49,11 @@ class GameSession:
         self.record_manager = RecordManager() if record_manager is None else record_manager
         self.replay_manager = ReplayManager() if replay_manager is None else replay_manager
         self.bot = create_player(bot_mode, engine) if bot is None else bot
+        # Training in the app stops each game at max_moves, like the headless
+        # command, and stops training once the bot has trained game_limit
+        # games in total. None means no limit.
+        self.max_moves = max_moves
+        self.game_limit = game_limit
         self.is_human_play = (bot_mode == HUMAN_PLAY)
         self.waiting_to_start = self.is_human_play
         self.paused = False
@@ -98,6 +105,10 @@ class GameSession:
         if (self.stopped or self.waiting_to_start or self.paused):
             return 0
 
+        # At the game limit the last game stays on screen and nothing moves.
+        if (self.limit_reached()):
+            return 0
+
         # A finished Human Play game stays on screen until restart() is called.
         if (self.is_human_play and self.game_over):
             return 0
@@ -132,7 +143,7 @@ class GameSession:
             self.advance()
             moves_made += 1
 
-            if (self.game_over):
+            if (self.result_text is not None):
                 # The game just ended, so stop moving and let the result show.
                 break
 
@@ -209,9 +220,17 @@ class GameSession:
 
         return "playing"
 
+    def limit_reached(self):
+        """True once a learning Bot Mode has trained as many games as the game limit."""
+        return (
+            self.game_limit is not None
+            and getattr(self.bot, "game_trained", 0) >= self.game_limit
+        )
+
     def advance(self):
         """Play one move: ask the bot, step the engine, then report back."""
-        if (self.stopped or self.game_over):
+        # A game stopped at the move limit is not over, but it is finished.
+        if (self.stopped or self.game_over or self.result_text is not None):
             return
 
         direction = None
@@ -243,7 +262,10 @@ class GameSession:
         if (self.engine.score > score_before and self.engine.food_position is not None):
             self.replay_manager.record_food(self.engine.food_position)
 
-        if (self.game_over):
+        reached_move_limit = (
+            self.max_moves is not None and self.total_moves >= self.max_moves
+        )
+        if (self.game_over or reached_move_limit):
             self.finish_game()
 
     def finish_game(self):
@@ -281,7 +303,7 @@ class GameSession:
             self.engine.board_height,
             self.engine.tile_size,
             self.speed_delay,
-            outcome="won" if self.game_won else "died",
+            outcome=self.outcome(),
         )
 
         print(
@@ -299,11 +321,24 @@ class GameSession:
         if (self.bot is not None):
             self.bot.on_game_end(self.engine.state)
 
-        self.result_text = "You won!" if self.game_won else "Game Over!"
+        if (self.game_won):
+            self.result_text = "You won!"
+        elif (self.game_over):
+            self.result_text = "Game Over!"
+        else:
+            self.result_text = "Move limit"
 
         # Bot Modes start the next game by themselves after a short pause.
         if (not self.is_human_play):
             self.result_pause_remaining = self.RESULT_PAUSE_SECONDS
+
+    def outcome(self):
+        if (self.game_won):
+            return "won"
+        if (self.game_over):
+            return "died"
+        # Stopped at the move limit: neither won nor died, so unknown.
+        return ""
 
     def bot_epsilon(self):
         # Only a learning Bot Mode has one; the summary line stays the same.

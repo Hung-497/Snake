@@ -1,17 +1,19 @@
 import arcade.gui
 
 from snake.ui import Theme
-from snake.ui.PlayerLabels import player_label
+from snake.ui.PlayerLabels import app_view_for_bot_mode, player_label
 from snake.ui.WindowLayout import layout_step
 
 
 class TrainingStartView(arcade.gui.UIView):
     """
-    The Start Live Training App View: continue a DQN's saved Live Training,
-    or start it over from game 0.
+    The Start training App View: continue a learning Bot Mode's saved
+    training, or start it over from game 0.
 
-    Play opens it only when the chosen DQN already has a save. Start new opens
-    the Set up training App View, where the old save becomes a backup.
+    Play opens it only when the chosen DQN or Q Learning already has a save.
+    Start new opens the Set up training App View, where the old save becomes
+    a backup. A save that cannot be read can only be started over, so it is
+    never overwritten.
     """
 
     def __init__(self, shell, bot_mode, summary, back):
@@ -34,8 +36,10 @@ class TrainingStartView(arcade.gui.UIView):
                                          font_size=sizes.body, color=Theme.TEXT_MUTED))
         start_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
 
-        start_box.add(Theme.create_primary_button("Continue training", self.continue_training,
-                                                  font_size=sizes.heading))
+        if self.summary.games is not None:
+            start_box.add(Theme.create_primary_button("Continue training",
+                                                      self.continue_training,
+                                                      font_size=sizes.heading))
         start_box.add(Theme.create_primary_button("Start new training", self.start_new_training,
                                                   font_size=sizes.heading))
         start_box.add(Theme.create_label("The old training is kept as a backup.",
@@ -55,7 +59,7 @@ class TrainingStartView(arcade.gui.UIView):
 
     def summary_text(self):
         if self.summary.games is None:
-            return "Saved training (could not be read)"
+            return "Saved training could not be read"
         text = f"Saved training: {self.summary.games} games"
         if self.summary.best_score is not None:
             text += f", best {self.summary.best_score}"
@@ -64,7 +68,7 @@ class TrainingStartView(arcade.gui.UIView):
         return text
 
     def continue_training(self):
-        self.shell.show_view("live_training", bot_mode=self.bot_mode)
+        self.shell.show_view(app_view_for_bot_mode(self.bot_mode), bot_mode=self.bot_mode)
 
     def start_new_training(self):
         self.shell.show_view(
