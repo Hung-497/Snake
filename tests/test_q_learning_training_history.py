@@ -196,3 +196,30 @@ def test_report_lists_no_history_for_an_older_table(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert saved_report(tmp_path)["q_learning"]["training_history"] == []
+
+
+def play_one_game(tmp_path, session):
+    engine = SnakeEngine(
+        GameConfig(5, 5, 25), start_position=None, random_source=random.Random(3),
+    )
+    bot = QLearningBot(
+        engine, random_source=random.Random(4), q_table_file=str(tmp_path / "table.json"),
+        session=session,
+    )
+    play_game(engine, bot, 30)
+    [entry] = read_table(tmp_path / "table.json")["training_history"]
+    return entry
+
+
+def test_an_app_session_records_its_game_limit(tmp_path):
+    entry = play_one_game(
+        tmp_path, {"source": "app", "seed": 0, "max_moves": 5000, "game_limit": 2000},
+    )
+
+    assert entry["game_limit"] == 2000
+
+
+def test_a_session_without_a_game_limit_leaves_it_out(tmp_path):
+    entry = play_one_game(tmp_path, {"source": "train_command", "seed": 3, "max_moves": 30})
+
+    assert "game_limit" not in entry

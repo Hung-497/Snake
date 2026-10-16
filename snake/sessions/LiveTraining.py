@@ -41,8 +41,10 @@ class LiveTrainingCheckpointError(ValueError):
     """The saved Live Training cannot be read or is for another Feature Set; the file is kept."""
 
 
-def start_live_training(settings, bot_mode="dqn", checkpoint_path=None):
+def start_live_training(settings, bot_mode="dqn", checkpoint_path=None, game_limit=None):
     """Continue this DQN's saved Live Training, or start fresh on the Settings board.
+
+    A fresh start stops at game_limit; a continued one keeps its saved limit.
 
     Raises LiveTrainingCheckpointError when the save does not fit, so it is
     never overwritten by a fresh start.
@@ -54,7 +56,7 @@ def start_live_training(settings, bot_mode="dqn", checkpoint_path=None):
     config = settings.build_game_config()
     # Games are saved as Records with the Settings speed, and the best one as a
     # Replay, like any Play game.
-    records = {
+    session_options = {
         "record_manager": RecordManager(),
         "replay_manager": ReplayManager(),
         "speed_delay": settings.speed_delay_for(bot_mode),
@@ -64,5 +66,8 @@ def start_live_training(settings, bot_mode="dqn", checkpoint_path=None):
         checkpoint_path = DQN_VERSIONS[bot_mode].checkpoint_path
     checkpoint_path = Path(checkpoint_path)
     if checkpoint_path.exists():
-        return LiveTrainingSession.load(checkpoint_path, config, **records)
-    return LiveTrainingSession(config, checkpoint_path=checkpoint_path, **records)
+        return LiveTrainingSession.load(checkpoint_path, config, **session_options)
+    return LiveTrainingSession(
+        config, checkpoint_path=checkpoint_path, game_limit=game_limit, **session_options
+    )
+

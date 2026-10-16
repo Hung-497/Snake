@@ -174,3 +174,46 @@ def test_watching_live_or_in_background_learns_the_same_network():
         live_weights = one_at_a_time.bot.network.state_dict()
         for name, weights in other.bot.network.state_dict().items():
             assert torch.equal(live_weights[name], weights), name
+
+
+def test_without_a_game_limit_training_never_stops():
+    session = make_session()
+    play_until_games(session, 2)
+
+    assert not session.limit_reached()
+
+
+def test_training_stops_once_the_game_limit_is_reached():
+    session = LiveTrainingSession(GameConfig(6, 6, 20), seed=7, max_moves=60, game_limit=2)
+    play_until_games(session, 2)
+    replay_size = len(session.bot.replay)
+    state = session.engine.state
+
+    session.make_move()
+
+    assert session.limit_reached()
+    assert session.stats().games_played == 2
+    assert len(session.bot.replay) == replay_size
+    assert session.engine.state == state
+
+
+def test_background_training_stops_exactly_at_the_game_limit():
+    session = LiveTrainingSession(GameConfig(6, 6, 20), seed=7, max_moves=60, game_limit=1)
+
+    # A budget far longer than one game: the limit, not the clock, ends it.
+    session.make_moves_for(10_000.0, clock=FakeClock())
+
+    assert session.stats().games_played == 1
+    assert session.make_moves_for(10_000.0, clock=FakeClock()) == 0
+
+
+def test_a_resumed_save_past_the_game_limit_starts_stopped(tmp_path):
+    checkpoint_path = tmp_path / "live.pt"
+    session = LiveTrainingSession(GameConfig(6, 6, 20), seed=7, max_moves=60,
+                                  checkpoint_path=checkpoint_path)
+    play_until_games(session, 3)
+    session.save()
+
+    resumed = LiveTrainingSession.load(checkpoint_path, GameConfig(6, 6, 20), game_limit=2)
+
+    assert resumed.limit_reached()

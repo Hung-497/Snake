@@ -8,7 +8,7 @@ from snake.ui.NetworkLayout import (
     live_training_minimum_size,
     pan_by, zoom_at,
     live_training_preferred_size, live_training_window,
-    screen_containing, side_by_side_areas,
+    screen_containing, side_by_side_areas, tile_size_to_fill,
 )
 from snake.ui.NetworkRenderer import NetworkRenderer
 from snake.ui.PlayerLabels import player_label
@@ -46,7 +46,7 @@ class LiveTrainingView(arcade.gui.UIView):
     is installed, so the app still starts without it.
     """
 
-    def __init__(self, shell, settings, bot_mode="dqn"):
+    def __init__(self, shell, settings, bot_mode="dqn", game_limit=None):
         super().__init__()
         self.shell = shell
         self.settings = settings
@@ -57,7 +57,8 @@ class LiveTrainingView(arcade.gui.UIView):
         self.session = None
         if self.message is None:
             try:
-                self.session = start_live_training(settings, bot_mode)
+                # A new training stops at game_limit; a continued one keeps its own.
+                self.session = start_live_training(settings, bot_mode, game_limit=game_limit)
             except LiveTrainingCheckpointError as error:
                 self.message = str(error)
         self.background_mode = False
@@ -259,12 +260,11 @@ class LiveTrainingView(arcade.gui.UIView):
             state = self.session.engine.state
             graph_area, board_area = side_by_side_areas(
                 self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT,
-                state.board_width, state.board_height, state.tile_size,
             )
             self.board_renderer.draw(
                 state.board_width,
                 state.board_height,
-                state.tile_size,
+                tile_size_to_fill(board_area, state.board_width, state.board_height),
                 state.snake_position,
                 state.snake_body,
                 state.food_position,
@@ -278,8 +278,10 @@ class LiveTrainingView(arcade.gui.UIView):
         self.layout_label.text = self.layout_text()
         self.layout_label.draw()
         stats = self.session.stats()
+        # At the limit no next game starts, so show the last game played.
+        game_number = stats.games_played if self.session.limit_reached() else stats.games_played + 1
         self.stats_label.text = (
-            f"Game {stats.games_played + 1}  Score: {stats.score}  "
+            f"Game {game_number}  Score: {stats.score}  "
             f"Best: {stats.best_score}  Avg: {stats.average_score:.1f}  "
             f"Epsilon: {stats.epsilon:.3f}"
         )
@@ -300,6 +302,11 @@ class LiveTrainingView(arcade.gui.UIView):
         return f"Network focus \u00b7 {zoom} \u00b7 N board"
 
     def controls_text(self):
+        if self.session.limit_reached():
+            return (
+                f"Limit reached: {self.session.game_limit} games \u00b7 "
+                "Start new from Play for another run"
+            )
         if self.background_mode:
             mode = "Background training \u00b7 B for Live"
         else:

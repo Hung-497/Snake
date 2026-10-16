@@ -20,7 +20,8 @@ V3_INPUT_LABELS = (
     "Tail straight", "Tail left", "Tail right",
 )
 INPUT_LABELS = {"v2": V3_INPUT_LABELS[:9], "v3": V3_INPUT_LABELS}
-# The graph's width in the side-by-side layout; the board gets the rest.
+# The smallest width that fits the whole graph and its labels. The graph and
+# the board each get half the window, so each half is at least this wide.
 GRAPH_WIDTH = 520
 # Room at the top of Live Training for the title, stats and controls lines.
 LIVE_TRAINING_HUD_HEIGHT = 100
@@ -49,26 +50,26 @@ def input_labels(feature_set):
     return INPUT_LABELS[feature_set]
 
 
-def side_by_side_areas(window_width, window_height, hud_height,
-                       board_width, board_height, tile_size):
-    """Split the space under the HUD: the graph on the left, the board on the right.
-
-    The board never draws bigger than its Tile Size, so it takes only the
-    width it needs at that size and the graph gets all the rest. In a narrow
-    window the graph keeps GRAPH_WIDTH and the board shrinks instead.
-    """
+def side_by_side_areas(window_width, window_height, hud_height):
+    """Split the space under the HUD in half: the graph left, the board right."""
     usable_height = window_height - hud_height
-    board_area_width = min(
-        window_width - GRAPH_WIDTH, board_width * tile_size + 2 * BOARD_MARGIN
-    )
-    graph_width = window_width - board_area_width
-    graph = Area(0, 0, graph_width, usable_height)
+    half_width = window_width / 2
+    graph = Area(0, 0, half_width, usable_height)
     board = Area(
-        graph_width + BOARD_MARGIN, BOARD_MARGIN,
-        max(1, board_area_width - 2 * BOARD_MARGIN),
+        half_width + BOARD_MARGIN, BOARD_MARGIN,
+        max(1, half_width - 2 * BOARD_MARGIN),
         max(1, usable_height - 2 * BOARD_MARGIN),
     )
     return graph, board
+
+
+def tile_size_to_fill(area, board_width, board_height):
+    """The largest whole tile size that fits the board inside the area.
+
+    Unlike other App Views, Live Training may draw the board bigger than the
+    Settings Tile Size, so the board fills its half of the window (ADR 0014).
+    """
+    return max(1, min(int(area.width) // board_width, int(area.height) // board_height))
 
 
 def live_training_minimum_size(board_width, board_height):
@@ -77,11 +78,12 @@ def live_training_minimum_size(board_width, board_height):
 
 
 def live_training_preferred_size(board_width, board_height, tile_size):
-    """A window that fits the whole graph and the board at this Tile Size."""
+    """A window whose halves fit the whole graph and the board at this Tile Size."""
     graph_height = (LARGEST_LAYER - 1) * MIN_ROW_GAP + 2 * AREA_MARGIN
+    board_pixel_width = board_width * tile_size + 2 * BOARD_MARGIN
     board_pixel_height = board_height * tile_size + 2 * BOARD_MARGIN
     return (
-        GRAPH_WIDTH + board_width * tile_size + 2 * BOARD_MARGIN,
+        2 * max(GRAPH_WIDTH, board_pixel_width),
         LIVE_TRAINING_HUD_HEIGHT + max(graph_height, board_pixel_height),
     )
 

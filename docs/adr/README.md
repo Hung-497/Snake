@@ -14,8 +14,9 @@ The app window, its screens, and how they look and move.
 | ADR | Decision | Status | Recorded | Related |
 | --- | --- | --- | --- | --- |
 | [0001](0001-use-arcade-for-the-presentation-layer.md) | Use Arcade for the presentation layer | Accepted | 2026-09-18 | Amended by 0002 |
-| [0002](0002-resizable-window-with-a-scaled-board.md) | Make the window resizable and scale the board to fit it | Accepted | 2026-09-25 | Amends 0001 |
+| [0002](0002-resizable-window-with-a-scaled-board.md) | Make the window resizable and scale the board to fit it | Accepted | 2026-09-25 | Amends 0001, amended by 0014 |
 | [0003](0003-keep-motion-in-the-presentation-layer.md) | Keep motion in the presentation layer, and do not animate snake movement | Accepted | 2026-09-25 | |
+| [0014](0014-split-live-training-in-half-and-fill-the-board-half.md) | Split Live Training in half and let the board fill its half | Accepted | 2026-10-16 | Amends 0002 and 0011 |
 
 ### Bots & Training
 
@@ -27,9 +28,12 @@ How the bots learn, are saved, and are compared.
 | [0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md) | Keep DQN headless with separate training and evaluation artifacts | Accepted | 2026-09-26 | Extended by 0009, amended by 0011 and 0012 |
 | [0009](0009-version-learned-artifacts-by-feature-set.md) | Version Learned Artifacts by Feature Set | Accepted | 2026-10-09 | Extends 0007 |
 | [0010](0010-keep-q-learning-training-history-inside-the-q-table.md) | Keep Q Learning Training History Inside the Q-table | Accepted | 2026-10-11 | Related to 0007 |
-| [0011](0011-train-dqn-in-the-live-training-app-view.md) | Train DQN in the Live Training App View | Accepted | 2026-10-13 | Amends 0007, amended by 0012 and 0013 |
+| [0011](0011-train-dqn-in-the-live-training-app-view.md) | Train DQN in the Live Training App View | Accepted | 2026-10-13 | Amends 0007, amended by 0012, 0013, 0014 and 0015 |
 | [0012](0012-offer-dqn-in-play-with-one-network-for-all-boards.md) | Offer DQN in Play with one network for all boards | Accepted | 2026-10-13 | Amends 0007 and 0011, amended by 0013 |
 | [0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md) | Choose a Feature Set version for learning Bot Modes | Accepted | 2026-10-13 | Amends 0011 and 0012 |
+| [0015](0015-let-live-training-start-over-and-keep-a-backup.md) | Let Live Training start over with a game limit and keep the old save as a backup | Accepted | 2026-10-16 | Amends 0011, extended by 0016 |
+| [0016](0016-train-q-learning-in-play-on-its-own-app-q-table.md) | Train Q Learning in Play on its own app Q-table | Accepted | 2026-10-16 | Amends 0005, extends 0015 |
+| [0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md) | Ship Showcase Bots and evaluate them on the study's games | Accepted | 2026-10-16 | Extends 0005, related to 0004 |
 
 ### Saved Data
 
@@ -37,7 +41,7 @@ Game records, replays, and the bundled Starter Q-table.
 
 | ADR | Decision | Status | Recorded | Related |
 | --- | --- | --- | --- | --- |
-| [0005](0005-separate-runtime-data-from-starter-table.md) | Separate Runtime Data from the Starter Q-table | Accepted | 2026-09-25 | |
+| [0005](0005-separate-runtime-data-from-starter-table.md) | Separate Runtime Data from the Starter Q-table | Accepted | 2026-09-25 | Amended by 0016, extended by 0017 |
 | [0006](0006-upgrade-old-records-files-in-place.md) | Upgrade old records files in place, keeping a backup | Accepted | 2026-09-26 | |
 
 ### Project Setup
@@ -52,7 +56,7 @@ Dependencies, tools, and continuous integration.
 
 | Status | ADRs |
 | --- | --- |
-| Accepted | 0001–0013 |
+| Accepted | 0001–0017 |
 | Proposed | none |
 | Rejected | none |
 | Deprecated | none |

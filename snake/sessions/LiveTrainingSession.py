@@ -14,6 +14,7 @@ import torch
 from snake.bots.DQNBot import DEFAULT_DQN_SETTINGS, DQNBot
 from snake.engine.SnakeEngine import SnakeEngine
 from snake.sessions.LiveTraining import DQN_VERSIONS, LiveTrainingCheckpointError
+from snake.sessions.TrainingSaves import valid_game_limit
 from snake.sessions.TrainQLearning import play_move
 from snake.storage.DQNArtifacts import (
     artifact_feature_set, checkpoint_data, common_metadata, load_artifact,
@@ -56,9 +57,11 @@ class LiveTrainingSession:
         self, config, seed=0, max_moves=5000,
         checkpoint_path=None, settings=None,
         record_manager=None, speed_delay=None, player=PLAYER, now=time.perf_counter,
-        replay_manager=None,
+        replay_manager=None, game_limit=None,
     ):
         self.config = config
+        # Training stops once this many games are played in total; None never stops.
+        self.game_limit = game_limit
         self.seed = seed
         self.max_moves = max_moves
         # The Player name picks the Feature Set and, by default, the save.
@@ -121,6 +124,8 @@ class LiveTrainingSession:
         # depend on the board, so the same DQN keeps learning here (ADR 0012),
         # and the next save records this board.
 
+        # Continuing keeps the game limit chosen when this training started.
+        session_options.setdefault("game_limit", valid_game_limit(metadata.get("game_limit")))
         session = cls(
             config, seed=metadata["base_seed"], max_moves=metadata["max_moves"],
             checkpoint_path=checkpoint_path, settings=metadata["learning_settings"],
@@ -160,12 +165,22 @@ class LiveTrainingSession:
         )
         metadata["checkpoint_every"] = CHECKPOINT_EVERY
         metadata["live_training_scores"] = list(self.scores)
+        metadata["game_limit"] = self.game_limit
         save_torch_data(
             self.checkpoint_path, checkpoint_data(self.bot, self.engine, metadata)
         )
 
+    def limit_reached(self):
+        """True once the save has played as many games as the game limit."""
+        return self.game_limit is not None and self.bot.game_trained >= self.game_limit
+
     def make_move(self):
-        """Make one training move, and start the next game if this one ended."""
+        """Make one training move, and start the next game if this one ended.
+
+        Does nothing once the game limit is reached.
+        """
+        if self.limit_reached():
+            return
         score_before = self.engine.score
         game_ended = play_move(self.engine, self.bot)
         self.moves_this_game += 1
@@ -181,16 +196,18 @@ class LiveTrainingSession:
     def make_moves_for(self, budget_seconds, clock=time.perf_counter):
         """Make training moves until the time budget runs out; return how many.
 
-        At least one move is always made, so a slow frame still makes progress.
+        At least one move is made, so a slow frame still makes progress, unless
+        the game limit is reached: then training stops exactly at the limit.
         Only the number of moves depends on time, never what is learned.
         """
         started_at = clock()
         moves = 0
-        while True:
+        while not self.limit_reached():
             self.make_move()
             moves += 1
             if clock() - started_at >= budget_seconds:
-                return moves
+                break
+        return moves
 
     def network_snapshot(self):
         """What the network saw and decided on the last move, for drawing.

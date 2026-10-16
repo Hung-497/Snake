@@ -2,8 +2,10 @@ import arcade.gui
 
 from snake.bots.BotFactory import supports_board
 from snake.sessions.HumanPlayer import HUMAN_PLAY
+from snake.sessions.LiveTraining import DQN_VERSIONS, missing_dependency_message
+from snake.sessions.TrainingSaves import SAVE_PATHS, copy_shared_q_table_once, saved_training
 from snake.ui import Theme
-from snake.ui.PlayerLabels import app_view_for_bot_mode, bot_mode_choices
+from snake.ui.PlayerLabels import LEARNING_FAMILIES, app_view_for_bot_mode, bot_mode_choices
 from snake.ui.WindowLayout import layout_step
 
 UNSUPPORTED_BOARD_MESSAGE = "Hamiltonian Bot needs at least one even board side."
@@ -77,7 +79,24 @@ class PlayView(arcade.gui.UIView):
         if (not supports_board(bot_mode, game_config.width, game_config.height)):
             return UNSUPPORTED_BOARD_MESSAGE
 
-        self.shell.show_view(app_view_for_bot_mode(bot_mode), bot_mode=bot_mode)
+        app_view = app_view_for_bot_mode(bot_mode)
+        # Without PyTorch, Live Training opens straight away to explain how
+        # to install it.
+        no_dqn = bot_mode in DQN_VERSIONS and missing_dependency_message()
+        if bot_mode not in SAVE_PATHS or no_dqn:
+            self.shell.show_view(app_view, bot_mode=bot_mode)
+            return None
+
+        # A learning Bot Mode asks first: continue a save, or set up a new
+        # training. Q Learning's app table starts as a copy of the shared one.
+        copy_shared_q_table_once(bot_mode)
+        back = self.choose_version(family_of(bot_mode))
+        summary = saved_training(bot_mode)
+        if summary is None:
+            self.shell.show_view("training_setup", bot_mode=bot_mode, back=back)
+        else:
+            self.shell.show_view("training_start", bot_mode=bot_mode,
+                                 summary=summary, back=back)
         return None
 
     def choose_version(self, family):
@@ -93,3 +112,11 @@ class PlayView(arcade.gui.UIView):
 
     def on_update(self, delta_time):
         self.ui.on_update(delta_time)
+
+
+def family_of(bot_mode):
+    """The learning family a versioned Bot Mode belongs to."""
+    return next(
+        family_key for family_key, family in LEARNING_FAMILIES.items()
+        if bot_mode in family.versions.values()
+    )
