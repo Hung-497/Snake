@@ -188,12 +188,12 @@ class RecordsView(arcade.gui.UIView):
         if not self.evaluations.results:
             rows.add(Theme.create_label("No completed evaluations yet.", font_size=self.sizes.body))
             return rows
-        heading = arcade.gui.UIBoxLayout(vertical=False)
+        heading = arcade.gui.UIBoxLayout(vertical=False, space_between=Theme.SPACE_TIGHT)
         for label, width in EVALUATE_COLUMNS:
             heading.add(self.create_cell(label, width, color=Theme.TEXT_MUTED))
         rows.add(heading)
         for result in self.evaluations.visible_results():
-            row = arcade.gui.UIBoxLayout(vertical=False)
+            row = arcade.gui.UIBoxLayout(vertical=False, space_between=Theme.SPACE_TIGHT)
             values = (
                 result.created_at.strftime("%Y-%m-%d %H:%M"), player_label(result.player),
                 result.source, str(result.game_count), f"{result.average_score:.1f}",
