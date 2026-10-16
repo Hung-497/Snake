@@ -91,12 +91,9 @@ class PlayView(arcade.gui.UIView):
         # training. Q Learning's app table starts as a copy of the shared one.
         copy_shared_q_table_once(bot_mode)
         back = self.choose_version(family_of(bot_mode))
-        summary = saved_training(bot_mode)
-        if summary is None:
-            self.shell.show_view("training_setup", bot_mode=bot_mode, back=back)
-        else:
-            self.shell.show_view("training_start", bot_mode=bot_mode,
-                                 summary=summary, back=back)
+        # It opens even with no save, so the Showcase Bot can still be reached.
+        self.shell.show_view("training_start", bot_mode=bot_mode,
+                             summary=saved_training(bot_mode), back=back)
         return None
 
     def choose_version(self, family):

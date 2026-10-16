@@ -145,8 +145,12 @@ class EvaluationSession:
 
 def start_q_learning_evaluation(
     bot_mode, game_count, table_path=None, games=STUDY_GAMES, report_directory=None,
+    evaluated="app_training",
 ):
-    """Evaluate a Q Learning app training. Raises ValueError when its table cannot be read."""
+    """Evaluate a Q Learning table: the app training, or a Showcase Bot.
+
+    Raises ValueError when the table cannot be read.
+    """
     table_path = str(SAVE_PATHS[bot_mode] if table_path is None else table_path)
     feature_set = FEATURE_SET_BY_BOT_MODE[bot_mode]
 
@@ -160,7 +164,7 @@ def start_q_learning_evaluation(
     # Built once up front, like RunExperiment, to check the table and identify it.
     reference_bot = make_bot(make_engine(games.config, games.base_seed), random.Random(0))
     return EvaluationSession(
-        bot_mode, game_count, make_bot, q_learning_identity(reference_bot), "app_training",
+        bot_mode, game_count, make_bot, q_learning_identity(reference_bot), evaluated,
         games=games, report_directory=report_directory,
     )
 

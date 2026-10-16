@@ -5,6 +5,7 @@
 - Recorded: 2026-10-16
 - Amends: [ADR 0011](0011-train-dqn-in-the-live-training-app-view.md), whose Live Training always continues its save
 - Extended by: [ADR 0016](0016-train-q-learning-in-play-on-its-own-app-q-table.md), which gives Q Learning in Play the same choices
+- Amended by: [ADR 0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md), whose start screen also opens with no save, to reach the Showcase Bot
 
 Live Training always continued a DQN's saved training and never stopped, so the only way to watch a DQN learn from game 0 again was to delete its DQN Training Checkpoint by hand. When the chosen DQN already has a save, Play now opens a Start Live Training App View first. It shows how many games the save holds, its best score and its game limit, and offers "Continue training" or "Start new training".
 

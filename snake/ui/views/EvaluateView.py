@@ -5,6 +5,7 @@ from snake.sessions.EvaluationSession import (
     STUDY_GAMES, start_dqn_evaluation, start_q_learning_evaluation,
 )
 from snake.sessions.LiveTraining import DQN_VERSIONS, missing_dependency_message
+from snake.sessions.TrainingSaves import SHOWCASE_BOTS
 from snake.ui import Theme
 from snake.ui.BoardRenderer import BoardRenderer
 from snake.ui.PlayerLabels import player_label
@@ -31,7 +32,7 @@ class EvaluateView(arcade.gui.UIView):
     key presses on; the games and the report belong to the EvaluationSession.
     """
 
-    def __init__(self, shell, bot_mode, game_count):
+    def __init__(self, shell, bot_mode, game_count, source="training"):
         super().__init__()
         self.shell = shell
         self.bot_mode = bot_mode
@@ -45,9 +46,8 @@ class EvaluateView(arcade.gui.UIView):
         if is_dqn:
             self.message = missing_dependency_message()
         if self.message is None:
-            start_evaluation = start_dqn_evaluation if is_dqn else start_q_learning_evaluation
             try:
-                self.session = start_evaluation(bot_mode, game_count)
+                self.session = self.start_session(bot_mode, game_count, source, is_dqn)
             except ValueError as error:
                 self.message = f"{error}\nTrain it first, or start new training."
 
@@ -72,7 +72,7 @@ class EvaluateView(arcade.gui.UIView):
         # Text objects are reused because drawing new text every frame is slow.
         board = STUDY_GAMES.config
         self.title_label = arcade.Text(
-            f"Evaluate · {player_label(bot_mode)} (your training) · "
+            f"Evaluate · {player_label(bot_mode)} ({self.source_text(bot_mode, source)}) · "
             f"{board.width} × {board.height} board, like the study",
             x=0, y=0, color=Theme.TEXT_MUTED,
             font_size=sizes.bot_mode, font_name=Theme.FONT_REGULAR,
@@ -92,6 +92,23 @@ class EvaluateView(arcade.gui.UIView):
             width=max(1, self.window.width - 2 * Theme.SPACE_WIDE), align="center",
         )
         self.on_resize(self.window.width, self.window.height)
+
+    @staticmethod
+    def start_session(bot_mode, game_count, source, is_dqn):
+        if is_dqn:
+            return start_dqn_evaluation(bot_mode, game_count)
+        if source == "showcase":
+            return start_q_learning_evaluation(
+                bot_mode, game_count, table_path=SHOWCASE_BOTS[bot_mode].path,
+                evaluated="showcase",
+            )
+        return start_q_learning_evaluation(bot_mode, game_count)
+
+    @staticmethod
+    def source_text(bot_mode, source):
+        if source == "showcase":
+            return f"showcase, seed {SHOWCASE_BOTS[bot_mode].seed}"
+        return "your training"
 
     def back_to_menu(self):
         # Nothing is saved for an unfinished run, so leaving simply stops it.
@@ -120,7 +137,11 @@ class EvaluateView(arcade.gui.UIView):
         left = positions["bot_mode"][0]
         top = height - EVALUATE_HUD_HEIGHT
         self.title_label.x, self.title_label.y = left, top + 70
-        self.title_label.font_size = sizes.bot_mode
+        # The title shrinks to stay clear of Back to Menu in a narrow window.
+        Theme.fit_text_to_width(
+            self.title_label, sizes.bot_mode,
+            width - left - Theme.HUD_BUTTON_WIDTH - 3 * Theme.SPACE_TIGHT,
+        )
         self.progress_label.x, self.progress_label.y = left, top + 40
         self.progress_label.font_size = sizes.body
         self.controls_label.x, self.controls_label.y = left, top + 40 - CONTROLS_GAP
