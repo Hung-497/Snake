@@ -8,7 +8,7 @@ from snake.ui.NetworkLayout import (
     live_training_minimum_size,
     pan_by, zoom_at,
     live_training_preferred_size, live_training_window,
-    screen_containing, side_by_side_areas,
+    screen_containing, side_by_side_areas, tile_size_to_fill,
 )
 from snake.ui.NetworkRenderer import NetworkRenderer
 from snake.ui.PlayerLabels import player_label
@@ -259,12 +259,11 @@ class LiveTrainingView(arcade.gui.UIView):
             state = self.session.engine.state
             graph_area, board_area = side_by_side_areas(
                 self.window.width, self.window.height, LIVE_TRAINING_HUD_HEIGHT,
-                state.board_width, state.board_height, state.tile_size,
             )
             self.board_renderer.draw(
                 state.board_width,
                 state.board_height,
-                state.tile_size,
+                tile_size_to_fill(board_area, state.board_width, state.board_height),
                 state.snake_position,
                 state.snake_body,
                 state.food_position,

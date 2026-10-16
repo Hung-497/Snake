@@ -5,6 +5,7 @@
 - Recorded: 2026-09-25
 - Discussed in: [#32](https://github.com/Hung-497/Snake/issues/32)
 - Amends: [ADR 0001](0001-use-arcade-for-the-presentation-layer.md), which chose a fixed-size window
+- Amended by: [ADR 0014](0014-split-live-training-in-half-and-fill-the-board-half.md), which lets Live Training draw the board larger than the Tile Size
 
 ADR 0001 chose a fixed-size window for the first Arcade version. The app now lets the user resize the window, and the board is drawn at the largest whole tile size that fits the space available, never larger than the tile size chosen in Settings. The window has a hard minimum, so no App View ever has to render into a space too small for it.
 

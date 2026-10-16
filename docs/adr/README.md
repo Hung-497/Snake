@@ -14,8 +14,9 @@ The app window, its screens, and how they look and move.
 | ADR | Decision | Status | Recorded | Related |
 | --- | --- | --- | --- | --- |
 | [0001](0001-use-arcade-for-the-presentation-layer.md) | Use Arcade for the presentation layer | Accepted | 2026-09-18 | Amended by 0002 |
-| [0002](0002-resizable-window-with-a-scaled-board.md) | Make the window resizable and scale the board to fit it | Accepted | 2026-09-25 | Amends 0001 |
+| [0002](0002-resizable-window-with-a-scaled-board.md) | Make the window resizable and scale the board to fit it | Accepted | 2026-09-25 | Amends 0001, amended by 0014 |
 | [0003](0003-keep-motion-in-the-presentation-layer.md) | Keep motion in the presentation layer, and do not animate snake movement | Accepted | 2026-09-25 | |
+| [0014](0014-split-live-training-in-half-and-fill-the-board-half.md) | Split Live Training in half and let the board fill its half | Accepted | 2026-10-16 | Amends 0002 and 0011 |
 
 ### Bots & Training
 
@@ -27,7 +28,7 @@ How the bots learn, are saved, and are compared.
 | [0007](0007-keep-dqn-headless-with-separate-training-and-evaluation-artifacts.md) | Keep DQN headless with separate training and evaluation artifacts | Accepted | 2026-09-26 | Extended by 0009, amended by 0011 and 0012 |
 | [0009](0009-version-learned-artifacts-by-feature-set.md) | Version Learned Artifacts by Feature Set | Accepted | 2026-10-09 | Extends 0007 |
 | [0010](0010-keep-q-learning-training-history-inside-the-q-table.md) | Keep Q Learning Training History Inside the Q-table | Accepted | 2026-10-11 | Related to 0007 |
-| [0011](0011-train-dqn-in-the-live-training-app-view.md) | Train DQN in the Live Training App View | Accepted | 2026-10-13 | Amends 0007, amended by 0012 and 0013 |
+| [0011](0011-train-dqn-in-the-live-training-app-view.md) | Train DQN in the Live Training App View | Accepted | 2026-10-13 | Amends 0007, amended by 0012, 0013 and 0014 |
 | [0012](0012-offer-dqn-in-play-with-one-network-for-all-boards.md) | Offer DQN in Play with one network for all boards | Accepted | 2026-10-13 | Amends 0007 and 0011, amended by 0013 |
 | [0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md) | Choose a Feature Set version for learning Bot Modes | Accepted | 2026-10-13 | Amends 0011 and 0012 |
 
@@ -52,7 +53,7 @@ Dependencies, tools, and continuous integration.
 
 | Status | ADRs |
 | --- | --- |
-| Accepted | 0001–0013 |
+| Accepted | 0001–0014 |
 | Proposed | none |
 | Rejected | none |
 | Deprecated | none |

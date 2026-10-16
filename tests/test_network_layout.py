@@ -7,7 +7,7 @@ from snake.ui.NetworkLayout import (
     activation_strength, connection_style, live_training_minimum_size,
     live_training_preferred_size,
     input_labels, live_training_window, neuron_positions, screen_containing, side_by_side_areas,
-    strongest_connections,
+    strongest_connections, tile_size_to_fill,
 )
 from snake.ui.WindowLayout import MIN_READABLE_TILE_SIZE
 
@@ -15,12 +15,10 @@ from snake.ui.WindowLayout import MIN_READABLE_TILE_SIZE
 def test_the_graph_sits_left_of_the_board_without_overlapping():
     window_width, window_height = live_training_minimum_size(24, 25)
 
-    graph, board = side_by_side_areas(
-        window_width, window_height, LIVE_TRAINING_HUD_HEIGHT, 24, 25, tile_size=25
-    )
+    graph, board = side_by_side_areas(window_width, window_height, LIVE_TRAINING_HUD_HEIGHT)
 
     assert graph.left == 0
-    assert graph.width == GRAPH_WIDTH
+    assert graph.width >= GRAPH_WIDTH
     assert graph.left + graph.width <= board.left
     assert board.left + board.width <= window_width
     for area in (graph, board):
@@ -31,10 +29,7 @@ def test_the_graph_sits_left_of_the_board_without_overlapping():
 def test_the_minimum_size_fits_the_graph_and_a_readable_board():
     for board_width, board_height in [(16, 16), (24, 25), (30, 30)]:
         window_width, window_height = live_training_minimum_size(board_width, board_height)
-        graph, board = side_by_side_areas(
-            window_width, window_height, LIVE_TRAINING_HUD_HEIGHT,
-            board_width, board_height, tile_size=25,
-        )
+        graph, board = side_by_side_areas(window_width, window_height, LIVE_TRAINING_HUD_HEIGHT)
 
         assert board.width >= board_width * MIN_READABLE_TILE_SIZE
         assert board.height >= board_height * MIN_READABLE_TILE_SIZE
@@ -43,8 +38,11 @@ def test_the_minimum_size_fits_the_graph_and_a_readable_board():
         assert abs(hidden[0][1] - hidden[1][1]) >= MIN_ROW_GAP
 
 
-def test_a_larger_board_needs_a_wider_window():
-    assert live_training_minimum_size(30, 30)[0] > live_training_minimum_size(16, 16)[0]
+def test_a_board_wider_than_the_graph_needs_a_wider_window():
+    # Boards up to 30 wide fit beside the graph at the readable tile size, so
+    # the graph sets the width; only a wider board makes the window wider.
+    assert live_training_minimum_size(30, 30)[0] == 2 * GRAPH_WIDTH
+    assert live_training_minimum_size(40, 40)[0] > live_training_minimum_size(16, 16)[0]
 
 
 SCREEN = Area(left=0, bottom=0, width=1710, height=1107)
@@ -182,9 +180,7 @@ def test_the_window_uses_the_screen_it_is_on_now():
 
 def test_the_preferred_size_fits_the_board_at_its_settings_tile_size():
     width, height = live_training_preferred_size(24, 25, tile_size=25)
-    graph, board = side_by_side_areas(
-        width, height, LIVE_TRAINING_HUD_HEIGHT, 24, 25, tile_size=25
-    )
+    graph, board = side_by_side_areas(width, height, LIVE_TRAINING_HUD_HEIGHT)
 
     assert board.width >= 24 * 25 and board.height >= 25 * 25
     assert (width, height) >= live_training_minimum_size(24, 25)
@@ -209,12 +205,29 @@ def test_the_preferred_size_is_cut_to_the_screen():
     assert size == (1710, 1107)
 
 
-def test_a_wider_window_gives_the_extra_width_to_the_graph():
-    # The board never draws bigger than its Tile Size, so extra width would
-    # otherwise be an empty gap between the graph and the board.
-    graph, board = side_by_side_areas(1600, 1000, LIVE_TRAINING_HUD_HEIGHT, 24, 25, tile_size=25)
+def test_the_graph_and_the_board_each_get_half_the_window():
+    for window_width in (1100, 1600, 2000):
+        graph, board = side_by_side_areas(window_width, 1000, LIVE_TRAINING_HUD_HEIGHT)
 
-    assert board.width == 24 * 25
-    assert board.left + board.width + BOARD_MARGIN == 1600
-    assert graph.width == board.left - BOARD_MARGIN
-    assert graph.width > GRAPH_WIDTH
+        assert graph.width == window_width / 2
+        # The board's half keeps a margin on every side.
+        assert board.left == window_width / 2 + BOARD_MARGIN
+        assert board.width == window_width / 2 - 2 * BOARD_MARGIN
+        assert board.height == 1000 - LIVE_TRAINING_HUD_HEIGHT - 2 * BOARD_MARGIN
+
+
+def test_the_board_scales_up_past_its_tile_size_to_fill_its_half():
+    # Live Training ignores the Settings Tile Size and fills the area (ADR 0014).
+    area = Area(left=800, bottom=16, width=768, height=868)
+
+    assert tile_size_to_fill(area, 24, 25) == 32  # 768 // 24 = 32, 868 // 25 = 34
+
+
+def test_the_fill_tile_size_is_limited_by_the_tighter_side():
+    area = Area(left=0, bottom=0, width=900, height=300)
+
+    assert tile_size_to_fill(area, 30, 30) == 10
+
+
+def test_the_fill_tile_size_is_never_below_one():
+    assert tile_size_to_fill(Area(0, 0, 5, 5), 30, 30) == 1
