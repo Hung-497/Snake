@@ -1,7 +1,6 @@
 import arcade.gui
 
 from snake.sessions.EvaluationSession import GAME_COUNTS
-from snake.sessions.TrainingSaves import APP_Q_TABLES
 from snake.ui import Theme
 from snake.ui.PlayerLabels import app_view_for_bot_mode, player_label
 from snake.ui.WindowLayout import layout_step
@@ -12,7 +11,7 @@ class TrainingStartView(arcade.gui.UIView):
     The Start training App View: continue a learning Bot Mode's saved
     training, or start it over from game 0.
 
-    Q Learning training can also be measured with Evaluate, after choosing
+    DQN and Q Learning training can also be measured with Evaluate, after choosing
     how many of the study's games to play (ADR 0017).
 
     Play opens it only when the chosen DQN or Q Learning already has a save.
@@ -94,8 +93,8 @@ class TrainingStartView(arcade.gui.UIView):
         ))
 
     def can_evaluate(self):
-        # DQN Evaluate comes later; only a readable save can be measured.
-        return self.bot_mode in APP_Q_TABLES and self.summary.games is not None
+        # Only a readable save can be measured.
+        return self.summary.games is not None
 
     def choose_game_count(self):
         self.choosing_game_count = True

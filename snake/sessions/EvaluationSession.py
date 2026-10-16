@@ -16,6 +16,7 @@ from snake.sessions.ExperimentReport import (
     BOT_SEED_OFFSET, build_report, game_record, make_engine, q_learning_identity,
     save_report, summarize_games,
 )
+from snake.sessions.LiveTraining import DQN_VERSIONS
 from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE, play_move
 from snake.sessions.TrainingSaves import SAVE_PATHS
 
@@ -48,19 +49,22 @@ class EvaluationSession:
     """Plays game_count evaluated games and saves one report when all are done.
 
     make_bot builds the bot in Evaluation Mode for one game's engine and
-    random source; identity describes the evaluated model in the report.
-    Stopping before the last game ends saves nothing.
+    random source; identity describes the evaluated model in the report, and
+    extra_report adds any other fields RunExperiment writes for that kind of
+    model. Stopping before the last game ends saves nothing.
     """
 
     def __init__(
         self, bot_mode, game_count, make_bot, identity, evaluated,
         games=STUDY_GAMES, report_directory=None, clock=time.perf_counter,
+        extra_report=None,
     ):
         self.bot_mode = bot_mode
         self.game_count = game_count
         self.make_bot = make_bot
         self.identity = identity
         self.evaluated = evaluated
+        self.extra_report = {} if extra_report is None else extra_report
         self.games = games
         self.report_directory = Path("experiments") if report_directory is None else report_directory
         self.clock = clock
@@ -134,6 +138,7 @@ class EvaluationSession:
             self.games.max_moves, (self.bot_mode,), results,
         )
         report[self.bot_mode] = self.identity
+        report.update(self.extra_report)
         report["evaluated"] = self.evaluated
         self.report_path = save_report(report, self.report_directory)
 
@@ -157,4 +162,57 @@ def start_q_learning_evaluation(
     return EvaluationSession(
         bot_mode, game_count, make_bot, q_learning_identity(reference_bot), "app_training",
         games=games, report_directory=report_directory,
+    )
+
+
+def start_dqn_evaluation(
+    bot_mode, game_count, checkpoint_path=None, games=STUDY_GAMES, report_directory=None,
+):
+    """Evaluate a DQN's Live Training from its DQN Training Checkpoint.
+
+    Raises ValueError when the save cannot be read or is for the other DQN
+    version. PyTorch is only imported here, so the app starts without it.
+    """
+    import torch
+    from snake.bots.DQNBot import DQNBot
+    from snake.storage.DQNArtifacts import artifact_feature_set, load_artifact, model_identity
+
+    checkpoint_path = SAVE_PATHS[bot_mode] if checkpoint_path is None else checkpoint_path
+    data = load_artifact(checkpoint_path, "dqn_training_checkpoint")
+    metadata = data["metadata"]
+    feature_set = artifact_feature_set(metadata, checkpoint_path)
+    if feature_set != DQN_VERSIONS[bot_mode].feature_set:
+        raise ValueError(
+            f"Saved training uses Feature Set {feature_set}, "
+            f"not {DQN_VERSIONS[bot_mode].feature_set}: {checkpoint_path}"
+        )
+    online_weights = data["state"]["online_weights"]
+    # The same CPU settings as RunExperiment, so both play the same moves.
+    torch.set_num_threads(1)
+    torch.use_deterministic_algorithms(True)
+
+    def make_bot(engine, random_source):
+        bot = DQNBot(
+            engine, random_source=random_source, settings=metadata["learning_settings"],
+            evaluation_mode=True, feature_set=feature_set,
+        )
+        bot.network.load_state_dict(online_weights)
+        return bot
+
+    identity = {
+        **model_identity(checkpoint_path, data),
+        "feature_set": feature_set,
+        "game_trained": data["state"]["game_trained"],
+    }
+    # Like RunExperiment's DQN reports, record where it trained and was evaluated.
+    board = games.config
+    extra_report = {
+        "training_board": metadata["training_board"],
+        "evaluation_board": {
+            "width": board.width, "height": board.height, "tile_size": board.tile_size,
+        },
+    }
+    return EvaluationSession(
+        bot_mode, game_count, make_bot, identity, "app_training",
+        games=games, report_directory=report_directory, extra_report=extra_report,
     )
