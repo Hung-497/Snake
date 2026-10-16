@@ -1,24 +1,18 @@
 """Compare selected Bot Modes in repeatable headless games."""
 
 import argparse
-from datetime import datetime, timezone
-import hashlib
-import json
-from pathlib import Path
-import platform
 import random
-import statistics
-import time
-import uuid
 
 from snake.bots.BotFactory import (
     OPT_IN_EXPERIMENT_MODES, create_bot_mode, normal_experiment_modes, supports_board,
 )
 from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
-from snake.engine.SnakeEngine import SnakeEngine
-from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE, play_game
-from snake.storage.CodeIdentity import code_identity
+from snake.sessions.ExperimentReport import (
+    BOT_SEED_OFFSET, build_report, make_engine, play_evaluation_game,
+    q_learning_identity, save_report, summarize_games,
+)
+from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE
 
 
 BOT_NAMES = {
@@ -29,57 +23,6 @@ BOT_NAMES = {
     "search_based": "Search-Based",
     "dqn": "DQN",
 }
-
-
-def make_engine(config, seed):
-    return SnakeEngine(
-        config,
-        start_position=None,
-        random_source=random.Random(seed),
-    )
-
-
-def summarize_games(games, elapsed_seconds):
-    """Summarize completed games; win rate is a fraction from zero to one."""
-    scores = [game["score"] for game in games]
-    moves = [game["moves"] for game in games]
-    wins = sum(game["outcome"] == "won" for game in games)
-
-    return {
-        "mean_score": statistics.mean(scores),
-        "median_score": statistics.median(scores),
-        "best_score": max(scores),
-        "score_std_dev": statistics.pstdev(scores),
-        "wins": wins,
-        "win_rate": wins / len(games),
-        "collisions": sum(game["outcome"] == "collision" for game in games),
-        "move_limits": sum(game["outcome"] == "move_limit" for game in games),
-        "total_moves": sum(moves),
-        "mean_moves": statistics.mean(moves),
-        "median_moves": statistics.median(moves),
-        "min_moves": min(moves),
-        "max_moves": max(moves),
-        "elapsed_seconds": elapsed_seconds,
-        "games_per_second": len(games) / elapsed_seconds if elapsed_seconds > 0 else 0,
-    }
-
-
-def q_learning_identity(bot):
-    """Identify the policy file and settings used for Evaluation Mode."""
-    return {
-        "feature_set": bot.feature_set,
-        "table_path": str(bot.q_table_file),
-        "table_sha256": hashlib.sha256(Path(bot.q_table_file).read_bytes()).hexdigest(),
-        "epsilon": bot.epsilon,
-        "game_trained": bot.game_trained,
-        "learning_rate": bot.learning_rate,
-        "discount_rate": bot.discount_rate,
-        "min_epsilon": bot.min_epsilon,
-        "epsilon_decay": bot.epsilon_decay,
-        "evaluation_mode": bot.evaluation_mode,
-        # How the table was trained, as it stood when this experiment ran.
-        "training_history": bot.training_history,
-    }
 
 
 def main(argv=None):
@@ -141,7 +84,7 @@ def main(argv=None):
         # Check the selected table before any Bot Mode starts playing.
         try:
             q_reference_bots[bot_mode] = make_q_learning_bot(
-                bot_mode, make_engine(config, seeds[0]), seeds[0] + 1,
+                bot_mode, make_engine(config, seeds[0]), seeds[0] + BOT_SEED_OFFSET,
             )
         except ValueError as error:
             parser.error(str(error))
@@ -176,11 +119,11 @@ def main(argv=None):
         for game_seed in seeds:
             engine = make_engine(config, game_seed)
             if bot_mode in FEATURE_SET_BY_BOT_MODE:
-                bot = make_q_learning_bot(bot_mode, engine, game_seed + 1)
+                bot = make_q_learning_bot(bot_mode, engine, game_seed + BOT_SEED_OFFSET)
             elif bot_mode == "dqn":
                 bot = DQNBot(
                     engine,
-                    random_source=random.Random(game_seed + 1),
+                    random_source=random.Random(game_seed + BOT_SEED_OFFSET),
                     settings=dqn_model["metadata"]["learning_settings"],
                     evaluation_mode=True,
                     feature_set=artifact_feature_set(
@@ -190,28 +133,17 @@ def main(argv=None):
                 bot.network.load_state_dict(dqn_model["online_weights"])
             else:
                 bot = create_bot_mode(
-                    bot_mode, engine, random_source=random.Random(game_seed + 1)
+                    bot_mode, engine, random_source=random.Random(game_seed + BOT_SEED_OFFSET)
                 )
 
-            start_time = time.perf_counter()
-            moves = play_game(engine, bot, options.max_moves)
-            elapsed_seconds += time.perf_counter() - start_time
-            if engine.game_won:
-                outcome = "won"
-            elif engine.game_over:
-                outcome = "collision"
-            else:
-                outcome = "move_limit"
-
-            games.append({
-                "seed": game_seed,
-                "score": engine.score,
-                "moves": moves,
-                "outcome": outcome,
-            })
+            game, game_seconds = play_evaluation_game(
+                engine, bot, game_seed, options.max_moves
+            )
+            elapsed_seconds += game_seconds
+            games.append(game)
             print(
                 f"{name} game {len(games)}/{options.games}: "
-                f"score {engine.score}, moves {moves}, {outcome}",
+                f"score {game['score']}, moves {game['moves']}, {game['outcome']}",
                 flush=True,
             )
 
@@ -220,28 +152,9 @@ def main(argv=None):
             "summary": summarize_games(games, elapsed_seconds),
         }
 
-    report = {
-        "schema_version": 3,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "code": code_identity(),
-        "python_version": platform.python_version(),
-        "timing_basis": (
-            "sum of per-game play wall times using time.perf_counter; "
-            "excludes setup, Q-table validation, and result writing"
-        ),
-        "board": {
-            "width": config.width,
-            "height": config.height,
-            "tile_size": config.tile_size,
-        },
-        "game_count": options.games,
-        "base_seed": options.seed,
-        "seeds": seeds,
-        "bot_seed_offset": 1,
-        "max_moves": options.max_moves,
-        "selected_bot_modes": list(bot_modes),
-        "bots": results,
-    }
+    report = build_report(
+        config, options.seed, options.games, options.max_moves, bot_modes, results,
+    )
     for bot_mode, q_reference_bot in q_reference_bots.items():
         report[bot_mode] = q_learning_identity(q_reference_bot)
     if dqn_model is not None:
@@ -249,12 +162,7 @@ def main(argv=None):
         report["training_board"] = dqn_model["metadata"]["training_board"]
         report["evaluation_board"] = dict(report["board"])
 
-    output_directory = Path("experiments")
-    output_directory.mkdir(exist_ok=True)
-    result_path = output_directory / f"experiment_{uuid.uuid4().hex}.json"
-    with result_path.open("x", encoding="utf-8") as result_file:
-        json.dump(report, result_file, indent=2)
-        result_file.write("\n")
+    result_path = save_report(report)
 
     for bot_mode in bot_modes:
         summary = results[bot_mode]["summary"]
