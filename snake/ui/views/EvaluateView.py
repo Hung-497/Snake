@@ -95,6 +95,11 @@ class EvaluateView(arcade.gui.UIView):
 
     @staticmethod
     def start_session(bot_mode, game_count, source, is_dqn):
+        if is_dqn and source == "showcase":
+            return start_dqn_evaluation(
+                bot_mode, game_count, model_path=SHOWCASE_BOTS[bot_mode].path,
+                evaluated="showcase",
+            )
         if is_dqn:
             return start_dqn_evaluation(bot_mode, game_count)
         if source == "showcase":

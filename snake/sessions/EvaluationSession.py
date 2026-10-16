@@ -170,27 +170,33 @@ def start_q_learning_evaluation(
 
 
 def start_dqn_evaluation(
-    bot_mode, game_count, checkpoint_path=None, games=STUDY_GAMES, report_directory=None,
+    bot_mode, game_count, model_path=None, games=STUDY_GAMES, report_directory=None,
+    evaluated="app_training",
 ):
-    """Evaluate a DQN's Live Training from its DQN Training Checkpoint.
+    """Evaluate a DQN: its Live Training's DQN Training Checkpoint, or a
+    Showcase Bot's DQN Evaluation Model.
 
-    Raises ValueError when the save cannot be read or is for the other DQN
+    Raises ValueError when the file cannot be read or is for the other DQN
     version. PyTorch is only imported here, so the app starts without it.
     """
     import torch
     from snake.bots.DQNBot import DQNBot
     from snake.storage.DQNArtifacts import artifact_feature_set, load_artifact, model_identity
 
-    checkpoint_path = SAVE_PATHS[bot_mode] if checkpoint_path is None else checkpoint_path
-    data = load_artifact(checkpoint_path, "dqn_training_checkpoint")
+    model_path = SAVE_PATHS[bot_mode] if model_path is None else model_path
+    is_checkpoint = evaluated == "app_training"
+    artifact_type = "dqn_training_checkpoint" if is_checkpoint else "dqn_evaluation_model"
+    data = load_artifact(model_path, artifact_type)
     metadata = data["metadata"]
-    feature_set = artifact_feature_set(metadata, checkpoint_path)
+    feature_set = artifact_feature_set(metadata, model_path)
     if feature_set != DQN_VERSIONS[bot_mode].feature_set:
         raise ValueError(
             f"Saved training uses Feature Set {feature_set}, "
-            f"not {DQN_VERSIONS[bot_mode].feature_set}: {checkpoint_path}"
+            f"not {DQN_VERSIONS[bot_mode].feature_set}: {model_path}"
         )
-    online_weights = data["state"]["online_weights"]
+    # A checkpoint keeps its learning state apart; a model holds only its weights.
+    state = data["state"] if is_checkpoint else data
+    online_weights = state["online_weights"]
     # The same CPU settings as RunExperiment, so both play the same moves.
     torch.set_num_threads(1)
     torch.use_deterministic_algorithms(True)
@@ -204,9 +210,9 @@ def start_dqn_evaluation(
         return bot
 
     identity = {
-        **model_identity(checkpoint_path, data),
+        **model_identity(model_path, data),
         "feature_set": feature_set,
-        "game_trained": data["state"]["game_trained"],
+        "game_trained": state["game_trained"] if is_checkpoint else metadata["game_trained"],
     }
     # Like RunExperiment's DQN reports, record where it trained and was evaluated.
     board = games.config
@@ -217,6 +223,6 @@ def start_dqn_evaluation(
         },
     }
     return EvaluationSession(
-        bot_mode, game_count, make_bot, identity, "app_training",
+        bot_mode, game_count, make_bot, identity, evaluated,
         games=games, report_directory=report_directory, extra_report=extra_report,
     )

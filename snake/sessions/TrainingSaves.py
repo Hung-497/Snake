@@ -52,11 +52,13 @@ class ShowcaseBot:
 
 
 # The best of each bot's three Study 1 training runs, by their 200-game
-# results in docs/results.md. The app only reads these files.
+# results in docs/results.md. The app only reads these files. The DQN v2
+# study models were not kept, so DQN v2 has no Showcase Bot yet.
 SHOWCASE_DIRECTORY = Path("starter_data") / "showcase"
 SHOWCASE_BOTS = {
     "q_learning": ShowcaseBot(SHOWCASE_DIRECTORY / "q_table_v2_seed12000.json", 12000),
     "q_learning_v3": ShowcaseBot(SHOWCASE_DIRECTORY / "q_table_v3_seed15000.json", 15000),
+    "dqn": ShowcaseBot(SHOWCASE_DIRECTORY / "dqn_v3_seed9000.pt", 9000),
 }
 
 
