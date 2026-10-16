@@ -41,7 +41,7 @@ def _saved_metadata(checkpoint_path):
 
 def evaluate(checkpoint_path, report_directory, bot_mode="dqn", game_count=3):
     session = start_dqn_evaluation(
-        bot_mode, game_count, checkpoint_path=checkpoint_path, games=SMALL_GAMES,
+        bot_mode, game_count, model_path=checkpoint_path, games=SMALL_GAMES,
         report_directory=report_directory,
     )
     while not session.finished:

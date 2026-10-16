@@ -3,7 +3,7 @@
 - Status: Accepted
 - Category: Bots & Training
 - Recorded: 2026-10-16
-- Updated: 2026-10-16, the start screen always opens, and where the Showcase Bots came from
+- Updated: 2026-10-16, the start screen always opens, where the Showcase Bots came from, and no DQN v2 Showcase Bot yet
 - Extends: [ADR 0005](0005-separate-runtime-data-from-starter-table.md), which bundles only the Starter Q-table
 - Related: [ADR 0004](0004-run-bot-experiments-headlessly.md), whose Bot Experiment reports Evaluate also writes
 - Amends: [ADR 0015](0015-let-live-training-start-over-and-keep-a-backup.md), whose Play went straight to setting up a new training when there was no save
@@ -28,3 +28,5 @@ The best run won because a showcase should show what the bot can do; its label s
 ## Update
 
 2026-10-16: Play now always opens the Start training App View for DQN and Q Learning, even with no save, so the Showcase Bot can be reached before any training. With no save it shows "Your training: none yet" and offers only "Start new training", which opens the Set up training App View as before. The Q Learning Showcase Bots are the Study 1 tables `q_table_v2_seed12000.json` (44.1) and `q_table_v3_seed15000.json` (127.7), identified by their file hashes in the study's Bot Experiment reports.
+
+2026-10-16: The DQN v3 Showcase Bot is the Study 1 run with seed 9000 (140.8), shipped as its DQN Evaluation Model. The DQN v2 study models were not kept on this computer, so DQN v2 has no Showcase Bot for now and its start screen shows no Showcase part. About 130 KB is committed instead of about 250 KB. A DQN v2 Showcase Bot can be added later from its original study model, if it is found, without retraining under the study label.

@@ -70,3 +70,33 @@ def test_evaluating_a_showcase_bot_never_changes_it_and_says_so(tmp_path):
     assert hashlib.sha256(path.read_bytes()).hexdigest() == before
     [report_path] = tmp_path.glob("*.json")
     assert json.loads(report_path.read_text())["evaluated"] == "showcase"
+
+
+def test_dqn_v3_ships_a_showcase_bot_and_dqn_v2_does_not_yet():
+    # The DQN v2 study models were not kept, so DQN v2 has no Showcase Bot.
+    assert SHOWCASE_BOTS["dqn"].label == "Best of 3 study runs (seed 9000)"
+    assert showcase_file("dqn").is_file()
+    assert "dqn_v2" not in SHOWCASE_BOTS
+
+
+def test_evaluating_the_dqn_showcase_bot_never_changes_it_and_says_so(tmp_path):
+    pytest.importorskip("torch")
+    from snake.sessions.EvaluationSession import start_dqn_evaluation
+
+    path = showcase_file("dqn")
+    before = hashlib.sha256(path.read_bytes()).hexdigest()
+
+    session = start_dqn_evaluation(
+        "dqn", 2, model_path=path, evaluated="showcase",
+        games=EvaluationGames(GameConfig(12, 12, 20), base_seed=200000, max_moves=200),
+        report_directory=tmp_path,
+    )
+    while not session.finished:
+        session.make_move()
+
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == before
+    [report_path] = tmp_path.glob("*.json")
+    report = json.loads(report_path.read_text())
+    assert report["evaluated"] == "showcase"
+    assert report["dqn"]["feature_set"] == "v3"
+    assert report["dqn"]["game_trained"] == 2000
