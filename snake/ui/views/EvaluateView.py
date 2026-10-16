@@ -1,7 +1,10 @@
 import arcade
 import arcade.gui
 
-from snake.sessions.EvaluationSession import STUDY_GAMES, start_q_learning_evaluation
+from snake.sessions.EvaluationSession import (
+    STUDY_GAMES, start_dqn_evaluation, start_q_learning_evaluation,
+)
+from snake.sessions.LiveTraining import DQN_VERSIONS, missing_dependency_message
 from snake.ui import Theme
 from snake.ui.BoardRenderer import BoardRenderer
 from snake.ui.PlayerLabels import player_label
@@ -37,10 +40,16 @@ class EvaluateView(arcade.gui.UIView):
         self.watching = False
         self.message = None
         self.session = None
-        try:
-            self.session = start_q_learning_evaluation(bot_mode, game_count)
-        except ValueError as error:
-            self.message = f"{error}\nTrain it first, or start new training."
+        is_dqn = bot_mode in DQN_VERSIONS
+        # Evaluating a DQN needs PyTorch, like Live Training (ADR 0007).
+        if is_dqn:
+            self.message = missing_dependency_message()
+        if self.message is None:
+            start_evaluation = start_dqn_evaluation if is_dqn else start_q_learning_evaluation
+            try:
+                self.session = start_evaluation(bot_mode, game_count)
+            except ValueError as error:
+                self.message = f"{error}\nTrain it first, or start new training."
 
         sizes = Theme.type_sizes(self.window.width)
         back_layout = arcade.gui.UIAnchorLayout()
