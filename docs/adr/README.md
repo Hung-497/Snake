@@ -33,6 +33,7 @@ How the bots learn, are saved, and are compared.
 | [0013](0013-choose-a-feature-set-version-for-learning-bot-modes.md) | Choose a Feature Set version for learning Bot Modes | Accepted | 2026-10-13 | Amends 0011 and 0012 |
 | [0015](0015-let-live-training-start-over-and-keep-a-backup.md) | Let Live Training start over with a game limit and keep the old save as a backup | Accepted | 2026-10-16 | Amends 0011, extended by 0016 |
 | [0016](0016-train-q-learning-in-play-on-its-own-app-q-table.md) | Train Q Learning in Play on its own app Q-table | Accepted | 2026-10-16 | Amends 0005, extends 0015 |
+| [0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md) | Ship Showcase Bots and evaluate them on the study's games | Accepted | 2026-10-16 | Extends 0005, related to 0004 |
 
 ### Saved Data
 
@@ -40,7 +41,7 @@ Game records, replays, and the bundled Starter Q-table.
 
 | ADR | Decision | Status | Recorded | Related |
 | --- | --- | --- | --- | --- |
-| [0005](0005-separate-runtime-data-from-starter-table.md) | Separate Runtime Data from the Starter Q-table | Accepted | 2026-09-25 | Amended by 0016 |
+| [0005](0005-separate-runtime-data-from-starter-table.md) | Separate Runtime Data from the Starter Q-table | Accepted | 2026-09-25 | Amended by 0016, extended by 0017 |
 | [0006](0006-upgrade-old-records-files-in-place.md) | Upgrade old records files in place, keeping a backup | Accepted | 2026-09-26 | |
 
 ### Project Setup
@@ -55,7 +56,7 @@ Dependencies, tools, and continuous integration.
 
 | Status | ADRs |
 | --- | --- |
-| Accepted | 0001–0016 |
+| Accepted | 0001–0017 |
 | Proposed | none |
 | Rejected | none |
 | Deprecated | none |
