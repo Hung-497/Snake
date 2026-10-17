@@ -4,13 +4,16 @@ import argparse
 import os
 import random
 
+from snake.bots.BotModeCatalogue import bot_modes_in_family
 from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.engine.SnakeEngine import SnakeEngine
 
 
 # Each Q Learning Bot Mode observes the board with its own Feature Set.
-FEATURE_SET_BY_BOT_MODE = {"q_learning": "v2", "q_learning_v3": "v3"}
+FEATURE_SET_BY_BOT_MODE = {
+    mode.key: mode.version for mode in bot_modes_in_family("q_learning")
+}
 
 def play_move(engine, bot):
     """Make one move through the Game Engine and Bot Mode contract.

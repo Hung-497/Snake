@@ -292,6 +292,33 @@ def create_secondary_button(button_text, on_click, **kwargs):
     )
 
 
+def add_back_to_menu_button(ui, on_click, font_size):
+    """Put Back to Menu in the top-right corner of a game-style App View."""
+    back_layout = arcade.gui.UIAnchorLayout()
+    button = create_secondary_button(
+        "Back to Menu",
+        on_click,
+        button_width=HUD_BUTTON_WIDTH,
+        button_height=HUD_BUTTON_HEIGHT,
+        font_size=font_size,
+    )
+    back_layout.add(
+        button,
+        anchor_x="right",
+        anchor_y="top",
+        align_x=-SPACE_TIGHT,
+        align_y=-SPACE_TIGHT,
+    )
+    ui.add(back_layout)
+    return button
+
+
+def set_button_font_size(button, font_size):
+    """Resize a button's text, for example when the window width changes."""
+    button.shared_style.font_size = font_size
+    button.trigger_full_render()
+
+
 def create_dropdown_style(base_color=SECONDARY, hover_color=SECONDARY_HOVER,
                           press_color=SECONDARY_PRESS, font_size=TYPE_BODY):
     """Give dropdown buttons the same four clear states as Menu controls."""
