@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 # Imported before arcade so the Arcade PATH guard runs first (see ArcadePathGuard).
 import snake  # noqa: F401
 import arcade
@@ -15,7 +18,7 @@ from snake.ui.views.PlayView import PlayView
 from snake.ui.views.RecordsView import RecordsView
 from snake.ui.views.ReplayPlaybackView import ReplayPlaybackView
 from snake.ui.views.ReplayView import ReplayView
-from snake.sessions.SessionSettings import SessionSettings
+from snake.storage.SettingsFile import SettingsFile
 from snake.ui.views.SettingsView import SettingsView
 from snake.ui.views.VersionView import VersionView
 from snake.ui import Theme
@@ -96,13 +99,13 @@ def create_app():
     window = SnakeWindow()
     shell = AppShell(window, {})
 
-    # One settings object for the whole session, so choices are kept when the
-    # user leaves Settings and opens it again.
-    settings = SessionSettings()
+    # Restore preferences once, then share this object between App Views.
+    settings_file = SettingsFile()
+    settings = settings_file.load()
     window.update_board_minimum(settings.build_game_config())
 
     shell.register_view("menu", lambda: MenuView(shell))
-    shell.register_view("settings", lambda: SettingsView(shell, settings))
+    shell.register_view("settings", lambda: SettingsView(shell, settings, settings_file))
     shell.register_view("play", lambda: PlayView(shell, settings))
     shell.register_view(
         "game",
@@ -141,7 +144,17 @@ def create_app():
     return shell
 
 
+def use_project_folder():
+    """Work in the Snake folder, so saves and Showcase Bots are found there.
+
+    Runtime Data and starter_data are relative paths, so starting the app
+    from another folder would otherwise create new, empty data folders there.
+    """
+    os.chdir(Path(__file__).resolve().parent)
+
+
 def main():
+    use_project_folder()
     shell = create_app()
     shell.start()
     arcade.run()

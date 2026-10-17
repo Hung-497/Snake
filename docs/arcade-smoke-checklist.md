@@ -59,6 +59,18 @@ uv run python SnakeApp.py
 | 42 | Evaluate DQN | With `uv sync --group dqn` and a DQN v2 or v3 Live Training save, the start screen shows Evaluate like Q Learning. A run is titled "Evaluate · DQN v3 (your training)" (or DQN v2), runs on the 24 × 25 study board, and W watches the board. When it finishes it shows the result and the saved report, and `learning_data/dqn_live_training.pt` (or the DQN v2 save) is unchanged, so Continue training carries on from the same game. |
 | 43 | Showcase Bots | Play → Q Learning → v2 or v3 always opens the start screen, even with no training: "Your training: none yet" offers only Start new training. Under it, "Showcase bot: Best of 3 study runs (seed 12000)" (v2) or "(seed 15000)" (v3) has Evaluate showcase, which asks for 20 or 200 games and opens "Evaluate · Q Learning v3 (showcase, seed 15000)". The title shrinks to stay clear of Back to Menu at 700 x 700. A finished 200-game run averages 44.1 (v2) or 127.7 (v3), as in `docs/results.md`, and `starter_data/showcase/` is unchanged. With `uv sync --group dqn`, DQN → v3 shows "Showcase bot: Best of 3 study runs (seed 9000)", and a finished 200-game run averages 140.8; DQN v2 shows no Showcase part. Without PyTorch, DQN opens Live Training's install message instead of the start screen. |
 
+## Remember Settings between launches
+
+- Change Board Size, Tile Size, and Game Speed. Close and reopen the app;
+  Settings shows all three choices, Play uses them, and Records opens with
+  the restored Board and Speed filters.
+- At 700 x 700 and 900 x 960, Settings and its Back button remain readable.
+- If `settings.json` cannot be written, changing a dropdown still applies
+  the choice and shows "Could not save settings. Choices apply until the app
+  closes." A later successful change clears that message.
+- With a missing or malformed `settings.json`, the app opens with defaults.
+  Test with a copy of your preferences, then restore the original file.
+
 ## Saved Evaluate results
 
 - Finish an app evaluation, then open Records → Evaluate. Its row shows the
