@@ -13,6 +13,24 @@ uv run python SnakeApp.py
 
 ## Checks
 
+Capture repeatable sample screens before inspecting the checklist:
+
+```bash
+uv run python tools/capture_app_views.py
+```
+
+The script writes PNGs and `manifest.json` into ignored `screenshots/`.
+It uses temporary records, reports, replays, and checkpoints. Every capture
+uses sample data; it is not a benchmark. It captures each main App View at
+700 × 700 and 900 × 960. Live Training grows to its supported size, recorded
+as `actual_size` in the manifest. Without PyTorch, its three network states
+are listed as skipped and the missing-dependency screen is still captured.
+Failures produce a nonzero exit status. Inspect the images for clipping and
+overlap; capture alone does not judge layout or replace interactive checks.
+
+Use `--output /path/to/folder` for another output folder, or `--only
+records_evaluate training_start_saved` to capture selected screens.
+
 | # | Check | What to expect |
 |---|---|---|
 | 1 | Window creation | After `uv sync`, `uv run python SnakeApp.py` starts without errors and one window opens, titled "Snake Game", 900 x 960 pixels. |
