@@ -76,40 +76,9 @@ records_evaluate training_start_saved` to capture selected screens.
 | 41 | Evaluate Q Learning | With a Q Learning v2 or v3 app training, the start screen after choosing the version shows "Your training: N games…" with Continue training, Evaluate, and Start new training. Evaluate asks "Evaluate your training on how many of the study's games?" with 20 games (quick), 200 games (like the study), and Cancel, which returns to the buttons. A run opens "Evaluate · Q Learning v2 (your training) · 24 × 25 board, like the study" whatever board Settings has, runs fast with "Evaluating fast" and a progress line (Game N / total, Avg, Best, Move limit), and W switches to watching the board and back with the same counts carrying on. When it finishes it shows the average, best, and move-limit games, and names the saved `experiments/experiment_….json` under them, wrapped to fit. Leaving with Back to Menu or Esc before the end saves no report, Records gains no games, and the app Q-table is unchanged. Every screen fits at 700 x 700 and after resizing larger. |
 | 42 | Evaluate DQN | With `uv sync --group dqn` and a DQN v2 or v3 Live Training save, the start screen shows Evaluate like Q Learning. A run is titled "Evaluate · DQN v3 (your training)" (or DQN v2), runs on the 24 × 25 study board, and W watches the board. When it finishes it shows the result and the saved report, and `learning_data/dqn_live_training.pt` (or the DQN v2 save) is unchanged, so Continue training carries on from the same game. |
 | 43 | Showcase Bots | Play → Q Learning → v2 or v3 always opens the start screen, even with no training: "Your training: none yet" offers only Start new training. Under it, "Showcase bot: Best of 3 study runs (seed 12000)" (v2) or "(seed 15000)" (v3) has Evaluate showcase, which asks for 20 or 200 games and opens "Evaluate · Q Learning v3 (showcase, seed 15000)". The title shrinks to stay clear of Back to Menu at 700 x 700. A finished 200-game run averages 44.1 (v2) or 127.7 (v3), as in `docs/results.md`, and `starter_data/showcase/` is unchanged. With `uv sync --group dqn`, DQN → v3 shows "Showcase bot: Best of 3 study runs (seed 9000)", and a finished 200-game run averages 140.8; DQN v2 shows no Showcase part. Without PyTorch, DQN opens Live Training's install message instead of the start screen. |
-
-## Remember Settings between launches
-
-- Change Board Size, Tile Size, and Game Speed. Close and reopen the app;
-  Settings shows all three choices, Play uses them, and Records opens with
-  the restored Board and Speed filters.
-- At 700 x 700 and 900 x 960, Settings and its Back button remain readable.
-- If `settings.json` cannot be written, changing a dropdown still applies
-  the choice and shows "Could not save settings. Choices apply until the app
-  closes." A later successful change clears that message.
-- With a missing or malformed `settings.json`, the app opens with defaults.
-  Test with a copy of your preferences, then restore the original file.
-
-## Saved Evaluate results
-
-- Finish an app evaluation, then open Records → Evaluate. Its row shows the
-  version, Your bot or Showcase Bot, game count, average, best, and UTC date.
-- Each row shows its board, seed range, and move limit. Board and Speed
-  filters remain on the watched-game tabs and do not filter evaluations.
-- With enough reports, Newer and Older reach every page at 700 × 700 and
-  900 × 960; resizing keeps a nearby result visible.
-- An empty folder shows "No completed evaluations yet." An unreadable or
-  unsupported report adds to the skipped count without hiding valid runs.
-- Opening the tab changes no reports, learned saves, records, or replays.
-
-## Backup storage and compact reports
-
-- Each learning Bot Mode's start screen shows its dated backup count and
-  total size. Starting new training adds a backup, and other modes' backups
-  stay separate. No file is deleted by opening this screen.
-- The start screen, including Continue, Evaluate, Start new, Showcase Bot,
-  and Back, fits at 700 × 700 and 900 × 960.
-- New DQN evaluation report identities omit `live_training_scores`; the
-  training checkpoint retains those scores and still resumes normally.
+| 44 | Remember Settings | Change Board Size, Tile Size, and Game Speed, then close and reopen the app: Settings shows all three choices, Play uses them, and Records opens with the restored Board and Speed filters. Settings and its Back button stay readable at 700 x 700 and 900 x 960. If `settings.json` cannot be written, changing a dropdown still applies the choice and shows "Could not save settings. Choices apply until the app closes."; a later successful change clears the message. With a missing or malformed `settings.json`, the app opens with the defaults (test with a copy of your preferences, then restore the original file). |
+| 45 | Saved Evaluate results | After an app evaluation finishes, Records → Evaluate shows its row: version, Your bot or Showcase Bot, game count, average, best, and UTC date, with its board, seed range, and move limit underneath. The Board and Speed filters stay on the watched-game tabs and do not filter evaluations. With enough reports, Newer and Older reach every page at 700 × 700 and 900 × 960, and resizing keeps a nearby result visible. An empty folder shows "No completed evaluations yet."; an unreadable or unsupported report adds to the skipped count without hiding valid runs. Opening the tab changes no reports, learned saves, records, or replays. |
+| 46 | Backup storage and compact reports | Each learning Bot Mode's start screen shows its dated backup count and total size; starting new training adds a backup, other modes' backups stay separate, and opening the screen deletes nothing. The start screen, with Continue, Evaluate, Start new, Showcase Bot, and Back, fits at 700 × 700 and 900 × 960. New DQN Evaluate reports leave out `live_training_scores`; the training checkpoint keeps those scores and still resumes normally. |
 
 ## Results
 
