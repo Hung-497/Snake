@@ -71,22 +71,9 @@ class GameView(arcade.gui.UIView):
         self.flash_started_at = None
 
         sizes = Theme.type_sizes(self.window.width)
-        back_layout = arcade.gui.UIAnchorLayout()
-        self.back_button = Theme.create_secondary_button(
-            "Back to Menu",
-            self.back_to_menu,
-            button_width=Theme.HUD_BUTTON_WIDTH,
-            button_height=Theme.HUD_BUTTON_HEIGHT,
-            font_size=sizes.body,
+        self.back_button = Theme.add_back_to_menu_button(
+            self.ui, self.back_to_menu, sizes.body
         )
-        back_layout.add(
-            self.back_button,
-            anchor_x="right",
-            anchor_y="top",
-            align_x=-Theme.SPACE_TIGHT,
-            align_y=-Theme.SPACE_TIGHT,
-        )
-        self.ui.add(back_layout)
 
         # Arcade warns that drawing text every frame is slow, so the lines that
         # change are kept as Text objects and only their contents are updated.
@@ -177,8 +164,7 @@ class GameView(arcade.gui.UIView):
     def on_resize(self, width, height):
         positions = view_label_positions(width, height, 60)
         sizes = Theme.type_sizes(width)
-        self.back_button.shared_style.font_size = sizes.body
-        self.back_button.trigger_full_render()
+        Theme.set_button_font_size(self.back_button, sizes.body)
         self.score_label.x, self.score_label.y = positions["score"]
         self.score_label.font_size = sizes.game_score
         self.bot_mode_label.x, self.bot_mode_label.y = positions["bot_mode"]
