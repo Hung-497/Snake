@@ -83,6 +83,16 @@ uv run python SnakeApp.py
   unsupported report adds to the skipped count without hiding valid runs.
 - Opening the tab changes no reports, learned saves, records, or replays.
 
+## Backup storage and compact reports
+
+- Each learning Bot Mode's start screen shows its dated backup count and
+  total size. Starting new training adds a backup, and other modes' backups
+  stay separate. No file is deleted by opening this screen.
+- The start screen, including Continue, Evaluate, Start new, Showcase Bot,
+  and Back, fits at 700 × 700 and 900 × 960.
+- New DQN evaluation report identities omit `live_training_scores`; the
+  training checkpoint retains those scores and still resumes normally.
+
 ## Results
 
 | System | Checked on | Result |

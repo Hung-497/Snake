@@ -7,6 +7,7 @@ import pytest
 
 from snake.sessions.TrainingSaves import (
     TRAINING_LIMITS, SavedTraining, copy_shared_q_table_once, saved_training, start_over,
+    backup_summary,
 )
 
 
@@ -74,6 +75,40 @@ def test_starting_over_twice_in_one_second_keeps_both_backups(tmp_path):
 def test_starting_over_without_a_save_does_nothing(tmp_path):
     assert start_over("dqn", save_path=tmp_path / "live.pt", now=lambda: NOW) is None
     assert list(tmp_path.iterdir()) == []
+
+
+def test_backup_summary_counts_only_this_modes_dated_backups(tmp_path):
+    path = tmp_path / "q_table_app_v2.json"
+    first = tmp_path / "q_table_app_v2_2026-10-16_201103.json"
+    second = tmp_path / "q_table_app_v2_2026-10-16_201103_2.json"
+    first.write_bytes(b"first")
+    second.write_bytes(b"second")
+    path.write_bytes(b"active")
+    (tmp_path / "q_table_app_v3_2026-10-16_201103.json").write_bytes(b"other mode")
+    (tmp_path / "q_table_app_v2_notes.json").write_bytes(b"not a backup")
+    before = {file: file.read_bytes() for file in tmp_path.iterdir()}
+
+    summary = backup_summary("q_learning", save_path=path)
+
+    assert (summary.count, summary.total_bytes, summary.unreadable_count) == (2, 11, 0)
+    assert before == {file: file.read_bytes() for file in before}
+
+
+def test_backup_summary_handles_missing_folder_and_unreadable_sizes(tmp_path, monkeypatch):
+    missing = backup_summary("dqn", save_path=tmp_path / "missing" / "live.pt")
+    assert (missing.count, missing.total_bytes) == (0, 0)
+    backup = tmp_path / "live_2026-10-16_201103.pt"
+    backup.write_bytes(b"old")
+    original_stat = type(backup).stat
+
+    def cannot_stat(path, *args, **kwargs):
+        if path == backup:
+            raise PermissionError("Cannot read size")
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(type(backup), "stat", cannot_stat)
+    summary = backup_summary("dqn", save_path=tmp_path / "live.pt")
+    assert summary.unreadable_count == 1
 
 
 def write_q_table(path, game_trained, training_history=None):

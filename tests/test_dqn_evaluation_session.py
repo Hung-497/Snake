@@ -97,6 +97,21 @@ def test_evaluating_never_changes_the_checkpoint(tmp_path, monkeypatch):
     assert checkpoint_path.read_bytes() == before
 
 
+def test_report_omits_score_history_but_checkpoint_keeps_it(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    checkpoint_path, _ = trained_checkpoint(tmp_path)
+    before = _saved_metadata(checkpoint_path)
+    assert before["live_training_scores"]
+
+    evaluate(checkpoint_path, tmp_path / "app")
+
+    identity = read_report(tmp_path / "app")["dqn"]
+    assert "live_training_scores" not in identity
+    for field in ("base_seed", "learning_settings", "feature_schema", "run_id"):
+        assert identity[field] == before[field]
+    assert _saved_metadata(checkpoint_path) == before
+
+
 def test_dqn_v2_evaluates_its_own_feature_set(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     checkpoint_path, _ = trained_checkpoint(tmp_path, player="dqn_v2")

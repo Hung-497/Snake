@@ -286,8 +286,12 @@ def valid_settings(settings):
 
 
 def model_identity(path, artifact):
+    # Reports identify the saved bot; its full training history stays in the
+    # checkpoint instead of being copied into every evaluation report.
+    metadata = dict(artifact["metadata"])
+    metadata.pop("live_training_scores", None)
     return {
-        **artifact["metadata"],
+        **metadata,
         "model_path": str(path),
         "model_sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
     }
