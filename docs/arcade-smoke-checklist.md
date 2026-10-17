@@ -71,6 +71,18 @@ uv run python SnakeApp.py
 - With a missing or malformed `settings.json`, the app opens with defaults.
   Test with a copy of your preferences, then restore the original file.
 
+## Saved Evaluate results
+
+- Finish an app evaluation, then open Records → Evaluate. Its row shows the
+  version, Your bot or Showcase Bot, game count, average, best, and UTC date.
+- Each row shows its board, seed range, and move limit. Board and Speed
+  filters remain on the watched-game tabs and do not filter evaluations.
+- With enough reports, Newer and Older reach every page at 700 × 700 and
+  900 × 960; resizing keeps a nearby result visible.
+- An empty folder shows "No completed evaluations yet." An unreadable or
+  unsupported report adds to the skipped count without hiding valid runs.
+- Opening the tab changes no reports, learned saves, records, or replays.
+
 ## Results
 
 | System | Checked on | Result |
