@@ -42,8 +42,9 @@ Game records, replays, and the bundled Starter Q-table.
 
 | ADR | Decision | Status | Recorded | Related |
 | --- | --- | --- | --- | --- |
-| [0005](0005-separate-runtime-data-from-starter-table.md) | Separate Runtime Data from the Starter Q-table | Accepted | 2026-09-25 | Amended by 0016, extended by 0017 |
+| [0005](0005-separate-runtime-data-from-starter-table.md) | Separate Runtime Data from the Starter Q-table | Accepted | 2026-09-25 | Amended by 0016, extended by 0017 and 0018 |
 | [0006](0006-upgrade-old-records-files-in-place.md) | Upgrade old records files in place, keeping a backup | Accepted | 2026-09-26 | |
+| [0018](0018-remember-settings-between-app-launches.md) | Remember Settings between app launches | Accepted | 2026-10-16 | Extends 0005, related to 0002 |
 
 ### Project Setup
 
@@ -57,7 +58,7 @@ Dependencies, tools, and continuous integration.
 
 | Status | ADRs |
 | --- | --- |
-| Accepted | 0001–0017, 0019 (0018 is in open PR #182) |
+| Accepted | 0001–0019 |
 | Proposed | none |
 | Rejected | none |
 | Deprecated | none |

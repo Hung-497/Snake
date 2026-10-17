@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import shutil
 
-from snake.sessions.LiveTraining import DQN_VERSIONS
+from snake.bots.BotModeCatalogue import BOT_MODES, SHOWCASE_DIRECTORY, ShowcaseBot  # noqa: F401
 
 
 # The game limits a new training can stop at; Off trains until you leave.
@@ -25,42 +25,17 @@ TRAINING_LIMITS = {
 # Q Learning in the app trains its own table, so the app never changes the
 # table the headless commands use (ADR 0016).
 APP_Q_TABLES = {
-    "q_learning": Path("learning_data") / "q_table_app_v2.json",
-    "q_learning_v3": Path("learning_data") / "q_table_app_v3.json",
+    mode.key: mode.save_path for mode in BOT_MODES if mode.family == "q_learning"
 }
 # The headless commands' tables, copied once to start the app's tables.
 SHARED_Q_TABLES = {
-    "q_learning": Path("learning_data") / "q_table_space_state_v2.json",
-    "q_learning_v3": Path("learning_data") / "q_table_space_state_v3.json",
+    mode.key: mode.shared_q_table for mode in BOT_MODES if mode.shared_q_table is not None
 }
 # Every learning Bot Mode the app trains, and where its training is saved.
-SAVE_PATHS = {
-    **{bot_mode: version.checkpoint_path for bot_mode, version in DQN_VERSIONS.items()},
-    **APP_Q_TABLES,
-}
-
-
-@dataclass(frozen=True)
-class ShowcaseBot:
-    """A finished study bot shipped read-only with the app (ADR 0017)."""
-
-    path: Path
-    seed: int
-
-    @property
-    def label(self):
-        return f"Best of 3 study runs (seed {self.seed})"
-
-
+SAVE_PATHS = {mode.key: mode.save_path for mode in BOT_MODES if mode.save_path is not None}
 # The best of each bot's three Study 1 training runs, by their 200-game
-# results in docs/results.md. The app only reads these files. The DQN v2
-# study models were not kept, so DQN v2 has no Showcase Bot yet.
-SHOWCASE_DIRECTORY = Path("starter_data") / "showcase"
-SHOWCASE_BOTS = {
-    "q_learning": ShowcaseBot(SHOWCASE_DIRECTORY / "q_table_v2_seed12000.json", 12000),
-    "q_learning_v3": ShowcaseBot(SHOWCASE_DIRECTORY / "q_table_v3_seed15000.json", 15000),
-    "dqn": ShowcaseBot(SHOWCASE_DIRECTORY / "dqn_v3_seed9000.pt", 9000),
-}
+# results in docs/results.md. The app only reads these files.
+SHOWCASE_BOTS = {mode.key: mode.showcase for mode in BOT_MODES if mode.showcase is not None}
 
 
 @dataclass(frozen=True)
