@@ -6,6 +6,7 @@ import random
 from snake.bots.BotFactory import (
     OPT_IN_EXPERIMENT_MODES, create_bot_mode, normal_experiment_modes, supports_board,
 )
+from snake.bots.BotModeCatalogue import BOT_MODES
 from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.sessions.ExperimentReport import (
@@ -15,14 +16,9 @@ from snake.sessions.ExperimentReport import (
 from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE
 
 
-BOT_NAMES = {
-    "rule": "Rule Based",
-    "q_learning": "Q Learning",
-    "q_learning_v3": "Q Learning v3",
-    "hamiltonian": "Hamiltonian",
-    "search_based": "Search-Based",
-    "dqn": "DQN",
-}
+# The app's names, except dqn: here it evaluates whichever DQN model it is
+# given, so its Feature Set version is not known from the name.
+BOT_NAMES = {**{mode.key: mode.label for mode in BOT_MODES}, "dqn": "DQN"}
 
 
 def main(argv=None):

@@ -7,6 +7,8 @@ it while the app still starts on installs without the dqn group (ADR 0007).
 from dataclasses import dataclass
 from pathlib import Path
 
+from snake.bots.BotModeCatalogue import bot_modes_in_family
+
 
 @dataclass(frozen=True)
 class DQNVersion:
@@ -19,8 +21,7 @@ class DQNVersion:
 # Each DQN Bot Mode keeps its own DQN Training Checkpoint, apart from the
 # headless commands' runs and from the other version (ADR 0013).
 DQN_VERSIONS = {
-    "dqn": DQNVersion("v3", Path("learning_data") / "dqn_live_training.pt"),
-    "dqn_v2": DQNVersion("v2", Path("learning_data") / "dqn_v2_live_training.pt"),
+    mode.key: DQNVersion(mode.version, mode.save_path) for mode in bot_modes_in_family("dqn")
 }
 MISSING_PYTORCH_MESSAGE = (
     "Live Training needs PyTorch, which is not installed.\n"
