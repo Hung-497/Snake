@@ -52,22 +52,9 @@ class EvaluateView(arcade.gui.UIView):
                 self.message = f"{error}\nTrain it first, or start new training."
 
         sizes = Theme.type_sizes(self.window.width)
-        back_layout = arcade.gui.UIAnchorLayout()
-        self.back_button = Theme.create_secondary_button(
-            "Back to Menu",
-            self.back_to_menu,
-            button_width=Theme.HUD_BUTTON_WIDTH,
-            button_height=Theme.HUD_BUTTON_HEIGHT,
-            font_size=sizes.body,
+        self.back_button = Theme.add_back_to_menu_button(
+            self.ui, self.back_to_menu, sizes.body
         )
-        back_layout.add(
-            self.back_button,
-            anchor_x="right",
-            anchor_y="top",
-            align_x=-Theme.SPACE_TIGHT,
-            align_y=-Theme.SPACE_TIGHT,
-        )
-        self.ui.add(back_layout)
 
         # Text objects are reused because drawing new text every frame is slow.
         board = STUDY_GAMES.config
@@ -137,8 +124,7 @@ class EvaluateView(arcade.gui.UIView):
     def on_resize(self, width, height):
         positions = view_label_positions(width, height, 60)
         sizes = Theme.type_sizes(width)
-        self.back_button.shared_style.font_size = sizes.body
-        self.back_button.trigger_full_render()
+        Theme.set_button_font_size(self.back_button, sizes.body)
         left = positions["bot_mode"][0]
         top = height - EVALUATE_HUD_HEIGHT
         self.title_label.x, self.title_label.y = left, top + 70
