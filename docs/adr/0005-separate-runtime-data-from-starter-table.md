@@ -6,6 +6,7 @@
 - Discussed in: [#47](https://github.com/Hung-497/Snake/issues/47)
 - Amended by: [ADR 0016](0016-train-q-learning-in-play-on-its-own-app-q-table.md), which gives app play its own Q-table
 - Extended by: [ADR 0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md), which also ships Showcase Bots
+- Extended by: [ADR 0018](0018-remember-settings-between-app-launches.md), which keeps local Settings preferences
 
 The app, training command, and Bot Experiments write results into project folders. Keep those generated Q-tables, watched-game records, replays, and experiment results as local Runtime Data rather than tracked files. Bundle a separate Starter Q-table from the committed Q-table snapshot so a fresh clone has an explicit starting point without making that starter writable during normal use.
 

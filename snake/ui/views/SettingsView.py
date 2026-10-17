@@ -10,13 +10,15 @@ class SettingsView(arcade.gui.UIView):
 
     The choices themselves live in SessionSettings, which outlives this view, so
     leaving and reopening Settings shows the values that were picked earlier.
-    This view only displays the options and reports the user's choice.
+    Each choice is also saved for the next app launch by SettingsFile.
     """
 
-    def __init__(self, shell, settings):
+    def __init__(self, shell, settings, settings_file):
         super().__init__()
         self.shell = shell
         self.settings = settings
+        self.settings_file = settings_file
+        self.message_text = ""
         self.background_color = Theme.SURFACE
         self.current_layout_step = layout_step(self.window.width)
         self.build_ui()
@@ -59,6 +61,11 @@ class SettingsView(arcade.gui.UIView):
             font_size=sizes.caption,
             color=Theme.TEXT_MUTED,
         ))
+
+        self.message_label = Theme.create_label(
+            self.message_text, font_size=sizes.caption, color=Theme.WARNING,
+        )
+        settings_box.add(self.message_label)
 
         settings_box.add(Theme.create_spacer(Theme.SPACE_SECTION))
         settings_box.add(
@@ -105,6 +112,13 @@ class SettingsView(arcade.gui.UIView):
     def change_setting(self, select_option, value):
         select_option(value)
         self.shell.window.update_board_minimum(self.settings.build_game_config())
+        try:
+            self.settings_file.save(self.settings)
+            self.message_text = ""
+        except OSError:
+            # Keep the current choice usable even when the disk cannot save it.
+            self.message_text = "Could not save settings. Choices apply until the app closes."
+        self.message_label.text = self.message_text
 
     def on_resize(self, width, height):
         if layout_step(width) != self.current_layout_step:
