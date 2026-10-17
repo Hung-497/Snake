@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 # Imported before arcade so the Arcade PATH guard runs first (see ArcadePathGuard).
 import snake  # noqa: F401
 import arcade
@@ -141,7 +144,17 @@ def create_app():
     return shell
 
 
+def use_project_folder():
+    """Work in the Snake folder, so saves and Showcase Bots are found there.
+
+    Runtime Data and starter_data are relative paths, so starting the app
+    from another folder would otherwise create new, empty data folders there.
+    """
+    os.chdir(Path(__file__).resolve().parent)
+
+
 def main():
+    use_project_folder()
     shell = create_app()
     shell.start()
     arcade.run()
