@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from html import escape
 import statistics
 
+from snake.analysis.PairedComparison import compare_paired
 from snake.analysis.ScoreChart import score_chart_svg
 from snake.bots.BotModeCatalogue import BOT_MODES, FAMILY_LABELS
 
@@ -19,6 +20,9 @@ LABELS_BY_VERSION = {(mode.family, mode.version): mode.label for mode in BOT_MOD
 OVERVIEW_HEADINGS = (
     "Bot", "Bot file", "Run date (UTC)", "Games", "Mean", "Median", "Best", "Std dev",
     "Win rate", "Move-limit rate", "Moves per point",
+)
+COMPARISON_HEADINGS = (
+    "Better bot", "Compared with", "Games", "Average difference", "95% range", "Verdict",
 )
 PROVENANCE_HEADINGS = (
     "Bot", "Bot file", "Feature Set", "Games trained", "Trained by", "Training seeds", "Code",
@@ -53,6 +57,7 @@ class RunSummary:
 class ConditionsGroup:
     title: str
     rows: tuple
+    comparisons: tuple
     provenance: tuple
 
 
@@ -75,7 +80,7 @@ def build_bot_report(runs, skipped_files):
         newest = newest_runs(runs_by_conditions[conditions])
         run_count += len(newest)
         groups.append(ConditionsGroup(
-            conditions_title(conditions), summary_rows(newest),
+            conditions_title(conditions), summary_rows(newest), comparison_rows(newest),
             tuple(provenance_cells(run) for run in newest),
         ))
     return BotReport(run_count, skipped_files, tuple(groups))
@@ -148,6 +153,50 @@ def summary_rows(runs):
                 NOT_APPLICABLE, pooled,
             ))
     return tuple(rows)
+
+
+def scores_per_seed(runs):
+    """A bot's score on each seed, averaged over its bot files.
+
+    Every run in a group played the same seeds in the same order.
+    """
+    return [
+        statistics.mean(run.games[number].score for run in runs)
+        for number in range(len(runs[0].games))
+    ]
+
+
+def comparison_rows(runs):
+    """Compare every pair of bots in a group, the higher average first."""
+    runs_by_label = {}
+    for run in runs:
+        runs_by_label.setdefault(bot_label(run), []).append(run)
+    scores = {label: scores_per_seed(label_runs) for label, label_runs in runs_by_label.items()}
+    # Highest average first; equal averages keep alphabetical order.
+    labels = sorted(scores, key=lambda label: (-statistics.mean(scores[label]), label))
+    rows = []
+    for position, first in enumerate(labels):
+        for second in labels[position + 1:]:
+            comparison = compare_paired(scores[first], scores[second])
+            rows.append(comparison_cells(first, second, comparison))
+    return tuple(rows)
+
+
+def comparison_cells(first, second, comparison):
+    if comparison.low is None:
+        range_text = NOT_APPLICABLE
+    else:
+        range_text = f"{comparison.low:.1f} to {comparison.high:.1f}"
+    verdict = {
+        "first is better": f"{first} scores more",
+        "second is better": f"{second} scores more",
+        "no reliable difference": "No reliable difference",
+        "too few games": "Too few games",
+    }[comparison.verdict]
+    return (
+        first, second, str(comparison.game_count), f"{comparison.mean_difference:.1f}",
+        range_text, verdict,
+    )
 
 
 def summarize_games(label, bot_file, created_at, games):
@@ -242,6 +291,13 @@ READING_NOTES = (
     "collision. Moves per point is how many moves the bot needed for each point "
     "of score; a high value with a high Move-limit rate suggests circling "
     "instead of chasing food.",
+    "Game by game compares two bots on the same seeds, so the luck of where the "
+    "food appears cancels out. Each seed gives one difference in score, and the "
+    "Average difference is their mean. The 95% range shows how far that average "
+    "could move if the bots were tested on other seeds: when the whole range is "
+    "above zero, the first bot reliably scores more; when it includes zero, the "
+    "games cannot show a difference. A bot with several bot files uses its "
+    "average score on each seed.",
     "In each chart the line runs from the lowest to the best score, the box holds "
     "the middle half of the games, the line inside the box is the median, and the "
     "dot is the mean.",
@@ -249,6 +305,9 @@ READING_NOTES = (
     "hash. When the same bot file was evaluated more than once, only its newest "
     "run is shown. A combined row pools the games of every bot file of that bot.",
 )
+
+
+ONE_BOT_SENTENCE = "Only one bot was evaluated under these conditions, so there is nothing to compare."
 
 
 def markdown_table(headings, rows):
@@ -279,6 +338,11 @@ def write_markdown(report):
         lines += ["", f"## {group.title}", ""]
         lines += markdown_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
         lines += ["", f"![{chart_title(group)}]({CHART_FOLDER}/{chart_name})"]
+        lines += ["", "### Game by game", ""]
+        if group.comparisons:
+            lines += markdown_table(COMPARISON_HEADINGS, group.comparisons)
+        else:
+            lines.append(ONE_BOT_SENTENCE)
         lines += ["", "### Where each bot came from", ""]
         lines += markdown_table(PROVENANCE_HEADINGS, group.provenance)
     return "\n".join(lines) + "\n"
@@ -335,6 +399,11 @@ def write_html(report):
         parts.append(f"<h2>{escape(group.title)}</h2>")
         parts += html_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
         parts.append(f'<div class="chart">{chart}</div>')
+        parts.append("<h3>Game by game</h3>")
+        if group.comparisons:
+            parts += html_table(COMPARISON_HEADINGS, group.comparisons)
+        else:
+            parts.append(f"<p>{escape(ONE_BOT_SENTENCE)}</p>")
         parts.append("<h3>Where each bot came from</h3>")
         parts += html_table(PROVENANCE_HEADINGS, group.provenance)
     parts += ["</body>", "</html>"]

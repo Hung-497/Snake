@@ -60,10 +60,24 @@ def read_markdown(tmp_path):
     return (tmp_path / "reports" / "bot_report.md").read_text(encoding="utf-8")
 
 
-def table_rows(markdown, first_cell):
-    """The cells of every Markdown table row whose first cell is first_cell."""
+OVERVIEW = "overview"
+COMPARISONS = "### Game by game"
+PROVENANCE = "### Where each bot came from"
+
+
+def table_rows(markdown, first_cell, table=OVERVIEW):
+    """The cells of each row whose first cell is first_cell, in one kind of table.
+
+    The overview table comes straight after each group's heading; the other
+    tables follow their own headings, up to the next heading.
+    """
+    sections = []
+    for section in markdown.split("\n#"):
+        heading = "#" + section.splitlines()[0]
+        if table == OVERVIEW and heading.startswith("## ") or heading == table:
+            sections.append(section)
     rows = []
-    for line in markdown.splitlines():
+    for line in "\n".join(sections).splitlines():
         cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
         if line.startswith("|") and cells[0] == first_cell:
             rows.append(cells)
@@ -232,7 +246,7 @@ def test_each_bot_file_is_its_own_row_with_a_combined_row(tmp_path):
     assert result.returncode == 0, result.stderr
     markdown = read_markdown(tmp_path)
     runs = table_rows(markdown, "Q Learning v3")
-    assert sorted(row[1] for row in runs[:2]) == ["aaaaaaaa", "bbbbbbbb"]
+    assert sorted(row[1] for row in runs) == ["aaaaaaaa", "bbbbbbbb"]
     combined = table_rows(markdown, "Q Learning v3 combined (2 bot files)")
     assert len(combined) == 1
     # The combined row pools both files' games: mean of 10, 20, 30, 40.
@@ -253,7 +267,7 @@ def test_a_bot_file_evaluated_twice_shows_only_its_newest_run(tmp_path):
     assert result.returncode == 0, result.stderr
     markdown = read_markdown(tmp_path)
     rows = table_rows(markdown, "Q Learning v3")
-    assert len(rows) == 2  # one overview row and one provenance row
+    assert len(rows) == 1
     assert rows[0][2] == "2026-10-05 00:00"
     assert "2026-10-01" not in markdown
     assert not table_rows(markdown, "Q Learning v3 combined (2 bot files)")
@@ -268,8 +282,7 @@ def test_non_learning_bots_evaluated_twice_show_only_the_newest_run(tmp_path):
 
     assert result.returncode == 0, result.stderr
     rows = table_rows(read_markdown(tmp_path), "Rule Based")
-    assert [row[2] for row in rows[:1]] == ["2026-10-05 00:00"]
-    assert len(rows) == 2
+    assert [row[2] for row in rows] == ["2026-10-05 00:00"]
 
 
 def test_provenance_shows_how_each_bot_file_was_trained(tmp_path):
@@ -287,11 +300,11 @@ def test_provenance_shows_how_each_bot_file_was_trained(tmp_path):
     markdown = read_markdown(tmp_path)
     assert "## " in markdown and "### Where each bot came from" in markdown
     # Bot, bot file, Feature Set, games trained, trained by, training seeds, code
-    assert table_rows(markdown, "Q Learning v3")[1] == [
+    assert table_rows(markdown, "Q Learning v3", PROVENANCE)[0] == [
         "Q Learning v3", "dddddddd", "v3", "2000", "Terminal command", "12000", "1234567",
     ]
     # Terminal experiments save every DQN as "dqn"; the Feature Set names it.
-    assert table_rows(markdown, "DQN v2")[1] == [
+    assert table_rows(markdown, "DQN v2", PROVENANCE)[0] == [
         "DQN v2", "eeeeeeee", "v2", "2000", "Terminal command", "9000", "1234567",
     ]
 
@@ -305,7 +318,7 @@ def test_app_trained_bots_are_marked_as_app_training(tmp_path):
     result = run_bot_report(tmp_path)
 
     assert result.returncode == 0, result.stderr
-    assert table_rows(read_markdown(tmp_path), "DQN v3")[1][4] == "App"
+    assert table_rows(read_markdown(tmp_path), "DQN v3", PROVENANCE)[0][4] == "App"
 
 
 def test_missing_provenance_is_shown_as_unknown(tmp_path):
@@ -319,10 +332,10 @@ def test_missing_provenance_is_shown_as_unknown(tmp_path):
     assert result.returncode == 0, result.stderr
     markdown = read_markdown(tmp_path)
     # Tables saved before Feature Sets were recorded are v2.
-    assert table_rows(markdown, "Q Learning v2")[1] == [
+    assert table_rows(markdown, "Q Learning v2", PROVENANCE)[0] == [
         "Q Learning v2", "22222222", "v2", "unknown", "unknown", "unknown", "unknown",
     ]
-    assert table_rows(markdown, "Rule Based")[1] == [
+    assert table_rows(markdown, "Rule Based", PROVENANCE)[0] == [
         "Rule Based", "—", "—", "—", "—", "—", "unknown",
     ]
 
@@ -372,3 +385,46 @@ def test_charts_from_an_earlier_report_are_removed(tmp_path):
     assert result.returncode == 0, result.stderr
     charts = (tmp_path / "reports" / "bot_report_charts").glob("*.svg")
     assert [chart.name for chart in charts] == ["scores_1.svg"]
+
+
+def test_bots_are_compared_game_by_game_with_a_95_percent_range(tmp_path):
+    write_report(tmp_path, "both.json", sample_report({
+        "rule": games_from([5, 7, 9]), "search_based": games_from([40, 50, 60]),
+    }))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    assert "### Game by game" in markdown
+    # Differences 35, 43, 51: average 43, range 43 ± 4.303 × 8 / √3.
+    assert table_rows(markdown, "Search-Based", COMPARISONS)[0] == [
+        "Search-Based", "Rule Based", "3", "43.0", "23.1 to 62.9", "Search-Based scores more",
+    ]
+
+
+def test_a_bot_with_several_files_is_compared_by_its_average_per_seed(tmp_path):
+    for name, sha, scores in (("a.json", "a" * 64, [10, 20]), ("b.json", "b" * 64, [30, 40])):
+        report = sample_report({"q_learning_v3": games_from(scores), "rule": games_from([25, 25])})
+        report["q_learning_v3"] = q_table_identity(sha)
+        write_report(tmp_path, name, report)
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    # Per seed, Q Learning v3 averages 20 and 30 over its files; Rule Based
+    # scores 25 both times, so the differences are -5 and 5.
+    comparison = table_rows(read_markdown(tmp_path), "Q Learning v3", COMPARISONS)[0]
+    assert comparison[:4] == ["Q Learning v3", "Rule Based", "2", "0.0"]
+    assert comparison[5] == "No reliable difference"
+
+
+def test_a_group_with_one_bot_has_nothing_to_compare(tmp_path):
+    write_report(tmp_path, "one.json", sample_report({"rule": games_from([1, 2])}))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    assert "Only one bot was evaluated under these conditions" in markdown
+    assert "| Better bot |" not in markdown
