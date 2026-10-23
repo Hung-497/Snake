@@ -8,6 +8,7 @@ always give the same files.
 from dataclasses import dataclass
 import statistics
 
+from snake.analysis.ExperimentRuns import ExperimentConditions
 from snake.analysis.PairedComparison import compare_paired
 from snake.analysis.ScoreChart import BIN_WIDTH, bin_label, score_bins, score_chart_svg
 from snake.bots.BotModeCatalogue import BOT_MODES, FAMILY_LABELS
@@ -81,6 +82,8 @@ class ConditionsGroup:
     # the committed Showcase Report leaves these out.
     newest_bot: str | None = None
     newest_at: str | None = None
+    # The Experiment Conditions every run in the group shares.
+    conditions: ExperimentConditions | None = None
 
     @property
     def comparisons(self):
@@ -117,6 +120,7 @@ def build_bot_report(runs, skipped_files, showcase=False, not_evaluated=()):
             tuple(provenance_cells(run) for run in newest),
             newest_bot=bot_label(latest) if is_latest_group else None,
             newest_at=latest.created_at.strftime("%Y-%m-%d %H:%M") if is_latest_group else None,
+            conditions=conditions,
         ))
     title = "Showcase Report" if showcase else "Bot Report"
     return BotReport(

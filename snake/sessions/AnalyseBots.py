@@ -11,7 +11,9 @@ import sys
 
 from snake.analysis.BotReport import build_bot_report
 from snake.analysis.ExperimentRuns import read_experiment_runs
-from snake.analysis.LocalReport import LOCAL_REPORT_FOLDER, LOCAL_REPORT_NAME, write_report_files
+from snake.analysis.LocalReport import (
+    LOCAL_REPORT_FOLDER, LOCAL_REPORT_NAME, write_local_files, write_report_files,
+)
 from snake.analysis.Showcase import select_showcase_runs
 
 
@@ -57,7 +59,10 @@ def main(argv=None):
         report = build_bot_report(runs, skipped)
 
     output = Path(options.output) if options.output else default_output
-    html_path = write_report_files(report, name, output)
+    if options.showcase:
+        html_path = write_report_files(report, name, output)
+    else:
+        html_path = write_local_files(runs, report, output)
     markdown_path = html_path.with_suffix(".md")
 
     print(

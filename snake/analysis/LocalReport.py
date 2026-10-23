@@ -2,8 +2,10 @@
 
 AnalyseBots, the Bot Experiment commands, and the app's Evaluate all write
 reports through here, so a new evaluation always shows up next to every bot
-that played the same games. Only the git-ignored local report is rebuilt
-automatically; the committed Showcase Report changes only on purpose.
+that played the same games. The local report also gets a run page for every
+saved run, in runs/. Only the git-ignored local report is rebuilt
+automatically; the committed Showcase Report changes only on purpose and has
+no run pages.
 """
 
 from pathlib import Path
@@ -11,10 +13,14 @@ from pathlib import Path
 from snake.analysis.BotReport import build_bot_report, chart_files, write_markdown
 from snake.analysis.ExperimentRuns import read_experiment_runs
 from snake.analysis.ReportPage import write_html
+from snake.analysis.RunPage import write_run_html
+from snake.analysis.RunReport import build_run_reports
 
 
 LOCAL_REPORT_NAME = "bot_report"
 LOCAL_REPORT_FOLDER = Path("reports")
+# Each saved report's run page, next to the full Bot Report.
+RUN_PAGE_FOLDER = "runs"
 
 
 def write_report_files(report, name, output):
@@ -53,4 +59,21 @@ def write_local_report(experiments, output=LOCAL_REPORT_FOLDER):
     runs, skipped = read_experiment_runs(experiments)
     if not runs:
         return None
-    return write_report_files(build_bot_report(runs, skipped), LOCAL_REPORT_NAME, output)
+    return write_local_files(runs, build_bot_report(runs, skipped), output)
+
+
+def write_local_files(runs, report, output):
+    """Write the local Bot Report and a run page for every run; return the report's HTML path."""
+    page = write_report_files(report, LOCAL_REPORT_NAME, output)
+    write_run_pages(runs, report, Path(output) / RUN_PAGE_FOLDER)
+    return page
+
+
+def write_run_pages(runs, report, folder):
+    """Write a page for every saved run, removing pages of runs no longer saved."""
+    folder.mkdir(exist_ok=True)
+    for old_page in folder.glob("*.html"):
+        old_page.unlink()
+    for run_report in build_run_reports(runs, report):
+        page = write_run_html(run_report)
+        (folder / f"{run_report.source}.html").write_text(page, encoding="utf-8")

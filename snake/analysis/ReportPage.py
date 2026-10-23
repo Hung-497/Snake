@@ -292,9 +292,9 @@ TEXT_COLUMNS = {"overview": (0, 1, 2), "comparisons": (0, 1, 5, 6), "provenance"
 class Palette:
     """One colour class per bot on the page, in light and dark versions."""
 
-    def __init__(self, report):
+    def __init__(self, groups):
         self.classes = {}
-        for group in report.groups:
+        for group in groups:
             for row in group.rows:
                 self.classes.setdefault(row.bot, f"c-{len(self.classes)}")
 
@@ -314,6 +314,17 @@ class Palette:
         lines.append("}")
         lines += [f':root[data-theme="dark"] {rule}' for rule in dark_rules]
         return "\n".join(lines) + "\n"
+
+
+HISTOGRAM_AXES = ("Across: the score a game ended with, in ranges of 10. Up: how many games "
+                  "ended there.")
+
+
+def histogram_note(shared=None):
+    """How to read the histograms; shared names the charts that share one scale."""
+    if shared is None:
+        return f"{HISTOGRAM_AXES} Hover over or tab to a bar to read its count."
+    return f"{HISTOGRAM_AXES} {shared} share one scale; hover over or tab to a bar to read its count."
 
 
 def games_text(count):
@@ -355,8 +366,9 @@ def ranking(group, palette):
     return parts
 
 
-def histograms(group, palette):
-    rows = ranking_rows(group)
+def histograms(group, palette, rows=None):
+    """One histogram per bot, every bot in the group unless rows names some."""
+    rows = ranking_rows(group) if rows is None else rows
     count = bin_count(group)
     bins = [score_bins(row.scores, count) for row in rows]
     y_ticks = axis_ticks(max(max(counts) for counts in bins))
@@ -573,9 +585,7 @@ def group_section(group, palette):
              f"<h2>{escape(headline(group))}</h2></div>"]
     parts += ranking(group, palette)
     parts += ['<div class="part"><h3>How did each bot&#39;s games end?</h3>',
-              "<p>Across: the score a game ended with, in ranges of 10. Up: how many games "
-              "ended there. All charts share one scale; hover over or tab to a bar to read "
-              "its count.</p>"]
+              f"<p>{histogram_note('All charts')}</p>"]
     parts += histograms(group, palette)
     parts.append("</div>")
     parts += ['<div class="part"><h3>Compare two bots</h3>',
@@ -601,7 +611,7 @@ def group_section(group, palette):
 
 
 def write_html(report):
-    palette = Palette(report)
+    palette = Palette(report.groups)
     parts = [
         "<!doctype html>",
         '<html lang="en">',
