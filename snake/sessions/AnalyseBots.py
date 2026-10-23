@@ -9,8 +9,9 @@ import argparse
 from pathlib import Path
 import sys
 
-from snake.analysis.BotReport import build_bot_report, chart_files, write_html, write_markdown
+from snake.analysis.BotReport import build_bot_report, chart_files, write_markdown
 from snake.analysis.ExperimentRuns import read_experiment_runs
+from snake.analysis.ReportPage import write_html
 from snake.analysis.Showcase import select_showcase_runs
 
 

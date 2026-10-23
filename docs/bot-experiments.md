@@ -126,14 +126,21 @@ It writes `reports/bot_report.html`, `reports/bot_report.md`, and the charts in
 Conditions (board, move limit, and exact seed list), and runs are only compared
 inside a group. Each group shows:
 
+- its result in one sentence and the bots ranked by average food per game;
+- a histogram per bot: across is the score a game ended with, in ranges of 10,
+  and up is how many games ended there (the Markdown also lists these counts);
+- a face-off between any two bots on the same seeds: average, median, best
+  game, games won head to head, moves per food, and stopped by limit side by
+  side, the better value in bold, then one sentence and a 95% range that says
+  whether the lead is reliable (the Markdown lists every pair);
 - an overview row per bot file, with mean, median, best, spread, win and
   move-limit rates, and moves per point, plus a combined row for a bot with
   several bot files;
-- a box plot of the scores per game;
-- a game-by-game comparison of every pair of bots on the same seeds, with a 95%
-  range that says whether the difference is reliable;
 - where each bot file came from: Feature Set, games trained, app or terminal
   training, training seeds, and code version.
+
+The HTML page has a light and a dark theme (it follows the system until you
+choose one) and uses system fonts, so it works offline.
 
 A bot file evaluated more than once shows only its newest run. Damaged,
 incomplete, and older-format reports are skipped and counted. Use `--output` to

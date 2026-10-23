@@ -28,11 +28,25 @@ PLAYER_COLORS = {
     "dqn_v2": "#A3E635",
 }
 
+# The same hues, deeper, so they stay readable on a light page.
+LIGHT_PLAYER_COLORS = {
+    "rule": "#9A6B00",
+    "q_learning": "#2F5FD0",
+    "hamiltonian": "#0B8A5E",
+    "search_based": "#BE2D69",
+    "q_learning_v3": "#0B7F9C",
+    "dqn": "#C9580A",
+    "dqn_v2": "#5E8F1F",
+}
+LIGHT_TEXT_MUTED = "#596171"
+
 # Reports name bots by label; terminal runs save any DQN as "dqn", so the
 # label (which includes the Feature Set) decides the colour, not the key.
 KEYS_BY_LABEL = {mode.label: mode.key for mode in BOT_MODES}
 
 
-def bot_color(label):
+def bot_color(label, light=False):
     """The colour of a bot by its report label; a bot the app does not know is muted."""
+    if light:
+        return LIGHT_PLAYER_COLORS.get(KEYS_BY_LABEL.get(label), LIGHT_TEXT_MUTED)
     return PLAYER_COLORS.get(KEYS_BY_LABEL.get(label), TEXT_MUTED)

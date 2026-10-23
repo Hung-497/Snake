@@ -62,6 +62,7 @@ def read_markdown(tmp_path):
 
 
 OVERVIEW = "overview"
+SCORES = "### Scores per game"
 COMPARISONS = "### Game by game"
 PROVENANCE = "### Where each bot came from"
 
@@ -371,11 +372,10 @@ def test_each_group_gets_a_score_chart_in_both_files(tmp_path):
         assert root.tag == "{http://www.w3.org/2000/svg}svg"
         text = chart.read_text(encoding="utf-8")
         assert all(label in text for label in labels)
-        # Each chart explains its own marks, wherever it is shown.
-        for key in ("Lowest to best score", "Middle half of games", "Median", "Mean"):
-            assert f">{key}</text>" in text
+        # Each chart is a histogram per bot that names both of its axes.
+        assert ">Games</text>" in text and ">Score (food eaten)</text>" in text
         assert f"](bot_report_charts/{chart.name})" in markdown
-    assert page.count("<svg") == 2
+    assert page.count('<div class="histograms"') == 2
 
 
 def test_charts_from_an_earlier_report_are_removed(tmp_path):
@@ -402,8 +402,10 @@ def test_bots_are_compared_game_by_game_with_a_95_percent_range(tmp_path):
     markdown = read_markdown(tmp_path)
     assert "### Game by game" in markdown
     # Differences 35, 43, 51: average 43, range 43 ± 4.303 × 8 / √3.
+    # The last column counts the games each bot won, tied, and lost.
     assert table_rows(markdown, "Search-Based", COMPARISONS)[0] == [
         "Search-Based", "Rule Based", "3", "43.0", "23.1 to 62.9", "Search-Based scores more",
+        "3 / 0 / 0",
     ]
 
 
@@ -421,6 +423,7 @@ def test_a_bot_with_several_files_is_compared_by_its_average_per_seed(tmp_path):
     comparison = table_rows(read_markdown(tmp_path), "Q Learning v3", COMPARISONS)[0]
     assert comparison[:4] == ["Q Learning v3", "Rule Based", "2", "0.0"]
     assert comparison[5] == "No reliable difference"
+    assert comparison[6] == "1 / 0 / 1"
 
 
 def test_a_group_with_one_bot_has_nothing_to_compare(tmp_path):
@@ -545,15 +548,57 @@ def test_html_lets_readers_pick_which_two_bots_to_compare(tmp_path):
 
     assert result.returncode == 0, result.stderr
     page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
-    # Two dropdowns, starting on the two best bots, with every bot to choose.
-    assert page.count('<select class="pick-') == 2
+    # Two dropdowns start on the two best bots, and that comparison is written
+    # into the page, so it reads the same without JavaScript.
+    assert '<select class="pick-a"' in page and '<select class="pick-b"' in page
     assert '<option value="Hamiltonian" selected>' in page
     assert '<option value="Search-Based" selected>' in page
-    assert '<option value="">Any bot</option>' in page
-    # Every comparison row stays in the page and says which pair it is, so the
-    # full table still shows without JavaScript.
+    assert ("Hamiltonian eats 71.0 more food per game than Search-Based, "
+            "and wins 3 of the 3 games.") in page
+    # The face-off puts six numbers side by side; the better side is marked.
+    assert page.count('<div class="stat">') == 6
+    games_won = page.split("<b>Games won</b>")[0].rsplit('<div class="stat">', 1)[1]
+    assert 'better" data-color="firstColor"><span class="num">3</span>' in games_won
+    stopped = page.split("<b>Stopped by limit</b>")[0].rsplit('<div class="stat">', 1)[1]
+    assert "better" not in stopped
+    # Every pair, in both orders, is ready for the dropdowns.
+    data = page.split('<script type="application/json" class="matchups">')[1].split("</script>")[0]
+    assert len(json.loads(data)) == 6
+    # The full comparison table stays in the page for developers.
     assert page.count('<tr data-pair="') == 3
     assert '<tr data-pair="Hamiltonian|Rule Based">' in page
+
+
+def test_markdown_lists_how_many_games_landed_in_each_score_range(tmp_path):
+    write_report(tmp_path, "both.json", sample_report({
+        "rule": games_from([5, 7, 9]), "search_based": games_from([40, 50, 60]),
+    }))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    # Columns follow the ranking, best bot first; empty ranges are left out.
+    assert "| Score | Search-Based | Rule Based |" in markdown
+    assert table_rows(markdown, "0 to 9", SCORES) == [["0 to 9", "0", "3"]]
+    assert table_rows(markdown, "50 to 59", SCORES) == [["50 to 59", "1", "0"]]
+    assert not table_rows(markdown, "20 to 29", SCORES)
+
+
+def test_html_page_has_light_and_dark_mode_motion_and_hover_bars(tmp_path):
+    write_report(tmp_path, "both.json", sample_report({
+        "rule": games_from([5, 7, 9]), "search_based": games_from([40, 50, 60]),
+    }))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    assert "prefers-color-scheme: dark" in page and 'class="theme-toggle"' in page
+    assert "prefers-reduced-motion: reduce" in page
+    # Each histogram bar can be hovered or focused and says what it counts.
+    assert 'aria-label="Rule Based: 3 games scored 0 to 9"' in page
+    assert "fonts.googleapis.com" not in page
 
 
 def test_a_showcase_table_with_windows_line_endings_is_the_same_bot(tmp_path):

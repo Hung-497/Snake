@@ -5,247 +5,531 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Showcase Report</title>
 <style>
-:root { color-scheme: dark; --surface: #0A1628; --raised: #12243D;
-  --border: #1E3A5F; --grid: #0F2036; --text: #EAF2FF; --muted: #8FA3BF;
-  --head: #D6F29B; --body: #2EAA82; --food: #FF7575; }
+:root { color-scheme: light; --ground: #F6F7F9; --surface: #FFFFFF; --ink: #14171C; --muted: #596171; --line: #E1E4E9; --soft: #EEF0F3; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; --ground: #0D0F12; --surface: #161A1F; --ink: #ECEEF2; --muted: #A3AAB6; --line: #262B33; --soft: #1E2329; }
+}
+:root[data-theme="dark"] { color-scheme: dark; --ground: #0D0F12; --surface: #161A1F; --ink: #ECEEF2; --muted: #A3AAB6; --line: #262B33; --soft: #1E2329; }
 * { box-sizing: border-box; }
-body { margin: 0; color: var(--text); background-color: var(--surface);
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 28px 28px;
-  font: 15px/1.6 Inter, ui-sans-serif, system-ui, sans-serif;
-  font-variant-numeric: tabular-nums; }
-main { max-width: 1080px; margin: 0 auto; padding: 48px 20px 64px; }
-h1 { font-size: clamp(34px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.02em;
-  margin: 0 0 14px; font-weight: 700; }
-h2 { font-size: 22px; line-height: 1.3; margin: 0 0 18px; font-weight: 650;
-  letter-spacing: -0.01em; }
-h3 { font-size: 15px; font-weight: 600; margin: 28px 0 10px; color: var(--muted); }
-.lede { max-width: 68ch; color: var(--muted); font-size: 17px; margin: 0 0 18px; }
-p { max-width: 72ch; }
-details.notes { max-width: 72ch; border: 1px solid var(--border); border-radius: 10px;
-  background: var(--raised); padding: 4px 18px; margin-bottom: 8px; }
-details.notes summary { cursor: pointer; padding: 10px 0; font-weight: 600; }
-details.notes p { color: var(--muted); margin: 0 0 14px; }
-summary:focus-visible { outline: 2px solid var(--head); outline-offset: 4px;
-  border-radius: 4px; }
-section.group { margin-top: 56px; }
-ol.ranking { list-style: none; display: flex; flex-wrap: wrap; align-items: center;
-  gap: 10px 0; padding: 0; margin: 0 0 22px; }
-ol.ranking li { position: relative; min-width: 118px; padding: 10px 14px 9px;
-  margin-right: 12px; border-radius: 8px; background: var(--raised);
-  border: 1px solid var(--border); border-top: 3px solid var(--bot); }
-ol.ranking li + li::before { content: ""; position: absolute; left: -13px; top: 50%;
-  width: 13px; height: 6px; margin-top: -3px; background: var(--body); }
-ol.ranking li.head { background: var(--head); border-color: var(--head);
-  color: #0A1628; padding-left: 24px; }
-ol.ranking li.head::after { content: ""; position: absolute; top: 12px; left: 9px;
-  width: 5px; height: 5px; border-radius: 50%; background: #0A1628;
-  box-shadow: 0 9px 0 #0A1628; }
-ol.ranking .food { width: 12px; height: 12px; border-radius: 50%; background: var(--food);
-  margin-right: 14px; min-width: 0; padding: 0; border: 0; }
-ol.ranking .name { display: block; font-weight: 600; font-size: 14px; white-space: nowrap; }
-ol.ranking .score { display: block; font-size: 22px; font-weight: 700; line-height: 1.2; }
-ol.ranking li.head .score, ol.ranking li.head .name { color: #0A1628; }
-.panel { background: var(--raised); border: 1px solid var(--border); border-radius: 10px;
-  overflow-x: auto; }
-.chart { margin: 0 0 18px; overflow-x: auto; border-radius: 10px; }
-.chart svg { display: block; width: 100%; min-width: 620px; height: auto; }
-table { border-collapse: collapse; width: 100%; }
-th, td { padding: 9px 14px; text-align: right; white-space: nowrap;
-  border-bottom: 1px solid var(--border); }
-tbody tr:last-child td { border-bottom: 0; }
-th { color: var(--muted); font-weight: 500; font-size: 13px; }
-th.text, td.text { text-align: left; }
-td.bot { text-align: left; font-weight: 500; }
-td.text:not(.bot) { color: var(--muted); }
+body { margin: 0; background: var(--ground); color: var(--ink);
+  font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums; transition: background-color .25s ease, color .25s ease; }
+main { max-width: 1120px; margin: 0 auto; padding: 28px 24px 96px; }
+h1, h2, h3 { letter-spacing: -0.02em; line-height: 1.1; }
+h1 { font-size: 18px; margin: 0; letter-spacing: 0; }
+h2 { font-size: clamp(32px, 5vw, 54px); margin: 6px 0 14px; max-width: 22ch; }
+h3 { font-size: 26px; margin: 0 0 6px; }
+h4 { font-size: 15px; margin: 22px 0 10px; color: var(--muted); }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+  gap: 16px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.theme-toggle { font: inherit; font-size: 14px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 999px; padding: 10px 18px; min-height: 44px;
+  cursor: pointer; }
+.lede { margin-top: 28px; font-size: 18px; color: var(--muted); max-width: 64ch; }
+section.group { margin-top: 72px; display: flex; flex-direction: column; gap: 56px; }
+.part { display: flex; flex-direction: column; gap: 16px; }
+.part > p { color: var(--muted); max-width: 70ch; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 24px 28px; }
+.conditions { font-size: 14px; color: var(--muted); }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
-  margin-right: 9px; background: var(--bot); vertical-align: 0; }
-td.unsure { color: var(--muted); font-style: italic; }
-.empty { color: var(--muted); }
-.picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
-  margin: 0 0 12px; color: var(--muted); }
-.picker select { font: inherit; color: var(--text); background: var(--raised);
-  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }
-.picker select:focus-visible { outline: 2px solid var(--head); outline-offset: 2px; }
-tr[hidden] { display: none; }
-ul.missing { padding-left: 20px; color: var(--muted); }
-@media (max-width: 600px) { main { padding: 32px 16px 48px; }
-  ol.ranking li { min-width: 0; margin-right: 8px; }
-  ol.ranking li + li::before { display: none; } }
+  background: var(--bot); flex: none; }
+.ranking { display: flex; flex-direction: column; gap: 14px; }
+.rank { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
+.rank .name { flex: 0 0 160px; display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.rank .track { flex: 1 1 320px; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rank .lane { flex: 1; height: 26px; background: var(--soft); border-radius: 6px; overflow: hidden; }
+.rank .fill { height: 100%; background: var(--bot); border-radius: 6px; transform-origin: left center;
+  animation: grow .9s cubic-bezier(.2,.8,.2,1) both; }
+.rank .value { width: 60px; text-align: right; font-weight: 600; font-size: 18px;
+  animation: rise .5s ease-out both; }
+.rank .kind { flex: 0 0 112px; text-align: center; font-size: 13px; color: var(--muted);
+  padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); }
+@keyframes grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.histograms { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.histogram { background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 16px 18px 12px; display: flex; flex-direction: column; gap: 6px; }
+.histogram .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.histogram .head span:first-child { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.axis-name { font-size: 12px; color: var(--muted); }
+.plot-row { display: flex; gap: 8px; }
+.y-axis { position: relative; flex: 0 0 28px; height: 150px; font-size: 12px; color: var(--muted); }
+.y-axis span { position: absolute; right: 0; transform: translateY(50%); }
+.histogram.pointing .y-axis span { opacity: .35; }
+.y-axis .guide-tag { right: -6px; padding: 1px 7px; border-radius: 6px; background: var(--bot);
+  color: var(--surface); font-weight: 700; white-space: nowrap; opacity: 1 !important; z-index: 1; }
+.plot { flex: 1; position: relative; height: 150px; border-left: 1px solid var(--line);
+  border-bottom: 1px solid var(--muted); }
+.plot .grid { position: absolute; left: 0; right: 0; height: 1px; background: var(--soft); }
+.plot .bar { position: absolute; bottom: 0; background: var(--bot); border-radius: 3px 3px 0 0;
+  min-height: 2px; outline-offset: 2px; transition: opacity .15s ease; }
+.histogram.pointing .bar { opacity: .45; }
+.histogram.pointing .bar.on { opacity: 1; }
+.plot .guide { position: absolute; left: 0; border-top: 2px dashed var(--bot); pointer-events: none; }
+.x-axis { position: relative; height: 16px; margin-left: 36px; font-size: 12px; color: var(--muted); }
+.x-axis span { position: absolute; top: 0; transform: translateX(-50%); }
+.histogram .x-name { text-align: center; }
+.compare, .verdict { display: flex; flex-direction: column; gap: 24px; }
+.picker, .stat { display: grid; grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr);
+  align-items: center; gap: 12px; }
+.picker label { display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  font-size: 14px; color: var(--muted); }
+.picker label:first-child { align-items: flex-end; text-align: right; }
+.select { position: relative; display: inline-block; max-width: 100%; }
+.select select { appearance: none; -webkit-appearance: none; font: inherit; font-size: 16px;
+  color: var(--ink); background: var(--ground); border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 44px 10px 14px; min-height: 46px; min-width: 220px; cursor: pointer; }
+.select svg { position: absolute; right: 14px; top: 15px; pointer-events: none; }
+.picker .against { align-self: end; padding-bottom: 12px; text-align: center; font-weight: 600;
+  color: var(--muted); }
+.picker select { color: var(--bot); font-weight: 700; }
+.faceoff { display: flex; flex-direction: column; }
+.stat { padding: 8px 0; border-top: 1px solid var(--soft); }
+.stat .left, .stat .right { display: flex; align-items: center; gap: 10px; }
+.stat .left { justify-content: flex-end; }
+.stat .num { min-width: 64px; font-size: 17px; }
+.stat .left .num { text-align: right; }
+.stat .lane { flex: 1; max-width: 300px; height: 18px; display: flex; background: var(--soft);
+  border-radius: 5px; }
+.stat .left .lane { justify-content: flex-end; }
+.stat .lane span { background: var(--bot); border-radius: 5px; transition: width .3s ease, opacity .2s ease; }
+.stat .better .num { font-weight: 800; }
+.stat .weaker .lane span { opacity: .4; }
+.stat .label { display: flex; flex-direction: column; text-align: center; line-height: 1.3; }
+.stat .label b { font-size: 15px; }
+.stat .label small { font-size: 12px; color: var(--muted); }
+.sentence { font-size: clamp(22px, 3vw, 30px); font-weight: 650; line-height: 1.25; max-width: 34ch;
+  letter-spacing: -0.01em; }
+.note { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; padding: 14px 16px;
+  border-radius: 12px; background: var(--soft); }
+.note b { font-weight: 650; }
+.note span { color: var(--muted); font-size: 15px; flex: 1 1 360px; }
+.terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.terms div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+.terms h4 { margin: 0 0 4px; color: var(--ink); font-size: 16px; }
+.terms p { color: var(--muted); font-size: 15px; }
+.table-box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 10px 14px; text-align: right; white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; font-size: 13px; }
+tbody tr { border-top: 1px solid var(--line); }
+th.text, td.text { text-align: left; }
+td.text:not(.bot) { color: var(--muted); }
+td.bot { font-weight: 600; }
+td.bot .swatch { margin-right: 10px; }
+ul.missing { color: var(--muted); }
+footer { margin-top: 72px; padding-top: 24px; border-top: 1px solid var(--line); color: var(--muted);
+  font-size: 14px; display: flex; flex-direction: column; gap: 6px; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .rank .fill, .rank .value { animation: none; }
+  body, .plot .bar, .stat .lane span { transition: none; }
+}
+@media (max-width: 600px) {
+  main { padding: 20px 16px 64px; }
+  .rank .name { flex-basis: 100%; }
+  .stat { grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr); gap: 8px; }
+  .stat .lane { display: none; }
+  /* The two dropdowns stack, full width, so bot names are never cut off. */
+  .picker { grid-template-columns: minmax(0, 1fr); }
+  .picker label, .picker label:first-child { align-items: stretch; text-align: left; }
+  .picker .against { padding: 0; }
+  .select { display: block; }
+  .select select { min-width: 0; width: 100%; }
+}
+.c-muted { --bot: #596171; }
+.c-0 { --bot: #C9580A; }
+.c-1 { --bot: #0B8A5E; }
+.c-2 { --bot: #2F5FD0; }
+.c-3 { --bot: #0B7F9C; }
+.c-4 { --bot: #9A6B00; }
+.c-5 { --bot: #BE2D69; }
+@media (prefers-color-scheme: dark) {
+:root:not([data-theme="light"]) .c-0 { --bot: #FB923C; }
+:root:not([data-theme="light"]) .c-1 { --bot: #34D399; }
+:root:not([data-theme="light"]) .c-2 { --bot: #60A5FA; }
+:root:not([data-theme="light"]) .c-3 { --bot: #22D3EE; }
+:root:not([data-theme="light"]) .c-4 { --bot: #F2B84B; }
+:root:not([data-theme="light"]) .c-5 { --bot: #F472B6; }
+}
+:root[data-theme="dark"] .c-0 { --bot: #FB923C; }
+:root[data-theme="dark"] .c-1 { --bot: #34D399; }
+:root[data-theme="dark"] .c-2 { --bot: #60A5FA; }
+:root[data-theme="dark"] .c-3 { --bot: #22D3EE; }
+:root[data-theme="dark"] .c-4 { --bot: #F2B84B; }
+:root[data-theme="dark"] .c-5 { --bot: #F472B6; }
 </style>
 </head>
 <body>
 <main>
-<h1>Showcase Report</h1>
+<header class="top"><div class="brand"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="1" y="20" width="8" height="8" rx="2" fill="#2EAA82"/><rect x="9" y="20" width="8" height="8" rx="2" fill="#2EAA82"/><rect x="17" y="20" width="8" height="8" rx="2" fill="#2EAA82"/><rect x="17" y="11" width="8" height="9" rx="3" fill="#8FC23A"/><circle cx="19.5" cy="14" r="1.2" fill="#14171C"/><circle cx="22.5" cy="14" r="1.2" fill="#14171C"/><circle cx="21" cy="4" r="3" fill="#E04848"/></svg><h1>Snake bots: Showcase Report</h1></div><button type="button" class="theme-toggle">Dark mode</button></header>
 <p class="lede">The Showcase Bots shipped with the app and the non-learning Baselines, each measured in Evaluation Mode on the same 200 study games. Built from 6 runs in 1 group of Experiment Conditions. Runs are only compared inside the same group.</p>
-<details class="notes"><summary>How to read this report</summary>
+<section class="group">
+<div>
+<p class="conditions">24 × 25 board, 5000-move limit, seeds 200000–200199 (200 games)</p>
+<h2>DQN v3 eats the most food: 140.8 per game on average.</h2></div>
+<div class="card ranking" role="list" aria-label="Average food per game, best first">
+<div class="top muted" style="font-size: 14px"><span>Average food eaten per game</span><span>200 games each</span></div>
+<div class="rank c-0" role="listitem" title="DQN v3: 140.8 food per game on average, best game 162"><span class="name"><span class="swatch"></span>DQN v3</span><span class="track"><span class="lane"><span class="fill" style="display: block; width: 92.0%; animation-delay: 0.00s"></span></span><span class="value" style="animation-delay: 0.00s">140.8</span></span><span class="kind">Learned</span></div>
+<div class="rank c-3" role="listitem" title="Q Learning v3: 127.7 food per game on average, best game 162"><span class="name"><span class="swatch"></span>Q Learning v3</span><span class="track"><span class="lane"><span class="fill" style="display: block; width: 83.5%; animation-delay: 0.09s"></span></span><span class="value" style="animation-delay: 0.09s">127.7</span></span><span class="kind">Learned</span></div>
+<div class="rank c-1" role="listitem" title="Hamiltonian: 122.5 food per game on average, best game 132"><span class="name"><span class="swatch"></span>Hamiltonian</span><span class="track"><span class="lane"><span class="fill" style="display: block; width: 80.1%; animation-delay: 0.18s"></span></span><span class="value" style="animation-delay: 0.18s">122.5</span></span><span class="kind">Hand-written</span></div>
+<div class="rank c-2" role="listitem" title="Q Learning v2: 44.1 food per game on average, best game 87"><span class="name"><span class="swatch"></span>Q Learning v2</span><span class="track"><span class="lane"><span class="fill" style="display: block; width: 28.8%; animation-delay: 0.27s"></span></span><span class="value" style="animation-delay: 0.27s">44.1</span></span><span class="kind">Learned</span></div>
+<div class="rank c-5" role="listitem" title="Search-Based: 38.0 food per game on average, best game 85"><span class="name"><span class="swatch"></span>Search-Based</span><span class="track"><span class="lane"><span class="fill" style="display: block; width: 24.8%; animation-delay: 0.36s"></span></span><span class="value" style="animation-delay: 0.36s">38.0</span></span><span class="kind">Hand-written</span></div>
+<div class="rank c-4" role="listitem" title="Rule Based: 13.9 food per game on average, best game 37"><span class="name"><span class="swatch"></span>Rule Based</span><span class="track"><span class="lane"><span class="fill" style="display: block; width: 9.1%; animation-delay: 0.45s"></span></span><span class="value" style="animation-delay: 0.45s">13.9</span></span><span class="kind">Hand-written</span></div>
+</div>
+<div class="part"><h3>How did each bot&#39;s games end?</h3>
+<p>Across: the score a game ended with, in ranges of 10. Up: how many games ended there. All charts share one scale; hover over or tab to a bar to read its count.</p>
+<div class="histograms">
+<div class="histogram c-0">
+<div class="head"><span><span class="swatch"></span>DQN v3</span><span class="muted" style="font-size: 13px">average 140.8</span></div>
+<span class="axis-name">Games</span><div class="plot-row"><div class="y-axis">
+<span style="bottom: 0.0%">0</span>
+<span style="bottom: 33.3%">50</span>
+<span style="bottom: 66.7%">100</span>
+<span style="bottom: 100.0%">150</span>
+<span class="guide-tag" hidden></span></div><div class="plot">
+<span class="grid" style="bottom: 33.3%"></span>
+<span class="grid" style="bottom: 66.7%"></span>
+<span class="grid" style="bottom: 100.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 1 game scored 50 to 59" title="DQN v3: 1 game scored 50 to 59" data-count="1 game" data-height="0.7" data-reach="25.0" style="left: calc(25.00% + 1px); width: calc(5.00% - 2px); height: 0.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 1 game scored 60 to 69" title="DQN v3: 1 game scored 60 to 69" data-count="1 game" data-height="0.7" data-reach="30.0" style="left: calc(30.00% + 1px); width: calc(5.00% - 2px); height: 0.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 2 games scored 70 to 79" title="DQN v3: 2 games scored 70 to 79" data-count="2 games" data-height="1.3" data-reach="35.0" style="left: calc(35.00% + 1px); width: calc(5.00% - 2px); height: 1.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 3 games scored 80 to 89" title="DQN v3: 3 games scored 80 to 89" data-count="3 games" data-height="2.0" data-reach="40.0" style="left: calc(40.00% + 1px); width: calc(5.00% - 2px); height: 2.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 3 games scored 90 to 99" title="DQN v3: 3 games scored 90 to 99" data-count="3 games" data-height="2.0" data-reach="45.0" style="left: calc(45.00% + 1px); width: calc(5.00% - 2px); height: 2.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 7 games scored 100 to 109" title="DQN v3: 7 games scored 100 to 109" data-count="7 games" data-height="4.7" data-reach="50.0" style="left: calc(50.00% + 1px); width: calc(5.00% - 2px); height: 4.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 6 games scored 110 to 119" title="DQN v3: 6 games scored 110 to 119" data-count="6 games" data-height="4.0" data-reach="55.0" style="left: calc(55.00% + 1px); width: calc(5.00% - 2px); height: 4.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 7 games scored 120 to 129" title="DQN v3: 7 games scored 120 to 129" data-count="7 games" data-height="4.7" data-reach="60.0" style="left: calc(60.00% + 1px); width: calc(5.00% - 2px); height: 4.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 18 games scored 130 to 139" title="DQN v3: 18 games scored 130 to 139" data-count="18 games" data-height="12.0" data-reach="65.0" style="left: calc(65.00% + 1px); width: calc(5.00% - 2px); height: 12.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 87 games scored 140 to 149" title="DQN v3: 87 games scored 140 to 149" data-count="87 games" data-height="58.0" data-reach="70.0" style="left: calc(70.00% + 1px); width: calc(5.00% - 2px); height: 58.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 62 games scored 150 to 159" title="DQN v3: 62 games scored 150 to 159" data-count="62 games" data-height="41.3" data-reach="75.0" style="left: calc(75.00% + 1px); width: calc(5.00% - 2px); height: 41.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="DQN v3: 3 games scored 160 to 169" title="DQN v3: 3 games scored 160 to 169" data-count="3 games" data-height="2.0" data-reach="80.0" style="left: calc(80.00% + 1px); width: calc(5.00% - 2px); height: 2.0%"></span>
+<span class="guide" hidden></span></div></div><div class="x-axis">
+<span style="left: 0.0%">0</span>
+<span style="left: 25.0%">50</span>
+<span style="left: 50.0%">100</span>
+<span style="left: 75.0%">150</span>
+<span style="left: 100.0%">200</span>
+</div><span class="axis-name x-name">Score (food eaten)</span></div>
+<div class="histogram c-3">
+<div class="head"><span><span class="swatch"></span>Q Learning v3</span><span class="muted" style="font-size: 13px">average 127.7</span></div>
+<span class="axis-name">Games</span><div class="plot-row"><div class="y-axis">
+<span style="bottom: 0.0%">0</span>
+<span style="bottom: 33.3%">50</span>
+<span style="bottom: 66.7%">100</span>
+<span style="bottom: 100.0%">150</span>
+<span class="guide-tag" hidden></span></div><div class="plot">
+<span class="grid" style="bottom: 33.3%"></span>
+<span class="grid" style="bottom: 66.7%"></span>
+<span class="grid" style="bottom: 100.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 1 game scored 40 to 49" title="Q Learning v3: 1 game scored 40 to 49" data-count="1 game" data-height="0.7" data-reach="20.0" style="left: calc(20.00% + 1px); width: calc(5.00% - 2px); height: 0.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 3 games scored 60 to 69" title="Q Learning v3: 3 games scored 60 to 69" data-count="3 games" data-height="2.0" data-reach="30.0" style="left: calc(30.00% + 1px); width: calc(5.00% - 2px); height: 2.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 3 games scored 70 to 79" title="Q Learning v3: 3 games scored 70 to 79" data-count="3 games" data-height="2.0" data-reach="35.0" style="left: calc(35.00% + 1px); width: calc(5.00% - 2px); height: 2.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 4 games scored 80 to 89" title="Q Learning v3: 4 games scored 80 to 89" data-count="4 games" data-height="2.7" data-reach="40.0" style="left: calc(40.00% + 1px); width: calc(5.00% - 2px); height: 2.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 14 games scored 90 to 99" title="Q Learning v3: 14 games scored 90 to 99" data-count="14 games" data-height="9.3" data-reach="45.0" style="left: calc(45.00% + 1px); width: calc(5.00% - 2px); height: 9.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 13 games scored 100 to 109" title="Q Learning v3: 13 games scored 100 to 109" data-count="13 games" data-height="8.7" data-reach="50.0" style="left: calc(50.00% + 1px); width: calc(5.00% - 2px); height: 8.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 21 games scored 110 to 119" title="Q Learning v3: 21 games scored 110 to 119" data-count="21 games" data-height="14.0" data-reach="55.0" style="left: calc(55.00% + 1px); width: calc(5.00% - 2px); height: 14.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 20 games scored 120 to 129" title="Q Learning v3: 20 games scored 120 to 129" data-count="20 games" data-height="13.3" data-reach="60.0" style="left: calc(60.00% + 1px); width: calc(5.00% - 2px); height: 13.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 52 games scored 130 to 139" title="Q Learning v3: 52 games scored 130 to 139" data-count="52 games" data-height="34.7" data-reach="65.0" style="left: calc(65.00% + 1px); width: calc(5.00% - 2px); height: 34.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 52 games scored 140 to 149" title="Q Learning v3: 52 games scored 140 to 149" data-count="52 games" data-height="34.7" data-reach="70.0" style="left: calc(70.00% + 1px); width: calc(5.00% - 2px); height: 34.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 16 games scored 150 to 159" title="Q Learning v3: 16 games scored 150 to 159" data-count="16 games" data-height="10.7" data-reach="75.0" style="left: calc(75.00% + 1px); width: calc(5.00% - 2px); height: 10.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v3: 1 game scored 160 to 169" title="Q Learning v3: 1 game scored 160 to 169" data-count="1 game" data-height="0.7" data-reach="80.0" style="left: calc(80.00% + 1px); width: calc(5.00% - 2px); height: 0.7%"></span>
+<span class="guide" hidden></span></div></div><div class="x-axis">
+<span style="left: 0.0%">0</span>
+<span style="left: 25.0%">50</span>
+<span style="left: 50.0%">100</span>
+<span style="left: 75.0%">150</span>
+<span style="left: 100.0%">200</span>
+</div><span class="axis-name x-name">Score (food eaten)</span></div>
+<div class="histogram c-1">
+<div class="head"><span><span class="swatch"></span>Hamiltonian</span><span class="muted" style="font-size: 13px">average 122.5</span></div>
+<span class="axis-name">Games</span><div class="plot-row"><div class="y-axis">
+<span style="bottom: 0.0%">0</span>
+<span style="bottom: 33.3%">50</span>
+<span style="bottom: 66.7%">100</span>
+<span style="bottom: 100.0%">150</span>
+<span class="guide-tag" hidden></span></div><div class="plot">
+<span class="grid" style="bottom: 33.3%"></span>
+<span class="grid" style="bottom: 66.7%"></span>
+<span class="grid" style="bottom: 100.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Hamiltonian: 49 games scored 110 to 119" title="Hamiltonian: 49 games scored 110 to 119" data-count="49 games" data-height="32.7" data-reach="55.0" style="left: calc(55.00% + 1px); width: calc(5.00% - 2px); height: 32.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Hamiltonian: 144 games scored 120 to 129" title="Hamiltonian: 144 games scored 120 to 129" data-count="144 games" data-height="96.0" data-reach="60.0" style="left: calc(60.00% + 1px); width: calc(5.00% - 2px); height: 96.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Hamiltonian: 7 games scored 130 to 139" title="Hamiltonian: 7 games scored 130 to 139" data-count="7 games" data-height="4.7" data-reach="65.0" style="left: calc(65.00% + 1px); width: calc(5.00% - 2px); height: 4.7%"></span>
+<span class="guide" hidden></span></div></div><div class="x-axis">
+<span style="left: 0.0%">0</span>
+<span style="left: 25.0%">50</span>
+<span style="left: 50.0%">100</span>
+<span style="left: 75.0%">150</span>
+<span style="left: 100.0%">200</span>
+</div><span class="axis-name x-name">Score (food eaten)</span></div>
+<div class="histogram c-2">
+<div class="head"><span><span class="swatch"></span>Q Learning v2</span><span class="muted" style="font-size: 13px">average 44.1</span></div>
+<span class="axis-name">Games</span><div class="plot-row"><div class="y-axis">
+<span style="bottom: 0.0%">0</span>
+<span style="bottom: 33.3%">50</span>
+<span style="bottom: 66.7%">100</span>
+<span style="bottom: 100.0%">150</span>
+<span class="guide-tag" hidden></span></div><div class="plot">
+<span class="grid" style="bottom: 33.3%"></span>
+<span class="grid" style="bottom: 66.7%"></span>
+<span class="grid" style="bottom: 100.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 6 games scored 10 to 19" title="Q Learning v2: 6 games scored 10 to 19" data-count="6 games" data-height="4.0" data-reach="5.0" style="left: calc(5.00% + 1px); width: calc(5.00% - 2px); height: 4.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 30 games scored 20 to 29" title="Q Learning v2: 30 games scored 20 to 29" data-count="30 games" data-height="20.0" data-reach="10.0" style="left: calc(10.00% + 1px); width: calc(5.00% - 2px); height: 20.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 34 games scored 30 to 39" title="Q Learning v2: 34 games scored 30 to 39" data-count="34 games" data-height="22.7" data-reach="15.0" style="left: calc(15.00% + 1px); width: calc(5.00% - 2px); height: 22.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 63 games scored 40 to 49" title="Q Learning v2: 63 games scored 40 to 49" data-count="63 games" data-height="42.0" data-reach="20.0" style="left: calc(20.00% + 1px); width: calc(5.00% - 2px); height: 42.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 41 games scored 50 to 59" title="Q Learning v2: 41 games scored 50 to 59" data-count="41 games" data-height="27.3" data-reach="25.0" style="left: calc(25.00% + 1px); width: calc(5.00% - 2px); height: 27.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 14 games scored 60 to 69" title="Q Learning v2: 14 games scored 60 to 69" data-count="14 games" data-height="9.3" data-reach="30.0" style="left: calc(30.00% + 1px); width: calc(5.00% - 2px); height: 9.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 10 games scored 70 to 79" title="Q Learning v2: 10 games scored 70 to 79" data-count="10 games" data-height="6.7" data-reach="35.0" style="left: calc(35.00% + 1px); width: calc(5.00% - 2px); height: 6.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Q Learning v2: 2 games scored 80 to 89" title="Q Learning v2: 2 games scored 80 to 89" data-count="2 games" data-height="1.3" data-reach="40.0" style="left: calc(40.00% + 1px); width: calc(5.00% - 2px); height: 1.3%"></span>
+<span class="guide" hidden></span></div></div><div class="x-axis">
+<span style="left: 0.0%">0</span>
+<span style="left: 25.0%">50</span>
+<span style="left: 50.0%">100</span>
+<span style="left: 75.0%">150</span>
+<span style="left: 100.0%">200</span>
+</div><span class="axis-name x-name">Score (food eaten)</span></div>
+<div class="histogram c-5">
+<div class="head"><span><span class="swatch"></span>Search-Based</span><span class="muted" style="font-size: 13px">average 38.0</span></div>
+<span class="axis-name">Games</span><div class="plot-row"><div class="y-axis">
+<span style="bottom: 0.0%">0</span>
+<span style="bottom: 33.3%">50</span>
+<span style="bottom: 66.7%">100</span>
+<span style="bottom: 100.0%">150</span>
+<span class="guide-tag" hidden></span></div><div class="plot">
+<span class="grid" style="bottom: 33.3%"></span>
+<span class="grid" style="bottom: 66.7%"></span>
+<span class="grid" style="bottom: 100.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 1 game scored 0 to 9" title="Search-Based: 1 game scored 0 to 9" data-count="1 game" data-height="0.7" data-reach="0.0" style="left: calc(0.00% + 1px); width: calc(5.00% - 2px); height: 0.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 17 games scored 10 to 19" title="Search-Based: 17 games scored 10 to 19" data-count="17 games" data-height="11.3" data-reach="5.0" style="left: calc(5.00% + 1px); width: calc(5.00% - 2px); height: 11.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 38 games scored 20 to 29" title="Search-Based: 38 games scored 20 to 29" data-count="38 games" data-height="25.3" data-reach="10.0" style="left: calc(10.00% + 1px); width: calc(5.00% - 2px); height: 25.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 65 games scored 30 to 39" title="Search-Based: 65 games scored 30 to 39" data-count="65 games" data-height="43.3" data-reach="15.0" style="left: calc(15.00% + 1px); width: calc(5.00% - 2px); height: 43.3%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 37 games scored 40 to 49" title="Search-Based: 37 games scored 40 to 49" data-count="37 games" data-height="24.7" data-reach="20.0" style="left: calc(20.00% + 1px); width: calc(5.00% - 2px); height: 24.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 25 games scored 50 to 59" title="Search-Based: 25 games scored 50 to 59" data-count="25 games" data-height="16.7" data-reach="25.0" style="left: calc(25.00% + 1px); width: calc(5.00% - 2px); height: 16.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 13 games scored 60 to 69" title="Search-Based: 13 games scored 60 to 69" data-count="13 games" data-height="8.7" data-reach="30.0" style="left: calc(30.00% + 1px); width: calc(5.00% - 2px); height: 8.7%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 3 games scored 70 to 79" title="Search-Based: 3 games scored 70 to 79" data-count="3 games" data-height="2.0" data-reach="35.0" style="left: calc(35.00% + 1px); width: calc(5.00% - 2px); height: 2.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Search-Based: 1 game scored 80 to 89" title="Search-Based: 1 game scored 80 to 89" data-count="1 game" data-height="0.7" data-reach="40.0" style="left: calc(40.00% + 1px); width: calc(5.00% - 2px); height: 0.7%"></span>
+<span class="guide" hidden></span></div></div><div class="x-axis">
+<span style="left: 0.0%">0</span>
+<span style="left: 25.0%">50</span>
+<span style="left: 50.0%">100</span>
+<span style="left: 75.0%">150</span>
+<span style="left: 100.0%">200</span>
+</div><span class="axis-name x-name">Score (food eaten)</span></div>
+<div class="histogram c-4">
+<div class="head"><span><span class="swatch"></span>Rule Based</span><span class="muted" style="font-size: 13px">average 13.9</span></div>
+<span class="axis-name">Games</span><div class="plot-row"><div class="y-axis">
+<span style="bottom: 0.0%">0</span>
+<span style="bottom: 33.3%">50</span>
+<span style="bottom: 66.7%">100</span>
+<span style="bottom: 100.0%">150</span>
+<span class="guide-tag" hidden></span></div><div class="plot">
+<span class="grid" style="bottom: 33.3%"></span>
+<span class="grid" style="bottom: 66.7%"></span>
+<span class="grid" style="bottom: 100.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Rule Based: 78 games scored 0 to 9" title="Rule Based: 78 games scored 0 to 9" data-count="78 games" data-height="52.0" data-reach="0.0" style="left: calc(0.00% + 1px); width: calc(5.00% - 2px); height: 52.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Rule Based: 63 games scored 10 to 19" title="Rule Based: 63 games scored 10 to 19" data-count="63 games" data-height="42.0" data-reach="5.0" style="left: calc(5.00% + 1px); width: calc(5.00% - 2px); height: 42.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Rule Based: 45 games scored 20 to 29" title="Rule Based: 45 games scored 20 to 29" data-count="45 games" data-height="30.0" data-reach="10.0" style="left: calc(10.00% + 1px); width: calc(5.00% - 2px); height: 30.0%"></span>
+<span class="bar" tabindex="0" role="img" aria-label="Rule Based: 14 games scored 30 to 39" title="Rule Based: 14 games scored 30 to 39" data-count="14 games" data-height="9.3" data-reach="15.0" style="left: calc(15.00% + 1px); width: calc(5.00% - 2px); height: 9.3%"></span>
+<span class="guide" hidden></span></div></div><div class="x-axis">
+<span style="left: 0.0%">0</span>
+<span style="left: 25.0%">50</span>
+<span style="left: 50.0%">100</span>
+<span style="left: 75.0%">150</span>
+<span style="left: 100.0%">200</span>
+</div><span class="axis-name x-name">Score (food eaten)</span></div>
+</div>
+</div>
+<div class="part"><h3>Compare two bots</h3>
+<p>Pick two bots. Each row puts one number side by side, from the same games; the better one is bold.</p>
+<div class="card compare">
+<script type="application/json" class="matchups">{"DQN v3|Q Learning v3": {"firstColor": "c-0", "secondColor": "c-3", "stats": [{"name": "Average food", "hint": "per game", "leftText": "140.8", "rightText": "127.7", "leftPct": 100.0, "rightPct": 90.7, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "146.5", "rightText": "134.5", "leftPct": 100.0, "rightPct": 91.8, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "162", "leftPct": 100.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "144", "rightText": "53", "leftPct": 72.0, "rightPct": 26.5, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.0", "rightText": "33.4", "leftPct": 80.9, "rightPct": 81.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "79.5%", "rightText": "51.5%", "leftPct": 79.5, "rightPct": 51.5, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 13.1 more food per game than Q Learning v3, and wins 144 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 9.1 to 17.1 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "DQN v3|Hamiltonian": {"firstColor": "c-0", "secondColor": "c-1", "stats": [{"name": "Average food", "hint": "per game", "leftText": "140.8", "rightText": "122.5", "leftPct": 100.0, "rightPct": 87.0, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "146.5", "rightText": "123.0", "leftPct": 100.0, "rightPct": 84.0, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "132", "leftPct": 100.0, "rightPct": 81.5, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "176", "rightText": "23", "leftPct": 88.0, "rightPct": 11.5, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.0", "rightText": "40.8", "leftPct": 80.9, "rightPct": 100.0, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "79.5%", "rightText": "100.0%", "leftPct": 79.5, "rightPct": 100.0, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 18.3 more food per game than Hamiltonian, and wins 176 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 15.6 to 20.9 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "DQN v3|Q Learning v2": {"firstColor": "c-0", "secondColor": "c-2", "stats": [{"name": "Average food", "hint": "per game", "leftText": "140.8", "rightText": "44.1", "leftPct": 100.0, "rightPct": 31.3, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "146.5", "rightText": "44.0", "leftPct": 100.0, "rightPct": 30.0, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "87", "leftPct": 100.0, "rightPct": 53.7, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "199", "rightText": "1", "leftPct": 99.5, "rightPct": 0.5, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.0", "rightText": "24.3", "leftPct": 80.9, "rightPct": 59.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "79.5%", "rightText": "0.0%", "leftPct": 79.5, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 96.7 more food per game than Q Learning v2, and wins 199 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 93.5 to 99.9 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "DQN v3|Search-Based": {"firstColor": "c-0", "secondColor": "c-5", "stats": [{"name": "Average food", "hint": "per game", "leftText": "140.8", "rightText": "38.0", "leftPct": 100.0, "rightPct": 27.0, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "146.5", "rightText": "36.0", "leftPct": 100.0, "rightPct": 24.6, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "85", "leftPct": 100.0, "rightPct": 52.5, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "200", "rightText": "0", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.0", "rightText": "18.3", "leftPct": 80.9, "rightPct": 44.9, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "79.5%", "rightText": "0.0%", "leftPct": 79.5, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 102.8 more food per game than Search-Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 99.5 to 106.1 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "DQN v3|Rule Based": {"firstColor": "c-0", "secondColor": "c-4", "stats": [{"name": "Average food", "hint": "per game", "leftText": "140.8", "rightText": "13.9", "leftPct": 100.0, "rightPct": 9.8, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "146.5", "rightText": "13.0", "leftPct": 100.0, "rightPct": 8.9, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "37", "leftPct": 100.0, "rightPct": 22.8, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "200", "rightText": "0", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.0", "rightText": "16.5", "leftPct": 80.9, "rightPct": 40.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "79.5%", "rightText": "0.0%", "leftPct": 79.5, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 126.9 more food per game than Rule Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 124.1 to 129.8 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v3|DQN v3": {"firstColor": "c-3", "secondColor": "c-0", "stats": [{"name": "Average food", "hint": "per game", "leftText": "127.7", "rightText": "140.8", "leftPct": 90.7, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "134.5", "rightText": "146.5", "leftPct": 91.8, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "162", "leftPct": 100.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "53", "rightText": "144", "leftPct": 26.5, "rightPct": 72.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.4", "rightText": "33.0", "leftPct": 81.9, "rightPct": 80.9, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "51.5%", "rightText": "79.5%", "leftPct": 51.5, "rightPct": 79.5, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 13.1 more food per game than Q Learning v3, and wins 144 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 9.1 to 17.1 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v3|Hamiltonian": {"firstColor": "c-3", "secondColor": "c-1", "stats": [{"name": "Average food", "hint": "per game", "leftText": "127.7", "rightText": "122.5", "leftPct": 90.7, "rightPct": 87.0, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "134.5", "rightText": "123.0", "leftPct": 91.8, "rightPct": 84.0, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "132", "leftPct": 100.0, "rightPct": 81.5, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "135", "rightText": "62", "leftPct": 67.5, "rightPct": 31.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.4", "rightText": "40.8", "leftPct": 81.9, "rightPct": 100.0, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "51.5%", "rightText": "100.0%", "leftPct": 51.5, "rightPct": 100.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 5.2 more food per game than Hamiltonian, and wins 135 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 2.3 to 8.1 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v3|Q Learning v2": {"firstColor": "c-3", "secondColor": "c-2", "stats": [{"name": "Average food", "hint": "per game", "leftText": "127.7", "rightText": "44.1", "leftPct": 90.7, "rightPct": 31.3, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "134.5", "rightText": "44.0", "leftPct": 91.8, "rightPct": 30.0, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "87", "leftPct": 100.0, "rightPct": 53.7, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "199", "rightText": "1", "leftPct": 99.5, "rightPct": 0.5, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.4", "rightText": "24.3", "leftPct": 81.9, "rightPct": 59.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "51.5%", "rightText": "0.0%", "leftPct": 51.5, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 83.6 more food per game than Q Learning v2, and wins 199 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 79.9 to 87.3 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v3|Search-Based": {"firstColor": "c-3", "secondColor": "c-5", "stats": [{"name": "Average food", "hint": "per game", "leftText": "127.7", "rightText": "38.0", "leftPct": 90.7, "rightPct": 27.0, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "134.5", "rightText": "36.0", "leftPct": 91.8, "rightPct": 24.6, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "85", "leftPct": 100.0, "rightPct": 52.5, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "198", "rightText": "2", "leftPct": 99.0, "rightPct": 1.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.4", "rightText": "18.3", "leftPct": 81.9, "rightPct": 44.9, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "51.5%", "rightText": "0.0%", "leftPct": 51.5, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 89.7 more food per game than Search-Based, and wins 198 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 86.2 to 93.3 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v3|Rule Based": {"firstColor": "c-3", "secondColor": "c-4", "stats": [{"name": "Average food", "hint": "per game", "leftText": "127.7", "rightText": "13.9", "leftPct": 90.7, "rightPct": 9.8, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "134.5", "rightText": "13.0", "leftPct": 91.8, "rightPct": 8.9, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "162", "rightText": "37", "leftPct": 100.0, "rightPct": 22.8, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "200", "rightText": "0", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "33.4", "rightText": "16.5", "leftPct": 81.9, "rightPct": 40.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "51.5%", "rightText": "0.0%", "leftPct": 51.5, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 113.9 more food per game than Rule Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 110.5 to 117.2 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Hamiltonian|DQN v3": {"firstColor": "c-1", "secondColor": "c-0", "stats": [{"name": "Average food", "hint": "per game", "leftText": "122.5", "rightText": "140.8", "leftPct": 87.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "123.0", "rightText": "146.5", "leftPct": 84.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "132", "rightText": "162", "leftPct": 81.5, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "23", "rightText": "176", "leftPct": 11.5, "rightPct": 88.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "40.8", "rightText": "33.0", "leftPct": 100.0, "rightPct": 80.9, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "100.0%", "rightText": "79.5%", "leftPct": 100.0, "rightPct": 79.5, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 18.3 more food per game than Hamiltonian, and wins 176 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 15.6 to 20.9 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Hamiltonian|Q Learning v3": {"firstColor": "c-1", "secondColor": "c-3", "stats": [{"name": "Average food", "hint": "per game", "leftText": "122.5", "rightText": "127.7", "leftPct": 87.0, "rightPct": 90.7, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "123.0", "rightText": "134.5", "leftPct": 84.0, "rightPct": 91.8, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "132", "rightText": "162", "leftPct": 81.5, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "62", "rightText": "135", "leftPct": 31.0, "rightPct": 67.5, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "40.8", "rightText": "33.4", "leftPct": 100.0, "rightPct": 81.9, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "100.0%", "rightText": "51.5%", "leftPct": 100.0, "rightPct": 51.5, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 5.2 more food per game than Hamiltonian, and wins 135 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 2.3 to 8.1 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Hamiltonian|Q Learning v2": {"firstColor": "c-1", "secondColor": "c-2", "stats": [{"name": "Average food", "hint": "per game", "leftText": "122.5", "rightText": "44.1", "leftPct": 87.0, "rightPct": 31.3, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "123.0", "rightText": "44.0", "leftPct": 84.0, "rightPct": 30.0, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "132", "rightText": "87", "leftPct": 81.5, "rightPct": 53.7, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "200", "rightText": "0", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "40.8", "rightText": "24.3", "leftPct": 100.0, "rightPct": 59.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "100.0%", "rightText": "0.0%", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Hamiltonian eats 78.4 more food per game than Q Learning v2, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Hamiltonian would most likely lead by 76.3 to 80.5 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Hamiltonian|Search-Based": {"firstColor": "c-1", "secondColor": "c-5", "stats": [{"name": "Average food", "hint": "per game", "leftText": "122.5", "rightText": "38.0", "leftPct": 87.0, "rightPct": 27.0, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "123.0", "rightText": "36.0", "leftPct": 84.0, "rightPct": 24.6, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "132", "rightText": "85", "leftPct": 81.5, "rightPct": 52.5, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "200", "rightText": "0", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "40.8", "rightText": "18.3", "leftPct": 100.0, "rightPct": 44.9, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "100.0%", "rightText": "0.0%", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Hamiltonian eats 84.5 more food per game than Search-Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Hamiltonian would most likely lead by 82.5 to 86.6 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Hamiltonian|Rule Based": {"firstColor": "c-1", "secondColor": "c-4", "stats": [{"name": "Average food", "hint": "per game", "leftText": "122.5", "rightText": "13.9", "leftPct": 87.0, "rightPct": 9.8, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "123.0", "rightText": "13.0", "leftPct": 84.0, "rightPct": 8.9, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "132", "rightText": "37", "leftPct": 81.5, "rightPct": 22.8, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "200", "rightText": "0", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "40.8", "rightText": "16.5", "leftPct": 100.0, "rightPct": 40.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "100.0%", "rightText": "0.0%", "leftPct": 100.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Hamiltonian eats 108.7 more food per game than Rule Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Hamiltonian would most likely lead by 107.2 to 110.2 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v2|DQN v3": {"firstColor": "c-2", "secondColor": "c-0", "stats": [{"name": "Average food", "hint": "per game", "leftText": "44.1", "rightText": "140.8", "leftPct": 31.3, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "44.0", "rightText": "146.5", "leftPct": 30.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "87", "rightText": "162", "leftPct": 53.7, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "1", "rightText": "199", "leftPct": 0.5, "rightPct": 99.5, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "24.3", "rightText": "33.0", "leftPct": 59.5, "rightPct": 80.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "79.5%", "leftPct": 0.0, "rightPct": 79.5, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 96.7 more food per game than Q Learning v2, and wins 199 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 93.5 to 99.9 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v2|Q Learning v3": {"firstColor": "c-2", "secondColor": "c-3", "stats": [{"name": "Average food", "hint": "per game", "leftText": "44.1", "rightText": "127.7", "leftPct": 31.3, "rightPct": 90.7, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "44.0", "rightText": "134.5", "leftPct": 30.0, "rightPct": 91.8, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "87", "rightText": "162", "leftPct": 53.7, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "1", "rightText": "199", "leftPct": 0.5, "rightPct": 99.5, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "24.3", "rightText": "33.4", "leftPct": 59.5, "rightPct": 81.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "51.5%", "leftPct": 0.0, "rightPct": 51.5, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 83.6 more food per game than Q Learning v2, and wins 199 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 79.9 to 87.3 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v2|Hamiltonian": {"firstColor": "c-2", "secondColor": "c-1", "stats": [{"name": "Average food", "hint": "per game", "leftText": "44.1", "rightText": "122.5", "leftPct": 31.3, "rightPct": 87.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "44.0", "rightText": "123.0", "leftPct": 30.0, "rightPct": 84.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "87", "rightText": "132", "leftPct": 53.7, "rightPct": 81.5, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "0", "rightText": "200", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "24.3", "rightText": "40.8", "leftPct": 59.5, "rightPct": 100.0, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "100.0%", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": false}], "sentence": "Hamiltonian eats 78.4 more food per game than Q Learning v2, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Hamiltonian would most likely lead by 76.3 to 80.5 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v2|Search-Based": {"firstColor": "c-2", "secondColor": "c-5", "stats": [{"name": "Average food", "hint": "per game", "leftText": "44.1", "rightText": "38.0", "leftPct": 31.3, "rightPct": 27.0, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "44.0", "rightText": "36.0", "leftPct": 30.0, "rightPct": 24.6, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "87", "rightText": "85", "leftPct": 53.7, "rightPct": 52.5, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "128", "rightText": "68", "leftPct": 64.0, "rightPct": 34.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "24.3", "rightText": "18.3", "leftPct": 59.5, "rightPct": 44.9, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "0.0%", "leftPct": 0.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v2 eats 6.2 more food per game than Search-Based, and wins 128 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v2 would most likely lead by 3.5 to 8.8 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Q Learning v2|Rule Based": {"firstColor": "c-2", "secondColor": "c-4", "stats": [{"name": "Average food", "hint": "per game", "leftText": "44.1", "rightText": "13.9", "leftPct": 31.3, "rightPct": 9.8, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "44.0", "rightText": "13.0", "leftPct": 30.0, "rightPct": 8.9, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "87", "rightText": "37", "leftPct": 53.7, "rightPct": 22.8, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "195", "rightText": "3", "leftPct": 97.5, "rightPct": 1.5, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "24.3", "rightText": "16.5", "leftPct": 59.5, "rightPct": 40.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "0.0%", "leftPct": 0.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v2 eats 30.3 more food per game than Rule Based, and wins 195 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v2 would most likely lead by 27.9 to 32.7 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Search-Based|DQN v3": {"firstColor": "c-5", "secondColor": "c-0", "stats": [{"name": "Average food", "hint": "per game", "leftText": "38.0", "rightText": "140.8", "leftPct": 27.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "36.0", "rightText": "146.5", "leftPct": 24.6, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "85", "rightText": "162", "leftPct": 52.5, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "0", "rightText": "200", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "18.3", "rightText": "33.0", "leftPct": 44.9, "rightPct": 80.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "79.5%", "leftPct": 0.0, "rightPct": 79.5, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 102.8 more food per game than Search-Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 99.5 to 106.1 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Search-Based|Q Learning v3": {"firstColor": "c-5", "secondColor": "c-3", "stats": [{"name": "Average food", "hint": "per game", "leftText": "38.0", "rightText": "127.7", "leftPct": 27.0, "rightPct": 90.7, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "36.0", "rightText": "134.5", "leftPct": 24.6, "rightPct": 91.8, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "85", "rightText": "162", "leftPct": 52.5, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "2", "rightText": "198", "leftPct": 1.0, "rightPct": 99.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "18.3", "rightText": "33.4", "leftPct": 44.9, "rightPct": 81.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "51.5%", "leftPct": 0.0, "rightPct": 51.5, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 89.7 more food per game than Search-Based, and wins 198 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 86.2 to 93.3 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Search-Based|Hamiltonian": {"firstColor": "c-5", "secondColor": "c-1", "stats": [{"name": "Average food", "hint": "per game", "leftText": "38.0", "rightText": "122.5", "leftPct": 27.0, "rightPct": 87.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "36.0", "rightText": "123.0", "leftPct": 24.6, "rightPct": 84.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "85", "rightText": "132", "leftPct": 52.5, "rightPct": 81.5, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "0", "rightText": "200", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "18.3", "rightText": "40.8", "leftPct": 44.9, "rightPct": 100.0, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "100.0%", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": false}], "sentence": "Hamiltonian eats 84.5 more food per game than Search-Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Hamiltonian would most likely lead by 82.5 to 86.6 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Search-Based|Q Learning v2": {"firstColor": "c-5", "secondColor": "c-2", "stats": [{"name": "Average food", "hint": "per game", "leftText": "38.0", "rightText": "44.1", "leftPct": 27.0, "rightPct": 31.3, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "36.0", "rightText": "44.0", "leftPct": 24.6, "rightPct": 30.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "85", "rightText": "87", "leftPct": 52.5, "rightPct": 53.7, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "68", "rightText": "128", "leftPct": 34.0, "rightPct": 64.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "18.3", "rightText": "24.3", "leftPct": 44.9, "rightPct": 59.5, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "0.0%", "leftPct": 0.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v2 eats 6.2 more food per game than Search-Based, and wins 128 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v2 would most likely lead by 3.5 to 8.8 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Search-Based|Rule Based": {"firstColor": "c-5", "secondColor": "c-4", "stats": [{"name": "Average food", "hint": "per game", "leftText": "38.0", "rightText": "13.9", "leftPct": 27.0, "rightPct": 9.8, "leftBetter": true, "rightBetter": false}, {"name": "Median food", "hint": "the middle game", "leftText": "36.0", "rightText": "13.0", "leftPct": 24.6, "rightPct": 8.9, "leftBetter": true, "rightBetter": false}, {"name": "Best game", "hint": "most food in one game", "leftText": "85", "rightText": "37", "leftPct": 52.5, "rightPct": 22.8, "leftBetter": true, "rightBetter": false}, {"name": "Games won", "hint": "head to head", "leftText": "180", "rightText": "2", "leftPct": 90.0, "rightPct": 1.0, "leftBetter": true, "rightBetter": false}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "18.3", "rightText": "16.5", "leftPct": 44.9, "rightPct": 40.5, "leftBetter": false, "rightBetter": true}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "0.0%", "leftPct": 0.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Search-Based eats 24.1 more food per game than Rule Based, and wins 180 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Search-Based would most likely lead by 21.9 to 26.4 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Rule Based|DQN v3": {"firstColor": "c-4", "secondColor": "c-0", "stats": [{"name": "Average food", "hint": "per game", "leftText": "13.9", "rightText": "140.8", "leftPct": 9.8, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "13.0", "rightText": "146.5", "leftPct": 8.9, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "37", "rightText": "162", "leftPct": 22.8, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "0", "rightText": "200", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "16.5", "rightText": "33.0", "leftPct": 40.5, "rightPct": 80.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "79.5%", "leftPct": 0.0, "rightPct": 79.5, "leftBetter": false, "rightBetter": false}], "sentence": "DQN v3 eats 126.9 more food per game than Rule Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, DQN v3 would most likely lead by 124.1 to 129.8 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Rule Based|Q Learning v3": {"firstColor": "c-4", "secondColor": "c-3", "stats": [{"name": "Average food", "hint": "per game", "leftText": "13.9", "rightText": "127.7", "leftPct": 9.8, "rightPct": 90.7, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "13.0", "rightText": "134.5", "leftPct": 8.9, "rightPct": 91.8, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "37", "rightText": "162", "leftPct": 22.8, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "0", "rightText": "200", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "16.5", "rightText": "33.4", "leftPct": 40.5, "rightPct": 81.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "51.5%", "leftPct": 0.0, "rightPct": 51.5, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v3 eats 113.9 more food per game than Rule Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v3 would most likely lead by 110.5 to 117.2 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Rule Based|Hamiltonian": {"firstColor": "c-4", "secondColor": "c-1", "stats": [{"name": "Average food", "hint": "per game", "leftText": "13.9", "rightText": "122.5", "leftPct": 9.8, "rightPct": 87.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "13.0", "rightText": "123.0", "leftPct": 8.9, "rightPct": 84.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "37", "rightText": "132", "leftPct": 22.8, "rightPct": 81.5, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "0", "rightText": "200", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "16.5", "rightText": "40.8", "leftPct": 40.5, "rightPct": 100.0, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "100.0%", "leftPct": 0.0, "rightPct": 100.0, "leftBetter": false, "rightBetter": false}], "sentence": "Hamiltonian eats 108.7 more food per game than Rule Based, and wins 200 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Hamiltonian would most likely lead by 107.2 to 110.2 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Rule Based|Q Learning v2": {"firstColor": "c-4", "secondColor": "c-2", "stats": [{"name": "Average food", "hint": "per game", "leftText": "13.9", "rightText": "44.1", "leftPct": 9.8, "rightPct": 31.3, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "13.0", "rightText": "44.0", "leftPct": 8.9, "rightPct": 30.0, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "37", "rightText": "87", "leftPct": 22.8, "rightPct": 53.7, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "3", "rightText": "195", "leftPct": 1.5, "rightPct": 97.5, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "16.5", "rightText": "24.3", "leftPct": 40.5, "rightPct": 59.5, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "0.0%", "leftPct": 0.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Q Learning v2 eats 30.3 more food per game than Rule Based, and wins 195 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Q Learning v2 would most likely lead by 27.9 to 32.7 food per game (the 95% range). That range stays above zero, so the lead is not luck."}, "Rule Based|Search-Based": {"firstColor": "c-4", "secondColor": "c-5", "stats": [{"name": "Average food", "hint": "per game", "leftText": "13.9", "rightText": "38.0", "leftPct": 9.8, "rightPct": 27.0, "leftBetter": false, "rightBetter": true}, {"name": "Median food", "hint": "the middle game", "leftText": "13.0", "rightText": "36.0", "leftPct": 8.9, "rightPct": 24.6, "leftBetter": false, "rightBetter": true}, {"name": "Best game", "hint": "most food in one game", "leftText": "37", "rightText": "85", "leftPct": 22.8, "rightPct": 52.5, "leftBetter": false, "rightBetter": true}, {"name": "Games won", "hint": "head to head", "leftText": "2", "rightText": "180", "leftPct": 1.0, "rightPct": 90.0, "leftBetter": false, "rightBetter": true}, {"name": "Moves per food", "hint": "lower is faster", "leftText": "16.5", "rightText": "18.3", "leftPct": 40.5, "rightPct": 44.9, "leftBetter": true, "rightBetter": false}, {"name": "Stopped by limit", "hint": "still alive at the limit", "leftText": "0.0%", "rightText": "0.0%", "leftPct": 0.0, "rightPct": 0.0, "leftBetter": false, "rightBetter": false}], "sentence": "Search-Based eats 24.1 more food per game than Rule Based, and wins 180 of the 200 games.", "badge": "Reliable result", "explain": "On new games, Search-Based would most likely lead by 21.9 to 26.4 food per game (the 95% range). That range stays above zero, so the lead is not luck."}}</script>
+<div class="picker">
+<label>First bot<span class="select c-0" data-color="firstColor"><select class="pick-a"><option value="DQN v3" selected>DQN v3</option><option value="Q Learning v3">Q Learning v3</option><option value="Hamiltonian">Hamiltonian</option><option value="Q Learning v2">Q Learning v2</option><option value="Search-Based">Search-Based</option><option value="Rule Based">Rule Based</option></select><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6l4.5 4.5L12.5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+<span class="against">versus</span>
+<label>Second bot<span class="select c-3" data-color="secondColor"><select class="pick-b"><option value="DQN v3">DQN v3</option><option value="Q Learning v3" selected>Q Learning v3</option><option value="Hamiltonian">Hamiltonian</option><option value="Q Learning v2">Q Learning v2</option><option value="Search-Based">Search-Based</option><option value="Rule Based">Rule Based</option></select><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 6l4.5 4.5L12.5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span></label>
+</div>
+<p class="same muted" hidden>Pick two different bots to compare them.</p>
+<div class="verdict">
+<div class="faceoff">
+<div class="stat"><div class="left c-0 better" data-color="firstColor"><span class="num">140.8</span><span class="lane"><span style="width: 100.0%"></span></span></div><div class="label"><b>Average food</b><small>per game</small></div><div class="right c-3 weaker" data-color="secondColor"><span class="lane"><span style="width: 90.7%"></span></span><span class="num">127.7</span></div></div>
+<div class="stat"><div class="left c-0 better" data-color="firstColor"><span class="num">146.5</span><span class="lane"><span style="width: 100.0%"></span></span></div><div class="label"><b>Median food</b><small>the middle game</small></div><div class="right c-3 weaker" data-color="secondColor"><span class="lane"><span style="width: 91.8%"></span></span><span class="num">134.5</span></div></div>
+<div class="stat"><div class="left c-0" data-color="firstColor"><span class="num">162</span><span class="lane"><span style="width: 100.0%"></span></span></div><div class="label"><b>Best game</b><small>most food in one game</small></div><div class="right c-3" data-color="secondColor"><span class="lane"><span style="width: 100.0%"></span></span><span class="num">162</span></div></div>
+<div class="stat"><div class="left c-0 better" data-color="firstColor"><span class="num">144</span><span class="lane"><span style="width: 72.0%"></span></span></div><div class="label"><b>Games won</b><small>head to head</small></div><div class="right c-3 weaker" data-color="secondColor"><span class="lane"><span style="width: 26.5%"></span></span><span class="num">53</span></div></div>
+<div class="stat"><div class="left c-0 better" data-color="firstColor"><span class="num">33.0</span><span class="lane"><span style="width: 80.9%"></span></span></div><div class="label"><b>Moves per food</b><small>lower is faster</small></div><div class="right c-3 weaker" data-color="secondColor"><span class="lane"><span style="width: 81.9%"></span></span><span class="num">33.4</span></div></div>
+<div class="stat"><div class="left c-0" data-color="firstColor"><span class="num">79.5%</span><span class="lane"><span style="width: 79.5%"></span></span></div><div class="label"><b>Stopped by limit</b><small>still alive at the limit</small></div><div class="right c-3" data-color="secondColor"><span class="lane"><span style="width: 51.5%"></span></span><span class="num">51.5%</span></div></div>
+</div>
+<p class="sentence" data-field="sentence">DQN v3 eats 13.1 more food per game than Q Learning v3, and wins 144 of the 200 games.</p>
+<div class="note"><b data-field="badge">Reliable result</b><span data-field="explain">On new games, DQN v3 would most likely lead by 9.1 to 17.1 food per game (the 95% range). That range stays above zero, so the lead is not luck.</span></div>
+</div></div>
+</div>
+<div class="part"><h3>Every number</h3>
+<p>For developers: one row per bot file, every comparison, and where each trained bot came from. A bot file is the saved Q-table or network, shown by the start of its hash.</p>
+<div class="table-box"><table><thead><tr>
+<th class="text">Bot</th>
+<th class="text">Bot file</th>
+<th class="text">Run date (UTC)</th>
+<th>Games</th>
+<th>Mean</th>
+<th>Median</th>
+<th>Best</th>
+<th>Std dev</th>
+<th>Win rate</th>
+<th>Move-limit rate</th>
+<th>Moves per point</th>
+</tr></thead><tbody>
+<tr><td class="text bot c-0"><span class="swatch"></span>DQN v3</td><td class="text">18b5932f</td><td class="text">2026-10-23 17:27</td><td>200</td><td>140.8</td><td>146.5</td><td>162</td><td>18.2</td><td>0.0%</td><td>79.5%</td><td>33.0</td></tr>
+<tr><td class="text bot c-1"><span class="swatch"></span>Hamiltonian</td><td class="text">—</td><td class="text">2026-10-23 17:27</td><td>200</td><td>122.5</td><td>123.0</td><td>132</td><td>3.9</td><td>0.0%</td><td>100.0%</td><td>40.8</td></tr>
+<tr><td class="text bot c-2"><span class="swatch"></span>Q Learning v2</td><td class="text">331d4d4a</td><td class="text">2026-10-23 17:27</td><td>200</td><td>44.1</td><td>44.0</td><td>87</td><td>14.8</td><td>0.0%</td><td>0.0%</td><td>24.3</td></tr>
+<tr><td class="text bot c-3"><span class="swatch"></span>Q Learning v3</td><td class="text">27fde16d</td><td class="text">2026-10-23 17:27</td><td>200</td><td>127.7</td><td>134.5</td><td>162</td><td>21.1</td><td>0.0%</td><td>51.5%</td><td>33.4</td></tr>
+<tr><td class="text bot c-4"><span class="swatch"></span>Rule Based</td><td class="text">—</td><td class="text">2026-10-23 17:27</td><td>200</td><td>13.9</td><td>13.0</td><td>37</td><td>9.4</td><td>0.0%</td><td>0.0%</td><td>16.5</td></tr>
+<tr><td class="text bot c-5"><span class="swatch"></span>Search-Based</td><td class="text">—</td><td class="text">2026-10-23 17:27</td><td>200</td><td>38.0</td><td>36.0</td><td>85</td><td>14.2</td><td>0.0%</td><td>0.0%</td><td>18.3</td></tr>
+</tbody></table></div>
+<h4>Game by game</h4>
+<div class="table-box"><table><thead><tr>
+<th class="text">Better bot</th>
+<th class="text">Compared with</th>
+<th>Games</th>
+<th>Average difference</th>
+<th>95% range</th>
+<th class="text">Verdict</th>
+<th class="text">Won / tied / lost</th>
+</tr></thead><tbody>
+<tr data-pair="DQN v3|Q Learning v3"><td class="text bot c-0"><span class="swatch"></span>DQN v3</td><td class="text bot c-3"><span class="swatch"></span>Q Learning v3</td><td>200</td><td>13.1</td><td>9.1 to 17.1</td><td class="text">DQN v3 scores more</td><td class="text">144 / 3 / 53</td></tr>
+<tr data-pair="DQN v3|Hamiltonian"><td class="text bot c-0"><span class="swatch"></span>DQN v3</td><td class="text bot c-1"><span class="swatch"></span>Hamiltonian</td><td>200</td><td>18.3</td><td>15.6 to 20.9</td><td class="text">DQN v3 scores more</td><td class="text">176 / 1 / 23</td></tr>
+<tr data-pair="DQN v3|Q Learning v2"><td class="text bot c-0"><span class="swatch"></span>DQN v3</td><td class="text bot c-2"><span class="swatch"></span>Q Learning v2</td><td>200</td><td>96.7</td><td>93.5 to 99.9</td><td class="text">DQN v3 scores more</td><td class="text">199 / 0 / 1</td></tr>
+<tr data-pair="DQN v3|Search-Based"><td class="text bot c-0"><span class="swatch"></span>DQN v3</td><td class="text bot c-5"><span class="swatch"></span>Search-Based</td><td>200</td><td>102.8</td><td>99.5 to 106.1</td><td class="text">DQN v3 scores more</td><td class="text">200 / 0 / 0</td></tr>
+<tr data-pair="DQN v3|Rule Based"><td class="text bot c-0"><span class="swatch"></span>DQN v3</td><td class="text bot c-4"><span class="swatch"></span>Rule Based</td><td>200</td><td>126.9</td><td>124.1 to 129.8</td><td class="text">DQN v3 scores more</td><td class="text">200 / 0 / 0</td></tr>
+<tr data-pair="Q Learning v3|Hamiltonian"><td class="text bot c-3"><span class="swatch"></span>Q Learning v3</td><td class="text bot c-1"><span class="swatch"></span>Hamiltonian</td><td>200</td><td>5.2</td><td>2.3 to 8.1</td><td class="text">Q Learning v3 scores more</td><td class="text">135 / 3 / 62</td></tr>
+<tr data-pair="Q Learning v3|Q Learning v2"><td class="text bot c-3"><span class="swatch"></span>Q Learning v3</td><td class="text bot c-2"><span class="swatch"></span>Q Learning v2</td><td>200</td><td>83.6</td><td>79.9 to 87.3</td><td class="text">Q Learning v3 scores more</td><td class="text">199 / 0 / 1</td></tr>
+<tr data-pair="Q Learning v3|Search-Based"><td class="text bot c-3"><span class="swatch"></span>Q Learning v3</td><td class="text bot c-5"><span class="swatch"></span>Search-Based</td><td>200</td><td>89.7</td><td>86.2 to 93.3</td><td class="text">Q Learning v3 scores more</td><td class="text">198 / 0 / 2</td></tr>
+<tr data-pair="Q Learning v3|Rule Based"><td class="text bot c-3"><span class="swatch"></span>Q Learning v3</td><td class="text bot c-4"><span class="swatch"></span>Rule Based</td><td>200</td><td>113.9</td><td>110.5 to 117.2</td><td class="text">Q Learning v3 scores more</td><td class="text">200 / 0 / 0</td></tr>
+<tr data-pair="Hamiltonian|Q Learning v2"><td class="text bot c-1"><span class="swatch"></span>Hamiltonian</td><td class="text bot c-2"><span class="swatch"></span>Q Learning v2</td><td>200</td><td>78.4</td><td>76.3 to 80.5</td><td class="text">Hamiltonian scores more</td><td class="text">200 / 0 / 0</td></tr>
+<tr data-pair="Hamiltonian|Search-Based"><td class="text bot c-1"><span class="swatch"></span>Hamiltonian</td><td class="text bot c-5"><span class="swatch"></span>Search-Based</td><td>200</td><td>84.5</td><td>82.5 to 86.6</td><td class="text">Hamiltonian scores more</td><td class="text">200 / 0 / 0</td></tr>
+<tr data-pair="Hamiltonian|Rule Based"><td class="text bot c-1"><span class="swatch"></span>Hamiltonian</td><td class="text bot c-4"><span class="swatch"></span>Rule Based</td><td>200</td><td>108.7</td><td>107.2 to 110.2</td><td class="text">Hamiltonian scores more</td><td class="text">200 / 0 / 0</td></tr>
+<tr data-pair="Q Learning v2|Search-Based"><td class="text bot c-2"><span class="swatch"></span>Q Learning v2</td><td class="text bot c-5"><span class="swatch"></span>Search-Based</td><td>200</td><td>6.2</td><td>3.5 to 8.8</td><td class="text">Q Learning v2 scores more</td><td class="text">128 / 4 / 68</td></tr>
+<tr data-pair="Q Learning v2|Rule Based"><td class="text bot c-2"><span class="swatch"></span>Q Learning v2</td><td class="text bot c-4"><span class="swatch"></span>Rule Based</td><td>200</td><td>30.3</td><td>27.9 to 32.7</td><td class="text">Q Learning v2 scores more</td><td class="text">195 / 2 / 3</td></tr>
+<tr data-pair="Search-Based|Rule Based"><td class="text bot c-5"><span class="swatch"></span>Search-Based</td><td class="text bot c-4"><span class="swatch"></span>Rule Based</td><td>200</td><td>24.1</td><td>21.9 to 26.4</td><td class="text">Search-Based scores more</td><td class="text">180 / 18 / 2</td></tr>
+</tbody></table></div>
+<h4>Where each bot came from</h4>
+<div class="table-box"><table><thead><tr>
+<th class="text">Bot</th>
+<th class="text">Bot file</th>
+<th>Feature Set</th>
+<th>Games trained</th>
+<th class="text">Trained by</th>
+<th>Training seeds</th>
+<th>Code</th>
+</tr></thead><tbody>
+<tr><td class="text bot c-0"><span class="swatch"></span>DQN v3</td><td class="text">18b5932f</td><td>v3</td><td>2000</td><td class="text">Terminal command</td><td>9000</td><td>1b597fe</td></tr>
+<tr><td class="text bot c-1"><span class="swatch"></span>Hamiltonian</td><td class="text">—</td><td>—</td><td>—</td><td class="text">—</td><td>—</td><td>1b597fe</td></tr>
+<tr><td class="text bot c-2"><span class="swatch"></span>Q Learning v2</td><td class="text">331d4d4a</td><td>v2</td><td>2000</td><td class="text">unknown</td><td>12000</td><td>1b597fe</td></tr>
+<tr><td class="text bot c-3"><span class="swatch"></span>Q Learning v3</td><td class="text">27fde16d</td><td>v3</td><td>2000</td><td class="text">unknown</td><td>15000</td><td>1b597fe</td></tr>
+<tr><td class="text bot c-4"><span class="swatch"></span>Rule Based</td><td class="text">—</td><td>—</td><td>—</td><td class="text">—</td><td>—</td><td>1b597fe</td></tr>
+<tr><td class="text bot c-5"><span class="swatch"></span>Search-Based</td><td class="text">—</td><td>—</td><td>—</td><td class="text">—</td><td>—</td><td>1b597fe</td></tr>
+</tbody></table></div>
+</div>
+</section>
+<section class="group"><div class="part"><h3>What the numbers mean</h3>
+<div class="terms">
+<div><h4>Average</h4><p>Total food eaten across all games, divided by the number of games. The headline number, but it hides bad games.</p></div>
+<div><h4>Median</h4><p>The middle game: half the games scored less, half scored more. Far from the average means a few very good or very bad games.</p></div>
+<div><h4>Histogram</h4><p>Across is the score a game ended with, in ranges of 10; up is how many games ended there. Hover over a bar to read its count.</p></div>
+<div><h4>Stopped by limit</h4><p>Share of games still running when the move limit ran out. A high value means the bot survives but eats slowly.</p></div>
+<div><h4>Moves per food</h4><p>Moves needed for each piece of food. Lower is faster. Hand-written bots chase food directly; learned bots play safer and slower.</p></div>
+<div><h4>95% range</h4><p>Where the real difference between two bots most likely lies if they played other games. If the whole range is above zero, the lead is reliable.</p></div>
+</div></div>
+</section>
+<footer>
 <p>Every number is computed from the saved games. The Move-limit rate is the share of games stopped by the move limit rather than ended by a win or a collision. Moves per point is how many moves the bot needed for each point of score; a high value with a high Move-limit rate suggests circling instead of chasing food.</p>
 <p>Game by game compares two bots on the same seeds, so the luck of where the food appears cancels out. Each seed gives one difference in score, and the Average difference is their mean. The 95% range shows how far that average could move if the bots were tested on other seeds: when the whole range is above zero, the first bot reliably scores more; when it includes zero, the games cannot show a difference. A bot with several bot files uses its average score on each seed.</p>
-<p>In each chart the line runs from the lowest to the best score, the box holds the middle half of the games, the line inside the box is the median, and the dot is the mean.</p>
+<p>Each histogram shows one bot: across is the score a game ended with, in ranges of 10, and up is how many games ended there. All of a group&#x27;s histograms share one scale.</p>
 <p>A bot file is the saved Q-table or DQN model, shown by the start of its hash. When the same bot file was evaluated more than once, only its newest run is shown. A combined row pools the games of every bot file of that bot.</p>
 <p>Hamiltonian follows one route over the whole board, so it never collides, but filling the board takes far more than the study&#x27;s 5000 moves. Its games stop at the move limit while the snake is still alive: its score shows how far that safe route gets in 5000 moves, not whether it can win.</p>
-</details>
-<section class="group">
-<h2>24 × 25 board, 5000-move limit, seeds 200000–200199 (200 games)</h2>
-<ol class="ranking" aria-label="Bots ranked by mean score, best first">
-<li class="food" aria-hidden="true"></li>
-<li class="head" style="--bot: #FB923C"><span class="name">DQN v3</span><span class="score">140.8</span></li>
-<li style="--bot: #22D3EE"><span class="name">Q Learning v3</span><span class="score">127.7</span></li>
-<li style="--bot: #34D399"><span class="name">Hamiltonian</span><span class="score">122.5</span></li>
-<li style="--bot: #60A5FA"><span class="name">Q Learning v2</span><span class="score">44.1</span></li>
-<li style="--bot: #F472B6"><span class="name">Search-Based</span><span class="score">38.0</span></li>
-<li style="--bot: #F2B84B"><span class="name">Rule Based</span><span class="score">13.9</span></li>
-</ol>
-<div class="chart"><svg xmlns="http://www.w3.org/2000/svg" class="bot-chart" viewBox="0 0 760 294" width="760" height="294" role="img" aria-label="Scores per game: 24 × 25 board, 5000-move limit, seeds 200000–200199 (200 games)">
-<title>Scores per game: 24 × 25 board, 5000-move limit, seeds 200000–200199 (200 games)</title>
-<style>
-.bot-chart { --surface: #12243D; --text: #EAF2FF;
-  --muted: #8FA3BF; --grid: #1E3A5F;
-  font: 12px Inter, ui-sans-serif, system-ui, sans-serif; }
-.bot-chart .background { fill: var(--surface); }
-.bot-chart .label { fill: var(--text); }
-.bot-chart .key { fill: var(--muted); }
-.bot-chart .axis { fill: var(--muted); }
-.bot-chart .grid { stroke: var(--grid); stroke-width: 1; }
-.bot-chart .whisker { stroke: var(--muted); stroke-width: 2; }
-.bot-chart .box { fill: var(--muted); }
-.bot-chart .median { stroke: var(--surface); stroke-width: 2; }
-.bot-chart .mean { fill: var(--surface); stroke: var(--text); stroke-width: 2; }
-</style>
-<rect class="background" width="760" height="294" rx="4"/>
-<line class="grid" x1="270.0" y1="16" x2="270.0" y2="220"/>
-<text class="axis" x="270.0" y="236" text-anchor="middle">0</text>
-<line class="grid" x1="386.5" y1="16" x2="386.5" y2="220"/>
-<text class="axis" x="386.5" y="236" text-anchor="middle">50</text>
-<line class="grid" x1="503.0" y1="16" x2="503.0" y2="220"/>
-<text class="axis" x="503.0" y="236" text-anchor="middle">100</text>
-<line class="grid" x1="619.5" y1="16" x2="619.5" y2="220"/>
-<text class="axis" x="619.5" y="236" text-anchor="middle">150</text>
-<line class="grid" x1="736.0" y1="16" x2="736.0" y2="220"/>
-<text class="axis" x="736.0" y="236" text-anchor="middle">200</text>
-<text class="axis" x="503.0" y="254" text-anchor="middle">Score per game</text>
-<g><title>DQN v3: lowest 53, middle half 140–151, median 146.5, mean 140.8, best 162</title>
-<rect x="0" y="16.0" width="760" height="34" fill="transparent"/>
-<text class="label" x="258" y="37.0" text-anchor="end">DQN v3 · 18b5932f</text>
-<line class="whisker" x1="393.5" y1="33.0" x2="647.5" y2="33.0"/>
-<rect class="box" x="596.2" y="26.0" width="25.6" height="14" rx="4" style="fill: #FB923C"/>
-<line class="median" x1="611.3" y1="26.0" x2="611.3" y2="40.0"/>
-<circle class="mean" cx="598.1" cy="33.0" r="4"/>
-</g>
-<g><title>Hamiltonian: lowest 114, middle half 120–125, median 123, mean 122.5, best 132</title>
-<rect x="0" y="50.0" width="760" height="34" fill="transparent"/>
-<text class="label" x="258" y="71.0" text-anchor="end">Hamiltonian</text>
-<line class="whisker" x1="535.6" y1="67.0" x2="577.6" y2="67.0"/>
-<rect class="box" x="549.6" y="60.0" width="11.6" height="14" rx="4" style="fill: #34D399"/>
-<line class="median" x1="556.6" y1="60.0" x2="556.6" y2="74.0"/>
-<circle class="mean" cx="555.5" cy="67.0" r="4"/>
-</g>
-<g><title>Q Learning v2: lowest 13, middle half 34–54, median 44, mean 44.1, best 87</title>
-<rect x="0" y="84.0" width="760" height="34" fill="transparent"/>
-<text class="label" x="258" y="105.0" text-anchor="end">Q Learning v2 · 331d4d4a</text>
-<line class="whisker" x1="300.3" y1="101.0" x2="472.7" y2="101.0"/>
-<rect class="box" x="349.2" y="94.0" width="46.6" height="14" rx="4" style="fill: #60A5FA"/>
-<line class="median" x1="372.5" y1="94.0" x2="372.5" y2="108.0"/>
-<circle class="mean" cx="372.8" cy="101.0" r="4"/>
-</g>
-<g><title>Q Learning v3: lowest 45, middle half 116–142.25, median 134.5, mean 127.7, best 162</title>
-<rect x="0" y="118.0" width="760" height="34" fill="transparent"/>
-<text class="label" x="258" y="139.0" text-anchor="end">Q Learning v3 · 27fde16d</text>
-<line class="whisker" x1="374.9" y1="135.0" x2="647.5" y2="135.0"/>
-<rect class="box" x="540.3" y="128.0" width="61.2" height="14" rx="4" style="fill: #22D3EE"/>
-<line class="median" x1="583.4" y1="128.0" x2="583.4" y2="142.0"/>
-<circle class="mean" cx="567.6" cy="135.0" r="4"/>
-</g>
-<g><title>Rule Based: lowest 0, middle half 6–21, median 13, mean 13.9, best 37</title>
-<rect x="0" y="152.0" width="760" height="34" fill="transparent"/>
-<text class="label" x="258" y="173.0" text-anchor="end">Rule Based</text>
-<line class="whisker" x1="270.0" y1="169.0" x2="356.2" y2="169.0"/>
-<rect class="box" x="284.0" y="162.0" width="34.9" height="14" rx="4" style="fill: #F2B84B"/>
-<line class="median" x1="300.3" y1="162.0" x2="300.3" y2="176.0"/>
-<circle class="mean" cx="302.3" cy="169.0" r="4"/>
-</g>
-<g><title>Search-Based: lowest 8, middle half 28–46, median 36, mean 38.0, best 85</title>
-<rect x="0" y="186.0" width="760" height="34" fill="transparent"/>
-<text class="label" x="258" y="207.0" text-anchor="end">Search-Based</text>
-<line class="whisker" x1="288.6" y1="203.0" x2="468.1" y2="203.0"/>
-<rect class="box" x="335.2" y="196.0" width="41.9" height="14" rx="4" style="fill: #F472B6"/>
-<line class="median" x1="353.9" y1="196.0" x2="353.9" y2="210.0"/>
-<circle class="mean" cx="358.5" cy="203.0" r="4"/>
-</g>
-<line class="whisker" x1="24" y1="279.0" x2="52" y2="279.0"/>
-<text class="key" x="60" y="283.0">Lowest to best score</text>
-<rect class="box" x="218" y="272.0" width="28" height="14" rx="4"/>
-<text class="key" x="254" y="283.0">Middle half of games</text>
-<rect class="box" x="412" y="272.0" width="28" height="14" rx="4"/>
-<line class="median" x1="426.0" y1="272.0" x2="426.0" y2="286.0"/>
-<text class="key" x="448" y="283.0">Median</text>
-<circle class="mean" cx="528.0" cy="279.0" r="4"/>
-<text class="key" x="550" y="283.0">Mean</text>
-</svg>
-</div>
-<div class="panel"><table>
-<thead><tr><th class="text">Bot</th><th class="text">Bot file</th><th class="text">Run date (UTC)</th><th>Games</th><th>Mean</th><th>Median</th><th>Best</th><th>Std dev</th><th>Win rate</th><th>Move-limit rate</th><th>Moves per point</th></tr></thead><tbody>
-<tr><td class="bot" style="--bot: #FB923C"><span class="swatch"></span>DQN v3</td><td class="text">18b5932f</td><td class="text">2026-10-23 17:27</td><td>200</td><td>140.8</td><td>146.5</td><td>162</td><td>18.2</td><td>0.0%</td><td>79.5%</td><td>33.0</td></tr>
-<tr><td class="bot" style="--bot: #34D399"><span class="swatch"></span>Hamiltonian</td><td class="text">—</td><td class="text">2026-10-23 17:27</td><td>200</td><td>122.5</td><td>123.0</td><td>132</td><td>3.9</td><td>0.0%</td><td>100.0%</td><td>40.8</td></tr>
-<tr><td class="bot" style="--bot: #60A5FA"><span class="swatch"></span>Q Learning v2</td><td class="text">331d4d4a</td><td class="text">2026-10-23 17:27</td><td>200</td><td>44.1</td><td>44.0</td><td>87</td><td>14.8</td><td>0.0%</td><td>0.0%</td><td>24.3</td></tr>
-<tr><td class="bot" style="--bot: #22D3EE"><span class="swatch"></span>Q Learning v3</td><td class="text">27fde16d</td><td class="text">2026-10-23 17:27</td><td>200</td><td>127.7</td><td>134.5</td><td>162</td><td>21.1</td><td>0.0%</td><td>51.5%</td><td>33.4</td></tr>
-<tr><td class="bot" style="--bot: #F2B84B"><span class="swatch"></span>Rule Based</td><td class="text">—</td><td class="text">2026-10-23 17:27</td><td>200</td><td>13.9</td><td>13.0</td><td>37</td><td>9.4</td><td>0.0%</td><td>0.0%</td><td>16.5</td></tr>
-<tr><td class="bot" style="--bot: #F472B6"><span class="swatch"></span>Search-Based</td><td class="text">—</td><td class="text">2026-10-23 17:27</td><td>200</td><td>38.0</td><td>36.0</td><td>85</td><td>14.2</td><td>0.0%</td><td>0.0%</td><td>18.3</td></tr>
-</tbody></table></div>
-<h3>Game by game</h3>
-<div class="picker">Compare
-<select class="pick-a" aria-label="First bot"><option value="">Any bot</option><option value="DQN v3" selected>DQN v3</option><option value="Q Learning v3">Q Learning v3</option><option value="Hamiltonian">Hamiltonian</option><option value="Q Learning v2">Q Learning v2</option><option value="Search-Based">Search-Based</option><option value="Rule Based">Rule Based</option></select>
-with
-<select class="pick-b" aria-label="Second bot"><option value="">Any bot</option><option value="DQN v3">DQN v3</option><option value="Q Learning v3" selected>Q Learning v3</option><option value="Hamiltonian">Hamiltonian</option><option value="Q Learning v2">Q Learning v2</option><option value="Search-Based">Search-Based</option><option value="Rule Based">Rule Based</option></select>
-</div>
-<div class="panel"><table>
-<thead><tr><th class="text">Better bot</th><th class="text">Compared with</th><th>Games</th><th>Average difference</th><th>95% range</th><th class="text">Verdict</th></tr></thead><tbody>
-<tr data-pair="DQN v3|Q Learning v3"><td class="bot" style="--bot: #FB923C"><span class="swatch"></span>DQN v3</td><td class="bot" style="--bot: #22D3EE"><span class="swatch"></span>Q Learning v3</td><td>200</td><td>13.1</td><td>9.1 to 17.1</td><td class="text">DQN v3 scores more</td></tr>
-<tr data-pair="DQN v3|Hamiltonian"><td class="bot" style="--bot: #FB923C"><span class="swatch"></span>DQN v3</td><td class="bot" style="--bot: #34D399"><span class="swatch"></span>Hamiltonian</td><td>200</td><td>18.3</td><td>15.6 to 20.9</td><td class="text">DQN v3 scores more</td></tr>
-<tr data-pair="DQN v3|Q Learning v2"><td class="bot" style="--bot: #FB923C"><span class="swatch"></span>DQN v3</td><td class="bot" style="--bot: #60A5FA"><span class="swatch"></span>Q Learning v2</td><td>200</td><td>96.7</td><td>93.5 to 99.9</td><td class="text">DQN v3 scores more</td></tr>
-<tr data-pair="DQN v3|Search-Based"><td class="bot" style="--bot: #FB923C"><span class="swatch"></span>DQN v3</td><td class="bot" style="--bot: #F472B6"><span class="swatch"></span>Search-Based</td><td>200</td><td>102.8</td><td>99.5 to 106.1</td><td class="text">DQN v3 scores more</td></tr>
-<tr data-pair="DQN v3|Rule Based"><td class="bot" style="--bot: #FB923C"><span class="swatch"></span>DQN v3</td><td class="bot" style="--bot: #F2B84B"><span class="swatch"></span>Rule Based</td><td>200</td><td>126.9</td><td>124.1 to 129.8</td><td class="text">DQN v3 scores more</td></tr>
-<tr data-pair="Q Learning v3|Hamiltonian"><td class="bot" style="--bot: #22D3EE"><span class="swatch"></span>Q Learning v3</td><td class="bot" style="--bot: #34D399"><span class="swatch"></span>Hamiltonian</td><td>200</td><td>5.2</td><td>2.3 to 8.1</td><td class="text">Q Learning v3 scores more</td></tr>
-<tr data-pair="Q Learning v3|Q Learning v2"><td class="bot" style="--bot: #22D3EE"><span class="swatch"></span>Q Learning v3</td><td class="bot" style="--bot: #60A5FA"><span class="swatch"></span>Q Learning v2</td><td>200</td><td>83.6</td><td>79.9 to 87.3</td><td class="text">Q Learning v3 scores more</td></tr>
-<tr data-pair="Q Learning v3|Search-Based"><td class="bot" style="--bot: #22D3EE"><span class="swatch"></span>Q Learning v3</td><td class="bot" style="--bot: #F472B6"><span class="swatch"></span>Search-Based</td><td>200</td><td>89.7</td><td>86.2 to 93.3</td><td class="text">Q Learning v3 scores more</td></tr>
-<tr data-pair="Q Learning v3|Rule Based"><td class="bot" style="--bot: #22D3EE"><span class="swatch"></span>Q Learning v3</td><td class="bot" style="--bot: #F2B84B"><span class="swatch"></span>Rule Based</td><td>200</td><td>113.9</td><td>110.5 to 117.2</td><td class="text">Q Learning v3 scores more</td></tr>
-<tr data-pair="Hamiltonian|Q Learning v2"><td class="bot" style="--bot: #34D399"><span class="swatch"></span>Hamiltonian</td><td class="bot" style="--bot: #60A5FA"><span class="swatch"></span>Q Learning v2</td><td>200</td><td>78.4</td><td>76.3 to 80.5</td><td class="text">Hamiltonian scores more</td></tr>
-<tr data-pair="Hamiltonian|Search-Based"><td class="bot" style="--bot: #34D399"><span class="swatch"></span>Hamiltonian</td><td class="bot" style="--bot: #F472B6"><span class="swatch"></span>Search-Based</td><td>200</td><td>84.5</td><td>82.5 to 86.6</td><td class="text">Hamiltonian scores more</td></tr>
-<tr data-pair="Hamiltonian|Rule Based"><td class="bot" style="--bot: #34D399"><span class="swatch"></span>Hamiltonian</td><td class="bot" style="--bot: #F2B84B"><span class="swatch"></span>Rule Based</td><td>200</td><td>108.7</td><td>107.2 to 110.2</td><td class="text">Hamiltonian scores more</td></tr>
-<tr data-pair="Q Learning v2|Search-Based"><td class="bot" style="--bot: #60A5FA"><span class="swatch"></span>Q Learning v2</td><td class="bot" style="--bot: #F472B6"><span class="swatch"></span>Search-Based</td><td>200</td><td>6.2</td><td>3.5 to 8.8</td><td class="text">Q Learning v2 scores more</td></tr>
-<tr data-pair="Q Learning v2|Rule Based"><td class="bot" style="--bot: #60A5FA"><span class="swatch"></span>Q Learning v2</td><td class="bot" style="--bot: #F2B84B"><span class="swatch"></span>Rule Based</td><td>200</td><td>30.3</td><td>27.9 to 32.7</td><td class="text">Q Learning v2 scores more</td></tr>
-<tr data-pair="Search-Based|Rule Based"><td class="bot" style="--bot: #F472B6"><span class="swatch"></span>Search-Based</td><td class="bot" style="--bot: #F2B84B"><span class="swatch"></span>Rule Based</td><td>200</td><td>24.1</td><td>21.9 to 26.4</td><td class="text">Search-Based scores more</td></tr>
-</tbody></table></div>
-<h3>Where each bot came from</h3>
-<div class="panel"><table>
-<thead><tr><th class="text">Bot</th><th class="text">Bot file</th><th>Feature Set</th><th>Games trained</th><th class="text">Trained by</th><th>Training seeds</th><th>Code</th></tr></thead><tbody>
-<tr><td class="bot" style="--bot: #FB923C"><span class="swatch"></span>DQN v3</td><td class="text">18b5932f</td><td>v3</td><td>2000</td><td class="text">Terminal command</td><td>9000</td><td>1b597fe</td></tr>
-<tr><td class="bot" style="--bot: #34D399"><span class="swatch"></span>Hamiltonian</td><td class="text">—</td><td>—</td><td>—</td><td class="text">—</td><td>—</td><td>1b597fe</td></tr>
-<tr><td class="bot" style="--bot: #60A5FA"><span class="swatch"></span>Q Learning v2</td><td class="text">331d4d4a</td><td>v2</td><td>2000</td><td class="text">unknown</td><td>12000</td><td>1b597fe</td></tr>
-<tr><td class="bot" style="--bot: #22D3EE"><span class="swatch"></span>Q Learning v3</td><td class="text">27fde16d</td><td>v3</td><td>2000</td><td class="text">unknown</td><td>15000</td><td>1b597fe</td></tr>
-<tr><td class="bot" style="--bot: #F2B84B"><span class="swatch"></span>Rule Based</td><td class="text">—</td><td>—</td><td>—</td><td class="text">—</td><td>—</td><td>1b597fe</td></tr>
-<tr><td class="bot" style="--bot: #F472B6"><span class="swatch"></span>Search-Based</td><td class="text">—</td><td>—</td><td>—</td><td class="text">—</td><td>—</td><td>1b597fe</td></tr>
-</tbody></table></div>
-</section>
+<p>Generated by AnalyseBots from saved Bot Experiment reports. The same games give the same numbers every time.</p></footer>
 </main>
 <script>
-document.querySelectorAll(".picker").forEach(function (picker) {
-  var a = picker.querySelector(".pick-a"), b = picker.querySelector(".pick-b");
-  var rows = picker.nextElementSibling.querySelectorAll("tr[data-pair]");
-  function update() {
-    rows.forEach(function (row) {
-      var pair = row.dataset.pair.split("|");
-      var fits = [a.value, b.value].every(function (bot) {
-        return bot === "" || pair.indexOf(bot) >= 0;
-      });
-      row.hidden = !fits || (a.value !== "" && a.value === b.value);
+(function () {
+  var root = document.documentElement;
+  var toggle = document.querySelector(".theme-toggle");
+  try {
+    var saved = localStorage.getItem("bot-report-theme");
+    if (saved) root.setAttribute("data-theme", saved);
+  } catch (error) {}
+  function isDark() {
+    var chosen = root.getAttribute("data-theme");
+    if (chosen) return chosen === "dark";
+    return window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function label() { toggle.textContent = isDark() ? "Light mode" : "Dark mode"; }
+  if (toggle) {
+    label();
+    toggle.addEventListener("click", function () {
+      var next = isDark() ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("bot-report-theme", next); } catch (error) {}
+      label();
     });
   }
-  a.addEventListener("change", update);
-  b.addEventListener("change", update);
-  update();
-});
+
+  document.querySelectorAll(".histogram").forEach(function (chart) {
+    var guide = chart.querySelector(".guide");
+    var tag = chart.querySelector(".guide-tag");
+    function show(bar) {
+      guide.style.bottom = tag.style.bottom = bar.dataset.height + "%";
+      guide.style.width = bar.dataset.reach + "%";
+      tag.textContent = bar.dataset.count;
+      guide.hidden = tag.hidden = false;
+      chart.classList.add("pointing");
+      bar.classList.add("on");
+    }
+    function hide(bar) {
+      guide.hidden = tag.hidden = true;
+      chart.classList.remove("pointing");
+      bar.classList.remove("on");
+    }
+    chart.querySelectorAll(".bar").forEach(function (bar) {
+      bar.addEventListener("mouseenter", function () { show(bar); });
+      bar.addEventListener("focus", function () { show(bar); });
+      bar.addEventListener("mouseleave", function () { hide(bar); });
+      bar.addEventListener("blur", function () { hide(bar); });
+    });
+  });
+
+  document.querySelectorAll(".compare").forEach(function (box) {
+    var matchups = JSON.parse(box.querySelector(".matchups").textContent);
+    var first = box.querySelector(".pick-a");
+    var second = box.querySelector(".pick-b");
+    function update() {
+      var same = first.value === second.value;
+      box.querySelector(".same").hidden = !same;
+      box.querySelector(".verdict").hidden = same;
+      var parts = matchups[first.value + "|" + second.value];
+      if (same || !parts) return;
+      box.querySelectorAll("[data-field]").forEach(function (node) {
+        node.textContent = parts[node.dataset.field];
+      });
+      box.querySelectorAll("[data-color]").forEach(function (node) {
+        node.className = node.className.replace(/c-\d+/, parts[node.dataset.color]);
+      });
+      box.querySelectorAll(".stat").forEach(function (row, index) {
+        var stat = parts.stats[index];
+        ["left", "right"].forEach(function (side) {
+          var cell = row.querySelector("." + side);
+          var other = side === "left" ? "right" : "left";
+          cell.querySelector(".num").textContent = stat[side + "Text"];
+          cell.querySelector(".lane span").style.width = stat[side + "Pct"] + "%";
+          cell.classList.toggle("better", stat[side + "Better"]);
+          cell.classList.toggle("weaker", stat[other + "Better"]);
+        });
+      });
+    }
+    first.addEventListener("change", update);
+    second.addEventListener("change", update);
+  });
+})();
 </script>
 </body>
 </html>
