@@ -1,17 +1,16 @@
-"""Turn experiment runs into a Bot Report, written as Markdown and as HTML.
+"""Turn experiment runs into a Bot Report and write its Markdown.
 
-Both files are written from the same BotReport, so they always show the same
-numbers. Nothing here depends on the time it runs, so the same runs always
-give the same files.
+ReportPage writes the HTML from the same BotReport, so both files always show
+the same numbers. Nothing here depends on the time it runs, so the same runs
+always give the same files.
 """
 
 from dataclasses import dataclass
-from html import escape
 import statistics
 
-from snake.analysis import ReportColors
+from snake.analysis.ExperimentRuns import ExperimentConditions
 from snake.analysis.PairedComparison import compare_paired
-from snake.analysis.ScoreChart import score_chart_svg
+from snake.analysis.ScoreChart import BIN_WIDTH, bin_label, score_bins, score_chart_svg
 from snake.bots.BotModeCatalogue import BOT_MODES, FAMILY_LABELS
 
 
@@ -24,10 +23,15 @@ OVERVIEW_HEADINGS = (
 )
 COMPARISON_HEADINGS = (
     "Better bot", "Compared with", "Games", "Average difference", "95% range", "Verdict",
+    "Won / tied / lost",
 )
 PROVENANCE_HEADINGS = (
     "Bot", "Bot file", "Feature Set", "Games trained", "Trained by", "Training seeds", "Code",
 )
+# Each saved run's page, in this folder next to the local Bot Report.
+RUN_PAGE_FOLDER = "runs"
+# How many of the latest saved runs the local Bot Report links to.
+RECENT_COUNT = 5
 # Shown where a field does not apply, such as a non-learning bot's Feature Set.
 NOT_APPLICABLE = "—"
 UNKNOWN = "unknown"
@@ -52,14 +56,56 @@ class RunSummary:
     upper_quartile: float
     # None when no game scored, as there is no point to divide by.
     moves_per_point: float | None
+    scores: tuple = ()
+
+
+@dataclass(frozen=True)
+class Matchup:
+    """Two bots on the same seeds, the one with the higher average first."""
+
+    first: str
+    second: str
+    game_count: int
+    mean_difference: float
+    low: float | None
+    high: float | None
+    verdict: str
+    # Games, out of the same seeds, that each bot scored more in, and ties.
+    first_wins: int
+    ties: int
+    second_wins: int
 
 
 @dataclass(frozen=True)
 class ConditionsGroup:
     title: str
     rows: tuple
-    comparisons: tuple
+    matchups: tuple
     provenance: tuple
+    # The Experiment Conditions every run in the group shares.
+    conditions: ExperimentConditions | None = None
+
+    @property
+    def comparisons(self):
+        return tuple(comparison_cells(matchup) for matchup in self.matchups)
+
+
+@dataclass(frozen=True)
+class RecentRun:
+    """A saved run the local Bot Report links to, by its run page."""
+
+    # The saved report's file name without ".json", which names its run page.
+    source: str
+    created_at: str
+    bots: tuple
+
+    @property
+    def page(self):
+        return f"{RUN_PAGE_FOLDER}/{self.source}.html"
+
+    @property
+    def text(self):
+        return f"{self.created_at} UTC: {', '.join(self.bots)}"
 
 
 @dataclass(frozen=True)
@@ -72,6 +118,8 @@ class BotReport:
     # on the local experiments folder, such as skipped files.
     showcase: bool = False
     not_evaluated: tuple = ()
+    # The latest saved runs, newest first; the Showcase Report has none.
+    recent: tuple = ()
 
 
 def build_bot_report(runs, skipped_files, showcase=False, not_evaluated=()):
@@ -87,11 +135,33 @@ def build_bot_report(runs, skipped_files, showcase=False, not_evaluated=()):
         run_count += len(newest)
         groups.append(ConditionsGroup(
             conditions_title(conditions), summary_rows(newest), comparison_rows(newest),
-            tuple(provenance_cells(run) for run in newest),
+            tuple(provenance_cells(run) for run in newest), conditions=conditions,
         ))
     title = "Showcase Report" if showcase else "Bot Report"
     return BotReport(
         run_count, skipped_files, tuple(groups), title, showcase, tuple(not_evaluated),
+        () if showcase else recent_runs(runs),
+    )
+
+
+def recent_runs(runs):
+    """The latest saved runs, newest first, each with the bots it evaluated.
+
+    This only lists them; nothing on the report is chosen by which run is newest.
+    """
+    runs_by_source = {}
+    for run in runs:
+        if run.source is not None:
+            runs_by_source.setdefault(run.source, []).append(run)
+    # Runs saved at the same time keep file name order.
+    sources = sorted(runs_by_source)
+    sources.sort(key=lambda source: runs_by_source[source][0].created_at, reverse=True)
+    return tuple(
+        RecentRun(
+            source, runs_by_source[source][0].created_at.strftime("%Y-%m-%d %H:%M"),
+            tuple(sorted({bot_label(run) for run in runs_by_source[source]})),
+        )
+        for source in sources[:RECENT_COUNT]
     )
 
 
@@ -184,29 +254,59 @@ def comparison_rows(runs):
     scores = {label: scores_per_seed(label_runs) for label, label_runs in runs_by_label.items()}
     # Highest average first; equal averages keep alphabetical order.
     labels = sorted(scores, key=lambda label: (-statistics.mean(scores[label]), label))
-    rows = []
+    matchups = []
     for position, first in enumerate(labels):
         for second in labels[position + 1:]:
             comparison = compare_paired(scores[first], scores[second])
-            rows.append(comparison_cells(first, second, comparison))
-    return tuple(rows)
+            pairs = list(zip(scores[first], scores[second]))
+            matchups.append(Matchup(
+                first, second, comparison.game_count, comparison.mean_difference,
+                comparison.low, comparison.high, comparison.verdict,
+                first_wins=sum(a > b for a, b in pairs),
+                ties=sum(a == b for a, b in pairs),
+                second_wins=sum(a < b for a, b in pairs),
+            ))
+    return tuple(matchups)
 
 
-def comparison_cells(first, second, comparison):
-    if comparison.low is None:
-        range_text = NOT_APPLICABLE
-    else:
-        range_text = f"{comparison.low:.1f} to {comparison.high:.1f}"
-    verdict = {
-        "first is better": f"{first} scores more",
-        "second is better": f"{second} scores more",
+def range_text(matchup):
+    if matchup.low is None:
+        return NOT_APPLICABLE
+    return f"{matchup.low:.1f} to {matchup.high:.1f}"
+
+
+def verdict_text(matchup):
+    return {
+        "first is better": f"{matchup.first} scores more",
+        "second is better": f"{matchup.second} scores more",
         "no reliable difference": "No reliable difference",
         "too few games": "Too few games",
-    }[comparison.verdict]
+    }[matchup.verdict]
+
+
+def comparison_cells(matchup):
     return (
-        first, second, str(comparison.game_count), f"{comparison.mean_difference:.1f}",
-        range_text, verdict,
+        matchup.first, matchup.second, str(matchup.game_count),
+        f"{matchup.mean_difference:.1f}", range_text(matchup), verdict_text(matchup),
+        f"{matchup.first_wins} / {matchup.ties} / {matchup.second_wins}",
     )
+
+
+def ranking_rows(group):
+    """One row per bot, best average first: its combined row when it has one."""
+    best_row = {}
+    for row in group.rows:
+        if row.bot not in best_row or row.label != row.bot:
+            best_row[row.bot] = row
+    return sorted(best_row.values(), key=lambda row: (-row.mean_score, row.bot))
+
+
+def bin_count(group):
+    """How many score ranges a group's histograms need to reach its best game."""
+    return max(row.best_score for row in group.rows) // BIN_WIDTH + 1
+
+
+
 
 
 def summarize_games(label, bot, bot_file, created_at, games):
@@ -238,6 +338,7 @@ def summarize_games(label, bot, bot_file, created_at, games):
         moves_per_point=(
             sum(game.moves for game in games) / total_score if total_score else None
         ),
+        scores=tuple(scores),
     )
 
 
@@ -328,9 +429,9 @@ READING_NOTES = (
     "above zero, the first bot reliably scores more; when it includes zero, the "
     "games cannot show a difference. A bot with several bot files uses its "
     "average score on each seed.",
-    "In each chart the line runs from the lowest to the best score, the box holds "
-    "the middle half of the games, the line inside the box is the median, and the "
-    "dot is the mean.",
+    "Each histogram shows one bot: across is the score a game ended with, in "
+    "ranges of 10, and up is how many games ended there. All of a group's "
+    "histograms share one scale.",
     "A bot file is the saved Q-table or DQN model, shown by the start of its "
     "hash. When the same bot file was evaluated more than once, only its newest "
     "run is shown. A combined row pools the games of every bot file of that bot.",
@@ -356,11 +457,25 @@ def chart_title(group):
 
 
 def chart_files(report):
-    """Each group's chart as (file name, SVG), in the order of the groups."""
+    """Each group's histograms as (file name, SVG), in the order of the groups."""
     return [
-        (f"scores_{number}.svg", score_chart_svg(chart_title(group), group.rows))
+        (f"scores_{number}.svg", score_chart_svg(
+            chart_title(group), ranking_rows(group), bin_count(group),
+        ))
         for number, group in enumerate(report.groups, start=1)
     ]
+
+
+def score_table(group):
+    """How many games landed in each score range, one column per bot."""
+    bots = ranking_rows(group)
+    count = bin_count(group)
+    bins = [score_bins(row.scores, count) for row in bots]
+    rows = [
+        (bin_label(index), *[str(counts[index]) for counts in bins])
+        for index in range(count) if any(counts[index] for counts in bins)
+    ]
+    return markdown_table(("Score", *[row.bot for row in bots]), rows)
 
 
 def write_markdown(report, chart_folder):
@@ -373,6 +488,8 @@ def write_markdown(report, chart_folder):
         lines += ["", f"## {group.title}", ""]
         lines += markdown_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
         lines += ["", f"![{chart_title(group)}]({chart_folder}/{chart_name})"]
+        lines += ["", "### Scores per game", ""]
+        lines += score_table(group)
         lines += ["", "### Game by game", ""]
         if group.comparisons:
             lines += markdown_table(COMPARISON_HEADINGS, group.comparisons)
@@ -383,225 +500,7 @@ def write_markdown(report, chart_folder):
     if report.not_evaluated:
         lines += ["", "## Not evaluated yet", "", NOT_EVALUATED_SENTENCE, ""]
         lines += [f"- {name}" for name in report.not_evaluated]
+    if report.recent:
+        lines += ["", "## Recent evaluations", ""]
+        lines += [f"- {recent.text} ({recent.page})" for recent in report.recent]
     return "\n".join(lines) + "\n"
-
-
-C = ReportColors
-# The app's dark board, as a page: a faint cell grid behind raised panels, and
-# each bot in its Records Analytics colour.
-HTML_STYLE = f"""
-:root {{ color-scheme: dark; --surface: {C.SURFACE}; --raised: {C.SURFACE_RAISED};
-  --border: {C.BORDER}; --grid: #0F2036; --text: {C.TEXT}; --muted: {C.TEXT_MUTED};
-  --head: {C.SNAKE_HEAD}; --body: #2EAA82; --food: {C.FOOD}; }}
-* {{ box-sizing: border-box; }}
-body {{ margin: 0; color: var(--text); background-color: var(--surface);
-  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: 28px 28px;
-  font: 15px/1.6 Inter, ui-sans-serif, system-ui, sans-serif;
-  font-variant-numeric: tabular-nums; }}
-main {{ max-width: 1080px; margin: 0 auto; padding: 48px 20px 64px; }}
-h1 {{ font-size: clamp(34px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.02em;
-  margin: 0 0 14px; font-weight: 700; }}
-h2 {{ font-size: 22px; line-height: 1.3; margin: 0 0 18px; font-weight: 650;
-  letter-spacing: -0.01em; }}
-h3 {{ font-size: 15px; font-weight: 600; margin: 28px 0 10px; color: var(--muted); }}
-.lede {{ max-width: 68ch; color: var(--muted); font-size: 17px; margin: 0 0 18px; }}
-p {{ max-width: 72ch; }}
-details.notes {{ max-width: 72ch; border: 1px solid var(--border); border-radius: 10px;
-  background: var(--raised); padding: 4px 18px; margin-bottom: 8px; }}
-details.notes summary {{ cursor: pointer; padding: 10px 0; font-weight: 600; }}
-details.notes p {{ color: var(--muted); margin: 0 0 14px; }}
-summary:focus-visible {{ outline: 2px solid var(--head); outline-offset: 4px;
-  border-radius: 4px; }}
-section.group {{ margin-top: 56px; }}
-ol.ranking {{ list-style: none; display: flex; flex-wrap: wrap; align-items: center;
-  gap: 10px 0; padding: 0; margin: 0 0 22px; }}
-ol.ranking li {{ position: relative; min-width: 118px; padding: 10px 14px 9px;
-  margin-right: 12px; border-radius: 8px; background: var(--raised);
-  border: 1px solid var(--border); border-top: 3px solid var(--bot); }}
-ol.ranking li + li::before {{ content: ""; position: absolute; left: -13px; top: 50%;
-  width: 13px; height: 6px; margin-top: -3px; background: var(--body); }}
-ol.ranking li.head {{ background: var(--head); border-color: var(--head);
-  color: {C.SURFACE}; padding-left: 24px; }}
-ol.ranking li.head::after {{ content: ""; position: absolute; top: 12px; left: 9px;
-  width: 5px; height: 5px; border-radius: 50%; background: {C.SURFACE};
-  box-shadow: 0 9px 0 {C.SURFACE}; }}
-ol.ranking .food {{ width: 12px; height: 12px; border-radius: 50%; background: var(--food);
-  margin-right: 14px; min-width: 0; padding: 0; border: 0; }}
-ol.ranking .name {{ display: block; font-weight: 600; font-size: 14px; white-space: nowrap; }}
-ol.ranking .score {{ display: block; font-size: 22px; font-weight: 700; line-height: 1.2; }}
-ol.ranking li.head .score, ol.ranking li.head .name {{ color: {C.SURFACE}; }}
-.panel {{ background: var(--raised); border: 1px solid var(--border); border-radius: 10px;
-  overflow-x: auto; }}
-.chart {{ margin: 0 0 18px; overflow-x: auto; border-radius: 10px; }}
-.chart svg {{ display: block; width: 100%; min-width: 620px; height: auto; }}
-table {{ border-collapse: collapse; width: 100%; }}
-th, td {{ padding: 9px 14px; text-align: right; white-space: nowrap;
-  border-bottom: 1px solid var(--border); }}
-tbody tr:last-child td {{ border-bottom: 0; }}
-th {{ color: var(--muted); font-weight: 500; font-size: 13px; }}
-th.text, td.text {{ text-align: left; }}
-td.bot {{ text-align: left; font-weight: 500; }}
-td.text:not(.bot) {{ color: var(--muted); }}
-.swatch {{ display: inline-block; width: 10px; height: 10px; border-radius: 3px;
-  margin-right: 9px; background: var(--bot); vertical-align: 0; }}
-td.unsure {{ color: var(--muted); font-style: italic; }}
-.empty {{ color: var(--muted); }}
-.picker {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
-  margin: 0 0 12px; color: var(--muted); }}
-.picker select {{ font: inherit; color: var(--text); background: var(--raised);
-  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }}
-.picker select:focus-visible {{ outline: 2px solid var(--head); outline-offset: 2px; }}
-tr[hidden] {{ display: none; }}
-ul.missing {{ padding-left: 20px; color: var(--muted); }}
-@media (max-width: 600px) {{ main {{ padding: 32px 16px 48px; }}
-  ol.ranking li {{ min-width: 0; margin-right: 8px; }}
-  ol.ranking li + li::before {{ display: none; }} }}
-"""
-
-# Columns that name a bot, per table, get the bot's colour swatch; text
-# columns align left and numbers right.
-BOT_COLUMNS = {"overview": (0,), "comparisons": (0, 1), "provenance": (0,)}
-TEXT_COLUMNS = {"overview": (0, 1, 2), "comparisons": (0, 1, 5), "provenance": (0, 1, 4)}
-
-
-def bot_cell(name, colors):
-    color = colors.get(name, C.TEXT_MUTED)
-    return (f'<td class="bot" style="--bot: {color}"><span class="swatch"></span>'
-            f"{escape(name)}</td>")
-
-
-def html_table(headings, rows, colors, table):
-    bot_columns, text_columns = BOT_COLUMNS[table], TEXT_COLUMNS[table]
-    parts = ['<div class="panel"><table>']
-    parts.append("<thead><tr>" + "".join(
-        f'<th class="text">{escape(heading)}</th>' if column in text_columns
-        else f"<th>{escape(heading)}</th>"
-        for column, heading in enumerate(headings)
-    ) + "</tr></thead><tbody>")
-    for cells in rows:
-        row = []
-        # A comparison row names its pair, so the picker can show just that pair.
-        opening = (f'<tr data-pair="{escape(cells[0])}|{escape(cells[1])}">'
-                   if table == "comparisons" else "<tr>")
-        for column, cell in enumerate(cells):
-            if column in bot_columns:
-                row.append(bot_cell(cell, colors))
-            elif cell in ("No reliable difference", "Too few games"):
-                row.append(f'<td class="text unsure">{escape(cell)}</td>')
-            elif column in text_columns:
-                row.append(f'<td class="text">{escape(cell)}</td>')
-            else:
-                row.append(f"<td>{escape(cell)}</td>")
-        parts.append(opening + "".join(row) + "</tr>")
-    parts.append("</tbody></table></div>")
-    return parts
-
-
-def ranking_rows(group):
-    """One row per bot, best mean first: its combined row when it has one."""
-    best_row = {}
-    for row in group.rows:
-        if row.bot not in best_row or row.label != row.bot:
-            best_row[row.bot] = row
-    return sorted(best_row.values(), key=lambda row: (-row.mean_score, row.bot))
-
-
-def ranking_snake(group):
-    """The group's ranking drawn as a snake: the leader is the head, nearest the food."""
-    parts = ['<ol class="ranking" aria-label="Bots ranked by mean score, best first">',
-             '<li class="food" aria-hidden="true"></li>']
-    for place, row in enumerate(ranking_rows(group)):
-        head = ' class="head"' if place == 0 else ""
-        parts.append(
-            f'<li{head} style="--bot: {C.bot_color(row.bot)}">'
-            f'<span class="name">{escape(row.bot)}</span>'
-            f'<span class="score">{row.mean_score:.1f}</span></li>'
-        )
-    parts.append("</ol>")
-    return parts
-
-
-def compare_picker(group):
-    """Two dropdowns that narrow the Game by game table, starting on the top two bots."""
-    bots = [row.bot for row in ranking_rows(group)]
-
-    def select(kind, chosen):
-        options = ['<option value="">Any bot</option>'] + [
-            f'<option value="{escape(bot)}"{" selected" if bot == chosen else ""}>'
-            f"{escape(bot)}</option>"
-            for bot in bots
-        ]
-        name = "First bot" if kind == "a" else "Second bot"
-        return (f'<select class="pick-{kind}" aria-label="{name}">'
-                + "".join(options) + "</select>")
-
-    return [
-        '<div class="picker">Compare', select("a", bots[0]), "with", select("b", bots[1]),
-        "</div>",
-    ]
-
-
-# Narrows each Game by game table to the chosen pair; without it every row shows.
-PICKER_SCRIPT = """
-document.querySelectorAll(".picker").forEach(function (picker) {
-  var a = picker.querySelector(".pick-a"), b = picker.querySelector(".pick-b");
-  var rows = picker.nextElementSibling.querySelectorAll("tr[data-pair]");
-  function update() {
-    rows.forEach(function (row) {
-      var pair = row.dataset.pair.split("|");
-      var fits = [a.value, b.value].every(function (bot) {
-        return bot === "" || pair.indexOf(bot) >= 0;
-      });
-      row.hidden = !fits || (a.value !== "" && a.value === b.value);
-    });
-  }
-  a.addEventListener("change", update);
-  b.addEventListener("change", update);
-  update();
-});
-"""
-
-
-def write_html(report):
-    parts = [
-        "<!doctype html>",
-        '<html lang="en">',
-        "<head>",
-        '<meta charset="utf-8">',
-        '<meta name="viewport" content="width=device-width, initial-scale=1">',
-        f"<title>{escape(report.title)}</title>",
-        f"<style>{HTML_STYLE}</style>",
-        "</head>",
-        "<body>",
-        "<main>",
-        f"<h1>{escape(report.title)}</h1>",
-        f'<p class="lede">{escape(source_sentence(report))}</p>',
-        '<details class="notes"><summary>How to read this report</summary>',
-    ]
-    parts += [f"<p>{escape(note)}</p>" for note in reading_notes(report)]
-    parts.append("</details>")
-    for group, (_, chart) in zip(report.groups, chart_files(report)):
-        colors = {row.label: C.bot_color(row.bot) for row in group.rows}
-        parts += ['<section class="group">', f"<h2>{escape(group.title)}</h2>"]
-        parts += ranking_snake(group)
-        parts.append(f'<div class="chart">{chart}</div>')
-        parts += html_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows],
-                            colors, "overview")
-        parts.append("<h3>Game by game</h3>")
-        if group.comparisons:
-            parts += compare_picker(group)
-            parts += html_table(COMPARISON_HEADINGS, group.comparisons, colors, "comparisons")
-        else:
-            parts.append(f'<p class="empty">{escape(ONE_BOT_SENTENCE)}</p>')
-        parts.append("<h3>Where each bot came from</h3>")
-        parts += html_table(PROVENANCE_HEADINGS, group.provenance, colors, "provenance")
-        parts.append("</section>")
-    if report.not_evaluated:
-        parts += ['<section class="group">', "<h2>Not evaluated yet</h2>",
-                  f"<p>{escape(NOT_EVALUATED_SENTENCE)}</p>", '<ul class="missing">']
-        parts += [f"<li>{escape(name)}</li>" for name in report.not_evaluated]
-        parts += ["</ul>", "</section>"]
-    parts += ["</main>", f"<script>{PICKER_SCRIPT}</script>", "</body>", "</html>"]
-    return "\n".join(parts) + "\n"

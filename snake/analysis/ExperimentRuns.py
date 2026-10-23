@@ -56,6 +56,8 @@ class ExperimentRun:
     # None for non-learning Bot Modes and for reports that did not identify the file.
     bot_file: BotFile | None = None
     code_version: str | None = None
+    # The saved report's file name without ".json"; its run page has the same name.
+    source: str | None = None
 
 
 def read_experiment_runs(directory):
@@ -69,13 +71,13 @@ def read_experiment_runs(directory):
     for path in sorted(Path(directory).glob("*.json")):
         try:
             with path.open(encoding="utf-8") as file:
-                runs.extend(read_runs(json.load(file)))
+                runs.extend(read_runs(json.load(file), path.stem))
         except (OSError, ValueError, KeyError, TypeError, OverflowError):
             skipped += 1
     return runs, skipped
 
 
-def read_runs(report):
+def read_runs(report, source=None):
     if not isinstance(report, dict):
         raise ValueError("Expected a report object")
     if report["schema_version"] != REPORT_SCHEMA_VERSION:
@@ -105,7 +107,7 @@ def read_runs(report):
     return [
         ExperimentRun(
             bot_mode, created_at, conditions, read_games(bot["games"], seeds),
-            read_bot_file(report, bot_mode), code_version,
+            read_bot_file(report, bot_mode), code_version, source,
         )
         for bot_mode, bot in bots.items()
     ]

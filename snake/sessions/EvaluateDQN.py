@@ -11,6 +11,7 @@ import uuid
 
 import torch
 
+from snake.analysis.LocalReport import print_bot_report
 from snake.bots.DQNBot import DQNBot
 from snake.engine.GameConfig import GameConfig
 from snake.sessions.RunExperiment import make_engine, summarize_games
@@ -113,6 +114,7 @@ def main(argv=None):
         f"games/s {summary['games_per_second']:.1f}"
     )
     print(f"Saved experiment: {result_path}")
+    print_bot_report(result_path)
     return 0
 
 

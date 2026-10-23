@@ -121,21 +121,54 @@ It never plays games or changes a report.
 uv run python -m snake.sessions.AnalyseBots
 ```
 
-It writes `reports/bot_report.html`, `reports/bot_report.md`, and the charts in
-`reports/bot_report_charts/`. Reports are grouped by their Experiment
+It writes `reports/bot_report.html`, `reports/bot_report.md`, the charts in
+`reports/bot_report_charts/`, and a run page for every saved report in
+`reports/runs/`, named after the report's file. You rarely need to run it
+yourself: every finished Evaluate in the app, `RunExperiment`, and `EvaluateDQN`
+rebuilds this local report right after saving, so a newly evaluated bot appears
+next to every bot that played the same games. The app's Evaluate screen then
+offers Open report (or R), which opens the run page of the evaluation that just
+finished, and the terminal commands print where the Bot Report and that run page
+are. Nothing on the Bot Report is chosen by which run is newest: the face-off
+always opens on the two best bots, and a Recent evaluations list near the top
+links to the five latest run pages. To compare a new
+bot with the others, evaluate it on the 200 study games; a 20-game run uses other
+seeds, so it gets its own group. The committed Showcase Report is never rebuilt
+automatically. Reports are grouped by their Experiment
 Conditions (board, move limit, and exact seed list), and runs are only compared
 inside a group. Each group shows:
 
+- its result in one sentence and the bots ranked by average food per game;
+- a histogram per bot: across is the score a game ended with, in ranges of 10,
+  and up is how many games ended there (the Markdown also lists these counts);
+- a face-off between any two bots on the same seeds: average, median, best
+  game, games won head to head, moves per food, and stopped by limit side by
+  side, the better value in bold, then one sentence and a 95% range that says
+  whether the lead is reliable (the Markdown lists every pair);
 - an overview row per bot file, with mean, median, best, spread, win and
   move-limit rates, and moves per point, plus a combined row for a bot with
   several bot files;
-- a box plot of the scores per game;
-- a game-by-game comparison of every pair of bots on the same seeds, with a 95%
-  range that says whether the difference is reliable;
 - where each bot file came from: Feature Set, games trained, app or terminal
   training, training seeds, and code version.
 
-A bot file evaluated more than once shows only its newest run. Damaged,
+A run page shows, for each bot in that run:
+
+- its average food per game, best game, and how often the move limit stopped
+  it, instead of a rank, because the bots play in very different ways;
+- how far it leads or trails every other bot on the same games, best first, with
+  the games it won and whether the difference is reliable;
+- its histogram next to the leader's, or next to the second best for the leader.
+
+It compares that run's own games, even when the bot has other bot files or later
+runs. A run with several bots lists them at the top to jump to. A bot that no
+other bot played the same games with says so, and lists the games other bots
+were evaluated on. Pages of deleted reports are removed.
+
+The HTML pages have a light and a dark theme (they follow the system until you
+choose one) and use system fonts, so they work offline.
+
+In the Bot Report, a bot file evaluated more than once shows only its newest
+run; each run still keeps its own run page. Damaged,
 incomplete, and older-format reports are skipped and counted. Use `--output` to
 write somewhere else and `--experiments` to read another folder.
 

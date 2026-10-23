@@ -3,6 +3,7 @@
 import hashlib
 import json
 import os
+import re
 from xml.etree import ElementTree
 from pathlib import Path
 import subprocess
@@ -62,6 +63,7 @@ def read_markdown(tmp_path):
 
 
 OVERVIEW = "overview"
+SCORES = "### Scores per game"
 COMPARISONS = "### Game by game"
 PROVENANCE = "### Where each bot came from"
 
@@ -146,7 +148,9 @@ def test_runs_with_different_experiment_conditions_are_never_mixed(tmp_path):
 
     assert result.returncode == 0, result.stderr
     markdown = read_markdown(tmp_path)
-    sections = markdown.split("\n## ")[1:]
+    # One section per group of Experiment Conditions, then the recent evaluations.
+    sections = markdown.split("\n## ")[1:-1]
+    assert markdown.split("\n## ")[-1].startswith("Recent evaluations")
     assert len(sections) == 3
     by_heading = {section.splitlines()[0]: section for section in sections}
     short = by_heading["24 × 25 board, 5000-move limit, seeds 200000–200001 (2 games)"]
@@ -270,7 +274,8 @@ def test_a_bot_file_evaluated_twice_shows_only_its_newest_run(tmp_path):
     rows = table_rows(markdown, "Q Learning v3")
     assert len(rows) == 1
     assert rows[0][2] == "2026-10-05 00:00"
-    assert "2026-10-01" not in markdown
+    # The old run keeps its own run page, so only the recent list may name it.
+    assert "2026-10-01" not in markdown.split("## Recent evaluations")[0]
     assert not table_rows(markdown, "Q Learning v3 combined (2 bot files)")
 
 
@@ -371,11 +376,10 @@ def test_each_group_gets_a_score_chart_in_both_files(tmp_path):
         assert root.tag == "{http://www.w3.org/2000/svg}svg"
         text = chart.read_text(encoding="utf-8")
         assert all(label in text for label in labels)
-        # Each chart explains its own marks, wherever it is shown.
-        for key in ("Lowest to best score", "Middle half of games", "Median", "Mean"):
-            assert f">{key}</text>" in text
+        # Each chart is a histogram per bot that names both of its axes.
+        assert ">Games</text>" in text and ">Score (food eaten)</text>" in text
         assert f"](bot_report_charts/{chart.name})" in markdown
-    assert page.count("<svg") == 2
+    assert page.count('<div class="histograms"') == 2
 
 
 def test_charts_from_an_earlier_report_are_removed(tmp_path):
@@ -402,8 +406,10 @@ def test_bots_are_compared_game_by_game_with_a_95_percent_range(tmp_path):
     markdown = read_markdown(tmp_path)
     assert "### Game by game" in markdown
     # Differences 35, 43, 51: average 43, range 43 ± 4.303 × 8 / √3.
+    # The last column counts the games each bot won, tied, and lost.
     assert table_rows(markdown, "Search-Based", COMPARISONS)[0] == [
         "Search-Based", "Rule Based", "3", "43.0", "23.1 to 62.9", "Search-Based scores more",
+        "3 / 0 / 0",
     ]
 
 
@@ -421,6 +427,7 @@ def test_a_bot_with_several_files_is_compared_by_its_average_per_seed(tmp_path):
     comparison = table_rows(read_markdown(tmp_path), "Q Learning v3", COMPARISONS)[0]
     assert comparison[:4] == ["Q Learning v3", "Rule Based", "2", "0.0"]
     assert comparison[5] == "No reliable difference"
+    assert comparison[6] == "1 / 0 / 1"
 
 
 def test_a_group_with_one_bot_has_nothing_to_compare(tmp_path):
@@ -500,6 +507,11 @@ def test_showcase_report_uses_only_showcase_bots_and_baselines_on_the_study_game
     assert not (tmp_path / "reports").exists()
     assert "3 runs left out" in result.stdout
     assert "Hamiltonian follows one route over the whole board" in markdown
+    # The committed report never points at whichever run happened to be newest,
+    # and its runs are not local, so it has no run pages to list.
+    assert "Newest" not in markdown
+    assert "Recent evaluations" not in markdown
+    assert "Recent evaluations" not in (folder / "showcase.html").read_text(encoding="utf-8")
     # The report had no Training History; the catalogue knows the seed.
     assert table_rows(markdown, "Q Learning v3", PROVENANCE)[0][5] == "15000"
 
@@ -545,15 +557,59 @@ def test_html_lets_readers_pick_which_two_bots_to_compare(tmp_path):
 
     assert result.returncode == 0, result.stderr
     page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
-    # Two dropdowns, starting on the two best bots, with every bot to choose.
-    assert page.count('<select class="pick-') == 2
+    # No bot is ever marked as the newest one.
+    assert 'class="newest"' not in page
+    # Two dropdowns start on the two best bots, and that comparison is written
+    # into the page, so it reads the same without JavaScript.
+    assert '<select class="pick-a"' in page and '<select class="pick-b"' in page
     assert '<option value="Hamiltonian" selected>' in page
     assert '<option value="Search-Based" selected>' in page
-    assert '<option value="">Any bot</option>' in page
-    # Every comparison row stays in the page and says which pair it is, so the
-    # full table still shows without JavaScript.
+    assert ("Hamiltonian eats 71.0 more food per game than Search-Based, "
+            "and wins 3 of the 3 games.") in page
+    # The face-off puts six numbers side by side; the better side is marked.
+    assert page.count('<div class="stat">') == 6
+    games_won = page.split("<b>Games won</b>")[0].rsplit('<div class="stat">', 1)[1]
+    assert 'better" data-color="firstColor"><span class="num">3</span>' in games_won
+    stopped = page.split("<b>Stopped by limit</b>")[0].rsplit('<div class="stat">', 1)[1]
+    assert "better" not in stopped
+    # Every pair, in both orders, is ready for the dropdowns.
+    data = page.split('<script type="application/json" class="matchups">')[1].split("</script>")[0]
+    assert len(json.loads(data)) == 6
+    # The full comparison table stays in the page for developers.
     assert page.count('<tr data-pair="') == 3
     assert '<tr data-pair="Hamiltonian|Rule Based">' in page
+
+
+def test_markdown_lists_how_many_games_landed_in_each_score_range(tmp_path):
+    write_report(tmp_path, "both.json", sample_report({
+        "rule": games_from([5, 7, 9]), "search_based": games_from([40, 50, 60]),
+    }))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    # Columns follow the ranking, best bot first; empty ranges are left out.
+    assert "| Score | Search-Based | Rule Based |" in markdown
+    assert table_rows(markdown, "0 to 9", SCORES) == [["0 to 9", "0", "3"]]
+    assert table_rows(markdown, "50 to 59", SCORES) == [["50 to 59", "1", "0"]]
+    assert not table_rows(markdown, "20 to 29", SCORES)
+
+
+def test_html_page_has_light_and_dark_mode_motion_and_hover_bars(tmp_path):
+    write_report(tmp_path, "both.json", sample_report({
+        "rule": games_from([5, 7, 9]), "search_based": games_from([40, 50, 60]),
+    }))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    assert "prefers-color-scheme: dark" in page and 'class="theme-toggle"' in page
+    assert "prefers-reduced-motion: reduce" in page
+    # Each histogram bar can be hovered or focused and says what it counts.
+    assert 'aria-label="Rule Based: 3 games scored 0 to 9"' in page
+    assert "fonts.googleapis.com" not in page
 
 
 def test_a_showcase_table_with_windows_line_endings_is_the_same_bot(tmp_path):
@@ -574,3 +630,191 @@ def test_a_showcase_table_with_windows_line_endings_is_the_same_bot(tmp_path):
     markdown = (tmp_path / "docs" / "results" / "showcase.md").read_text(encoding="utf-8")
     assert len(table_rows(markdown, "Q Learning v3")) == 1
     assert "Q Learning v3 Showcase Bot" not in markdown.split("## Not evaluated yet")[1]
+
+
+def test_the_full_report_opens_on_the_top_two_and_lists_recent_evaluations(tmp_path):
+    write_report(tmp_path, "experiment_old.json", sample_report({
+        "hamiltonian": games_from([120, 121, 122]), "search_based": games_from([40, 50, 60]),
+    }, date="2026-10-01T00:00:00+00:00"))
+    write_report(tmp_path, "experiment_new.json", sample_report(
+        {"rule": games_from([5, 7, 9])}, date="2026-10-05T00:00:00+00:00",
+    ))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    # A newer run changes nothing about where the face-off starts.
+    assert "Newest" not in page
+    first = page.split('<select class="pick-a">')[1].split("</select>")[0]
+    second = page.split('<select class="pick-b">')[1].split("</select>")[0]
+    assert '<option value="Hamiltonian" selected>' in first
+    assert '<option value="Search-Based" selected>' in second
+    # Recent evaluations link to their run pages, newest first.
+    recent = page.split('<nav class="recent"')[1].split("</nav>")[0]
+    assert re.findall(r'<a href="([^"]+)">([^<]+)</a>', recent) == [
+        ("runs/experiment_new.html", "2026-10-05 00:00 UTC: Rule Based"),
+        ("runs/experiment_old.html", "2026-10-01 00:00 UTC: Hamiltonian, Search-Based"),
+    ]
+    markdown = read_markdown(tmp_path)
+    assert "Newest" not in markdown
+    assert ("## Recent evaluations\n\n"
+            "- 2026-10-05 00:00 UTC: Rule Based (runs/experiment_new.html)\n"
+            "- 2026-10-01 00:00 UTC: Hamiltonian, Search-Based (runs/experiment_old.html)\n"
+            ) in markdown
+
+
+def test_only_the_five_most_recent_evaluations_are_listed(tmp_path):
+    for day in range(1, 8):
+        write_report(tmp_path, f"experiment_day{day}.json", sample_report(
+            {"rule": games_from([day, day, day])}, date=f"2026-10-0{day}T00:00:00+00:00",
+        ))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    recent = page.split('<nav class="recent"')[1].split("</nav>")[0]
+    assert re.findall(r'href="runs/([^"]+)\.html"', recent) == [
+        "experiment_day7", "experiment_day6", "experiment_day5", "experiment_day4",
+        "experiment_day3",
+    ]
+
+
+def run_page(tmp_path, name):
+    return (tmp_path / "reports" / "runs" / f"{name}.html").read_text(encoding="utf-8")
+
+
+def test_every_saved_run_gets_its_own_run_page_and_old_pages_are_removed(tmp_path):
+    write_report(tmp_path, "experiment_old.json", sample_report({
+        "hamiltonian": games_from([120, 121, 122]), "search_based": games_from([40, 50, 60]),
+    }))
+    write_report(tmp_path, "experiment_new.json", sample_report({"rule": games_from([5, 7, 9])}))
+    runs = tmp_path / "reports" / "runs"
+    runs.mkdir(parents=True)
+    (runs / "experiment_deleted.html").write_text("an evaluation that was removed")
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert sorted(path.name for path in runs.iterdir()) == [
+        "experiment_new.html", "experiment_old.html",
+    ]
+    rule = run_page(tmp_path, "experiment_new")
+    assert "<h2>Rule Based eats 7.0 food per game on average.</h2>" in rule
+    assert "3 games · best game 9 · stopped by the move limit in 0.0% of games" in rule
+    assert "<h2>Hamiltonian eats 121.0 food per game on average.</h2>" in run_page(
+        tmp_path, "experiment_old",
+    )
+    # Bots play in different ways, so a run page never ranks them by one number.
+    assert " ranks " not in rule
+
+
+def rival_rows(page):
+    """Each against-everyone row's visible text, in page order."""
+    rows = [row.split("</li>")[0] for row in page.split('<li class="rival ')[1:]]
+    return [" ".join(re.sub("<[^>]+>", " ", row.split(">", 1)[1]).split()) for row in rows]
+
+
+def test_a_run_page_compares_its_bot_with_every_other_bot_best_first(tmp_path):
+    write_report(tmp_path, "experiment_old.json", sample_report({
+        "hamiltonian": games_from([120, 121, 122]), "search_based": games_from([40, 50, 60]),
+    }))
+    write_report(tmp_path, "experiment_rule.json", sample_report({"rule": games_from([5, 7, 9])}))
+    write_report(tmp_path, "experiment_close.json", sample_report({
+        "q_learning_v3": games_from([45, 48, 58]),
+    }))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert rival_rows(run_page(tmp_path, "experiment_rule")) == [
+        "Hamiltonian Trails by 114.0 won 0 of 3 games · reliable",
+        "Q Learning v3 Trails by 43.3 won 0 of 3 games · reliable",
+        "Search-Based Trails by 43.0 won 0 of 3 games · reliable",
+    ]
+    close = rival_rows(run_page(tmp_path, "experiment_close"))
+    assert "Search-Based Leads by 0.3 won 1 of 3 games · too close to call" in close
+
+
+def histogram_names(section):
+    return re.findall(
+        r'<div class="histogram [^"]*">\s*<div class="head"><span><span class="swatch"></span>([^<]+)</span>',
+        section,
+    )
+
+
+def test_a_run_page_shows_each_bots_games_next_to_the_leaders(tmp_path):
+    write_report(tmp_path, "experiment_old.json", sample_report({
+        "hamiltonian": games_from([120, 121, 122]), "search_based": games_from([40, 50, 60]),
+    }))
+    write_report(tmp_path, "experiment_new.json", sample_report({"rule": games_from([5, 7, 9])}))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert histogram_names(run_page(tmp_path, "experiment_new")) == ["Rule Based", "Hamiltonian"]
+    # The leader is shown next to the second best; one section per bot in the run.
+    sections = run_page(tmp_path, "experiment_old").split('<section class="group"')[1:]
+    assert [histogram_names(section) for section in sections] == [
+        ["Hamiltonian", "Search-Based"], ["Search-Based", "Hamiltonian"],
+    ]
+
+
+def test_a_bot_alone_on_its_games_says_so_and_names_the_games_others_played(tmp_path):
+    write_report(tmp_path, "experiment_study.json", sample_report({
+        "hamiltonian": games_from([120, 121, 122]), "search_based": games_from([40, 50, 60]),
+    }))
+    write_report(tmp_path, "experiment_quick.json", sample_report({"rule": games_from([5, 7])}))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = run_page(tmp_path, "experiment_quick")
+    assert ("No other bot has played these games yet, so there is nothing to compare "
+            "Rule Based with.") in page
+    assert ("<li>24 × 25 board, 5000-move limit, seeds 200000–200002 (3 games): "
+            "2 bots</li>") in page
+    assert rival_rows(page) == []
+    # How its own games ended is still worth seeing.
+    assert histogram_names(page) == ["Rule Based"]
+
+
+def test_a_run_with_several_bots_lists_them_at_the_top_to_jump_to(tmp_path):
+    write_report(tmp_path, "experiment_two.json", sample_report({
+        "hamiltonian": games_from([120, 121, 122]), "q_learning_v3": games_from([40, 50, 60]),
+    }))
+    write_report(tmp_path, "experiment_one.json", sample_report({"rule": games_from([5, 7, 9])}))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = run_page(tmp_path, "experiment_two")
+    jump = page.split('<nav class="jump"')[1].split("</nav>")[0]
+    assert re.findall(r'<a href="#([^"]+)">([^<]+)</a>', jump) == [
+        ("hamiltonian", "Hamiltonian"), ("q-learning-v3", "Q Learning v3"),
+    ]
+    assert '<section class="group" id="hamiltonian">' in page
+    assert '<section class="group" id="q-learning-v3">' in page
+    # One bot needs no list to jump to.
+    assert '<nav class="jump"' not in run_page(tmp_path, "experiment_one")
+
+
+def test_a_run_page_compares_its_own_games_not_the_bots_other_files(tmp_path):
+    strong = sample_report({"q_learning_v3": games_from([100, 100, 100])})
+    strong["q_learning_v3"] = q_table_identity("a" * 64)
+    weak = sample_report({"q_learning_v3": games_from([10, 10, 10])})
+    weak["q_learning_v3"] = q_table_identity("b" * 64)
+    write_report(tmp_path, "experiment_strong.json", strong)
+    write_report(tmp_path, "experiment_weak.json", weak)
+    write_report(tmp_path, "experiment_rule.json", sample_report({"rule": games_from([50, 50, 50])}))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert rival_rows(run_page(tmp_path, "experiment_strong")) == [
+        "Rule Based Leads by 50.0 won 3 of 3 games · reliable",
+    ]
+    assert rival_rows(run_page(tmp_path, "experiment_weak")) == [
+        "Rule Based Trails by 40.0 won 0 of 3 games · reliable",
+    ]

@@ -132,3 +132,16 @@ def test_progress_counts_games_average_best_and_move_limits(trained_table, tmp_p
 def test_a_missing_or_broken_table_cannot_be_evaluated(tmp_path):
     with pytest.raises(ValueError):
         evaluate(tmp_path / "missing.json")
+
+
+def test_a_finished_evaluation_opens_the_run_page_of_its_own_saved_run(trained_table, tmp_path):
+    session = evaluate(trained_table, report_directory=tmp_path / "experiments")
+    assert session.run_report_path is None
+
+    play_one_move_at_a_time(session)
+
+    # The page is named after the file this evaluation saved, so nothing is guessed.
+    page = tmp_path / "reports" / "runs" / f"{session.report_path.stem}.html"
+    assert session.run_report_path.resolve() == page.resolve()
+    assert "Q Learning v2 eats" in page.read_text(encoding="utf-8")
+    assert (tmp_path / "reports" / "bot_report.html").exists()
