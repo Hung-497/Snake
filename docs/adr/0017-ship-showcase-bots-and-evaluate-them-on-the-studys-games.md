@@ -6,7 +6,7 @@
 - Updated: 2026-10-16, the start screen always opens, where the Showcase Bots came from, and no DQN v2 Showcase Bot yet
 - Extends: [ADR 0005](0005-separate-runtime-data-from-starter-table.md), which bundles only the Starter Q-table
 - Related: [ADR 0004](0004-run-bot-experiments-headlessly.md), whose Bot Experiment reports Evaluate also writes
-- Extended by: [ADR 0019](0019-browse-completed-evaluations-in-records.md), which adds a read-only Evaluate tab to Records
+- Extended by: [ADR 0019](0019-browse-completed-evaluations-in-records.md), which adds a read-only Evaluate tab to Records, and [ADR 0020](0020-generate-bot-reports-and-commit-only-the-showcase-report.md), which publishes a Showcase Report from these evaluations
 - Amends: [ADR 0015](0015-let-live-training-start-over-and-keep-a-backup.md), whose Play went straight to setting up a new training when there was no save
 
 Seeing a strong learning bot meant training it first, and the app had no fair way to measure a trained bot, so the scores in `docs/results.md` could only be checked in the terminal. The app now ships one finished Showcase Bot per learning Bot Mode, read-only in `starter_data/showcase/`, and adds an Evaluate App View that measures either the user's own app training or the Showcase Bot. Evaluate always uses the study's games: a 24 × 25 board, a 5000-move limit, and 20 or 200 games on evaluation seeds starting at 200000, ignoring the board chosen in Settings.

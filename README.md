@@ -275,6 +275,17 @@ move. Add `--bots rule q_learning hamiltonian` to leave it out.
 - [Bot Experiments](docs/bot-experiments.md): choosing bots, adding DQN, and
   what each JSON report records.
 
+To analyse every saved experiment and evaluation, write a Bot Report: a page
+with tables, charts, and game-by-game comparisons in `reports/bot_report.html`,
+and the same numbers for agents in `reports/bot_report.md`:
+
+```bash
+uv run python -m snake.sessions.AnalyseBots
+```
+
+See [Analyse saved experiments](docs/bot-experiments.md#analyse-saved-experiments)
+for what it shows and for the committed Showcase Report.
+
 ## Where Your Data Is Saved
 
 Games played in the app, by a bot or by you, save game records in `records/`
@@ -285,7 +296,8 @@ Learning saves its app progress in `learning_data/q_table_app_v2.json` or
 `q_table_app_v3.json`; terminal training uses separate tables. DQN Live Training
 saves `learning_data/dqn_live_training.pt` (v3) or
 `dqn_v2_live_training.pt` (v2). Start new training preserves dated backups.
-Bot Experiments and completed app evaluations save reports in `experiments/`.
+Bot Experiments and completed app evaluations save reports in `experiments/`,
+and Bot Reports are written to `reports/`.
 Evaluation report identities keep the model hash and metadata, while full DQN
 training-score history stays in its checkpoint. These folders hold local
 Runtime Data that Git ignores, so a fresh clone starts with no records or replays.
@@ -300,7 +312,9 @@ snake/
                      # (v2 and v3), Hamiltonian, Search-Based, and DQN
   sessions/          # GameSession, ReplaySession, SessionSettings, HumanPlayer,
                      # PlayerFactory, and the TrainQLearning, TrainDQN,
-                     # EvaluateDQN, and RunExperiment commands
+                     # EvaluateDQN, RunExperiment, and AnalyseBots commands
+  analysis/          # Bot Reports: reading saved experiments, statistics,
+                     # charts, and the Markdown and HTML writers
   storage/           # Records, replays, DQN files, saved evaluation reports,
                      # and code version for reports
   ui/                # AppShell, Theme, WindowLayout, MotionRules, BoardRenderer,
@@ -316,14 +330,15 @@ starter_data/        # Bundled Starter Q-table and read-only Showcase Bots
 DEVLOG.md            # Development diary
 ```
 
-`records/`, `replays/`, `learning_data/`, and `experiments/` are created when
-you play, train, or run Bot Experiments.
+`records/`, `replays/`, `learning_data/`, `experiments/`, and `reports/` are
+created when you play, train, run Bot Experiments, or write a Bot Report.
 
 ## Documentation
 
 - [Training the Learning Bots](docs/training.md)
 - [Bot Experiments](docs/bot-experiments.md)
-- [Results](docs/results.md)
+- [Results](docs/results.md) and the generated
+  [Showcase Report](docs/results/showcase.md)
 - [Architecture Decision Log](docs/adr/README.md): why the project is built the
   way it is
 - [Arcade smoke checklist](docs/arcade-smoke-checklist.md): manual checks the

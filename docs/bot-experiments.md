@@ -110,10 +110,56 @@ Bot Mode's actual gameplay. It excludes engine and bot setup, Q-table loading,
 the initial Q-table check, and JSON writing. Throughput varies by machine and
 Python version, so compare it under the same environment.
 
+## Analyse saved experiments
+
+The Bot Report command reads every saved report in `experiments/`, from these
+commands and from the app's Evaluate, and writes one analysis as a page for
+people and a Markdown file for agents ([ADR 0020](adr/0020-generate-bot-reports-and-commit-only-the-showcase-report.md)).
+It never plays games or changes a report.
+
+```bash
+uv run python -m snake.sessions.AnalyseBots
+```
+
+It writes `reports/bot_report.html`, `reports/bot_report.md`, and the charts in
+`reports/bot_report_charts/`. Reports are grouped by their Experiment
+Conditions (board, move limit, and exact seed list), and runs are only compared
+inside a group. Each group shows:
+
+- an overview row per bot file, with mean, median, best, spread, win and
+  move-limit rates, and moves per point, plus a combined row for a bot with
+  several bot files;
+- a box plot of the scores per game;
+- a game-by-game comparison of every pair of bots on the same seeds, with a 95%
+  range that says whether the difference is reliable;
+- where each bot file came from: Feature Set, games trained, app or terminal
+  training, training seeds, and code version.
+
+A bot file evaluated more than once shows only its newest run. Damaged,
+incomplete, and older-format reports are skipped and counted. Use `--output` to
+write somewhere else and `--experiments` to read another folder.
+
+### The Showcase Report
+
+`--showcase` writes the committed [Showcase Report](results/showcase.md) to
+`docs/results/` instead. It uses only full 200-game study evaluations (24 × 25,
+seeds 200000–200199, 5000 moves) whose file hash matches a shipped Showcase Bot,
+plus the non-learning Bot Modes as Baselines, and lists anything without such a
+run under "Not evaluated yet". To evaluate the Baselines on the study games:
+
+```bash
+uv run python -m snake.sessions.RunExperiment --bots rule hamiltonian search_based --games 200 --seed 200000 --max-moves 5000
+uv run python -m snake.sessions.AnalyseBots --showcase
+```
+
+The Showcase Bots are evaluated with Evaluate showcase in the app (200 games),
+or with `RunExperiment`/`EvaluateDQN` pointed at their files in
+`starter_data/showcase/`. The same runs always give the same Showcase Report.
+
 ## Limits
 
 These experiments use one fixed Q-table and one board configuration per run.
-They do not train a new policy, measure statistical confidence, or save game
-records and replays. Human Play is not part of Bot Experiments. Scores are
+They do not train a new policy or save game records and replays; statistical
+confidence comes from the Bot Report above. Human Play is not part of Bot Experiments. Scores are
 comparable across bots for the same seed list; elapsed time can vary between
 otherwise identical runs.
