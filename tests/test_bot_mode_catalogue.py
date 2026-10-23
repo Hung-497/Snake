@@ -3,7 +3,9 @@
 from pathlib import Path
 
 from snake.bots.BotFactory import BOT_MODE_CLASSES
-from snake.bots.BotModeCatalogue import BOT_MODES, bot_mode
+from snake.bots.BotModeCatalogue import (
+    BOT_MODES, SPARE_COLORS, BotColors, BotMode, bot_mode, bot_mode_colors,
+)
 from snake.sessions.LiveTraining import DQN_VERSIONS
 from snake.sessions.RunExperiment import BOT_NAMES
 from snake.sessions.TrainQLearning import FEATURE_SET_BY_BOT_MODE
@@ -78,3 +80,17 @@ def test_each_learning_bot_mode_sees_its_own_feature_set_version():
             assert mode.version in ("v2", "v3")
             assert mode.save_path is not None
     assert bot_mode("dqn").label == "DQN v3"
+
+
+def test_a_bot_mode_without_colours_gets_the_next_spare_pair():
+    modes = (
+        BotMode("rule", "Rule Based", colors=BotColors("#F2B84B", "#9A6B00")),
+        BotMode("dqn_v4", "DQN v4"),
+        BotMode("dqn_v5", "DQN v5"),
+    )
+
+    colors = bot_mode_colors(modes)
+
+    assert colors["rule"] == BotColors("#F2B84B", "#9A6B00")
+    assert colors["dqn_v4"] == SPARE_COLORS[0]
+    assert colors["dqn_v5"] == SPARE_COLORS[1]

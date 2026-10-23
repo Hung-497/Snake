@@ -14,6 +14,7 @@ import arcade.gui
 from arcade.gui.experimental.focus import FocusMode, UIFocusGroup
 from arcade.types import Color
 
+from snake.bots.BotModeCatalogue import bot_mode_colors
 from snake.ui.WindowLayout import layout_step
 
 
@@ -78,16 +79,11 @@ SNAKE_HEAD = Color.from_hex_string("#D6F29B")
 FOOD = Color.from_hex_string("#FF7575")
 
 # Each Player keeps one colour on every Records Analytics table and chart.
+# Bot Modes take theirs from the catalogue, which Bot Reports read too.
 PLAYER_COLORS = {
-    "rule": Color.from_hex_string("#F2B84B"),
-    "q_learning": Color.from_hex_string("#60A5FA"),
-    "hamiltonian": Color.from_hex_string("#34D399"),
-    "search_based": Color.from_hex_string("#F472B6"),
-    "q_learning_v3": Color.from_hex_string("#22D3EE"),
-    "human": Color.from_hex_string("#C084FC"),
-    "dqn": Color.from_hex_string("#FB923C"),
-    "dqn_v2": Color.from_hex_string("#A3E635"),
+    key: Color.from_hex_string(colors.dark) for key, colors in bot_mode_colors().items()
 }
+PLAYER_COLORS["human"] = Color.from_hex_string("#C084FC")
 
 
 def player_color(player):
