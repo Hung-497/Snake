@@ -1,0 +1,2 @@
+# Shipped bots must be byte-identical on every system, so their hashes match.
+starter_data/** -text

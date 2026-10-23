@@ -371,6 +371,9 @@ def test_each_group_gets_a_score_chart_in_both_files(tmp_path):
         assert root.tag == "{http://www.w3.org/2000/svg}svg"
         text = chart.read_text(encoding="utf-8")
         assert all(label in text for label in labels)
+        # Each chart explains its own marks, wherever it is shown.
+        for key in ("Lowest to best score", "Middle half of games", "Median", "Mean"):
+            assert f">{key}</text>" in text
         assert f"](bot_report_charts/{chart.name})" in markdown
     assert page.count("<svg") == 2
 
@@ -530,3 +533,44 @@ def test_showcase_report_without_qualifying_runs_writes_nothing(tmp_path):
     assert result.returncode == 1
     assert "No study evaluations of a Showcase Bot or Baseline" in result.stderr
     assert not (tmp_path / "docs").exists()
+
+
+def test_html_lets_readers_pick_which_two_bots_to_compare(tmp_path):
+    write_report(tmp_path, "three.json", sample_report({
+        "rule": games_from([5, 7, 9]), "search_based": games_from([40, 50, 60]),
+        "hamiltonian": games_from([120, 121, 122]),
+    }))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    # Two dropdowns, starting on the two best bots, with every bot to choose.
+    assert page.count('<select class="pick-') == 2
+    assert '<option value="Hamiltonian" selected>' in page
+    assert '<option value="Search-Based" selected>' in page
+    assert '<option value="">Any bot</option>' in page
+    # Every comparison row stays in the page and says which pair it is, so the
+    # full table still shows without JavaScript.
+    assert page.count('<tr data-pair="') == 3
+    assert '<tr data-pair="Hamiltonian|Rule Based">' in page
+
+
+def test_a_showcase_table_with_windows_line_endings_is_the_same_bot(tmp_path):
+    # Git on Windows can check out text files with CRLF line endings, which
+    # changes the bytes and the hash but not the table.
+    folder = tmp_path / "starter_data" / "showcase"
+    folder.mkdir(parents=True)
+    content = b'{\n  "q_table": {}\n}\n'
+    (folder / "q_table_v3_seed15000.json").write_bytes(content)
+    windows_sha = hashlib.sha256(content.replace(b"\n", b"\r\n")).hexdigest()
+    write_report(tmp_path, "vm.json", study_report(
+        "q_learning_v3", study_scores(100), q_table_identity(windows_sha),
+    ))
+
+    result = run_bot_report(tmp_path, "--showcase")
+
+    assert result.returncode == 0, result.stderr
+    markdown = (tmp_path / "docs" / "results" / "showcase.md").read_text(encoding="utf-8")
+    assert len(table_rows(markdown, "Q Learning v3")) == 1
+    assert "Q Learning v3 Showcase Bot" not in markdown.split("## Not evaluated yet")[1]
