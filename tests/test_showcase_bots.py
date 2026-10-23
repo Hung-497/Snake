@@ -55,7 +55,9 @@ def test_showcase_bots_live_apart_from_every_training_save():
     }
 
 
-def test_evaluating_a_showcase_bot_never_changes_it_and_says_so(tmp_path):
+def test_evaluating_a_showcase_bot_never_changes_it_and_says_so(tmp_path, monkeypatch):
+    # A finished Evaluate rebuilds the local Bot Report in reports/, so keep it here.
+    monkeypatch.chdir(tmp_path)
     path = showcase_file("q_learning")
     before = hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -79,8 +81,9 @@ def test_dqn_v3_ships_a_showcase_bot_and_dqn_v2_does_not_yet():
     assert "dqn_v2" not in SHOWCASE_BOTS
 
 
-def test_evaluating_the_dqn_showcase_bot_never_changes_it_and_says_so(tmp_path):
+def test_evaluating_the_dqn_showcase_bot_never_changes_it_and_says_so(tmp_path, monkeypatch):
     pytest.importorskip("torch")
+    monkeypatch.chdir(tmp_path)
     from snake.sessions.EvaluationSession import start_dqn_evaluation
 
     path = showcase_file("dqn")
