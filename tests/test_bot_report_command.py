@@ -496,6 +496,9 @@ def test_showcase_report_uses_only_showcase_bots_and_baselines_on_the_study_game
     assert "](showcase_charts/scores_1.svg)" in markdown
     assert not (tmp_path / "reports").exists()
     assert "3 runs left out" in result.stdout
+    assert "Hamiltonian follows one route over the whole board" in markdown
+    # The report had no Training History; the catalogue knows the seed.
+    assert table_rows(markdown, "Q Learning v3", PROVENANCE)[0][5] == "15000"
 
 
 def test_showcase_report_does_not_depend_on_other_local_files(tmp_path):

@@ -5,6 +5,7 @@ seeds. A learning run counts only when its bot file is the shipped Showcase
 Bot, checked by hash, and the non-learning Bot Modes join as Baselines.
 """
 
+from dataclasses import replace
 import hashlib
 from pathlib import Path
 
@@ -36,6 +37,10 @@ def select_showcase_runs(runs):
     showcase_hashes = {
         mode.key: file_sha256(mode.showcase.path) for mode in SHOWCASE_BOT_MODES
     }
+    modes_by_hash = {
+        showcase_hashes[mode.key]: mode for mode in SHOWCASE_BOT_MODES
+        if showcase_hashes[mode.key] is not None
+    }
     baseline_keys = {mode.key for mode in BASELINE_BOT_MODES}
     selected = []
     for run in runs:
@@ -43,8 +48,8 @@ def select_showcase_runs(runs):
             continue
         if run.bot_mode in baseline_keys:
             selected.append(run)
-        elif run.bot_file is not None and run.bot_file.sha256 in showcase_hashes.values():
-            selected.append(run)
+        elif run.bot_file is not None and run.bot_file.sha256 in modes_by_hash:
+            selected.append(with_showcase_seed(run, modes_by_hash[run.bot_file.sha256]))
 
     found_hashes = {run.bot_file.sha256 for run in selected if run.bot_file}
     found_baselines = {run.bot_mode for run in selected}
@@ -58,3 +63,10 @@ def select_showcase_runs(runs):
         for mode in BASELINE_BOT_MODES if mode.key not in found_baselines
     ]
     return selected, tuple(not_evaluated)
+
+
+def with_showcase_seed(run, mode):
+    """Older reports did not record a table's training seed; the catalogue does."""
+    if run.bot_file.training_seeds:
+        return run
+    return replace(run, bot_file=replace(run.bot_file, training_seeds=(mode.showcase.seed,)))

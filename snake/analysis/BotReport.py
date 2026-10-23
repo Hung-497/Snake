@@ -297,6 +297,14 @@ SHOWCASE_INTRODUCTION = (
     "The Showcase Bots shipped with the app and the non-learning Baselines, each "
     "measured in Evaluation Mode on the same 200 study games."
 )
+# Hamiltonian never dies, but filling the study board takes far more moves
+# than the study allows, so its study score is how far it gets, not a loss.
+MOVE_LIMIT_NOTE = (
+    "Hamiltonian follows one route over the whole board, so it never collides, "
+    "but filling the board takes far more than the study's 5000 moves. Its games "
+    "stop at the move limit while the snake is still alive: its score shows how "
+    "far that safe route gets in 5000 moves, not whether it can win."
+)
 NOT_EVALUATED_SENTENCE = (
     "These have no full study evaluation on the shipped file yet, so they are "
     "not shown above:"
@@ -324,6 +332,10 @@ READING_NOTES = (
 )
 
 
+def reading_notes(report):
+    return READING_NOTES + ((MOVE_LIMIT_NOTE,) if report.showcase else ())
+
+
 ONE_BOT_SENTENCE = "Only one bot was evaluated under these conditions, so there is nothing to compare."
 
 
@@ -349,7 +361,7 @@ def chart_files(report):
 def write_markdown(report, chart_folder):
     """The Markdown report; its charts are linked from chart_folder, next to it."""
     lines = [f"# {report.title}", "", source_sentence(report)]
-    for note in READING_NOTES:
+    for note in reading_notes(report):
         lines += ["", note]
     charts = chart_files(report)
     for group, (chart_name, _) in zip(report.groups, charts):
@@ -415,7 +427,7 @@ def write_html(report):
         f"<h1>{escape(report.title)}</h1>",
         f"<p>{escape(source_sentence(report))}</p>",
     ]
-    parts += [f"<p>{escape(note)}</p>" for note in READING_NOTES]
+    parts += [f"<p>{escape(note)}</p>" for note in reading_notes(report)]
     for group, (_, chart) in zip(report.groups, chart_files(report)):
         parts.append(f"<h2>{escape(group.title)}</h2>")
         parts += html_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
