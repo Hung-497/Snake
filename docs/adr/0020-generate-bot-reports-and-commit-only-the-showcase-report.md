@@ -6,6 +6,7 @@
 - Discussed in: [#194](https://github.com/Hung-497/Snake/issues/194)
 - Extends: [ADR 0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md)
 - Related: [ADR 0004](0004-run-bot-experiments-headlessly.md), [ADR 0005](0005-separate-runtime-data-from-starter-table.md)
+- Extended by: [ADR 0021](0021-give-each-evaluation-its-own-run-page.md), which gives each evaluation its own run page
 
 Records Analytics is too brief to judge a trained bot, and `docs/results.md`
 was calculated by hand. A headless command now reads saved Bot Experiment
