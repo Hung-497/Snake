@@ -35,7 +35,7 @@ How the bots learn, are saved, and are compared.
 | [0015](0015-let-live-training-start-over-and-keep-a-backup.md) | Let Live Training start over with a game limit and keep the old save as a backup | Accepted | 2026-10-16 | Amends 0011, extended by 0016, amended by 0017 |
 | [0016](0016-train-q-learning-in-play-on-its-own-app-q-table.md) | Train Q Learning in Play on its own app Q-table | Accepted | 2026-10-16 | Amends 0005, extends 0015 |
 | [0017](0017-ship-showcase-bots-and-evaluate-them-on-the-studys-games.md) | Ship Showcase Bots and evaluate them on the study's games | Accepted | 2026-10-16 | Extends 0005, amends 0015, extended by 0019 and 0020, related to 0004 |
-| [0020](0020-generate-bot-reports-and-commit-only-the-showcase-report.md) | Generate Bot Reports and commit only the Showcase Report | Proposed | 2026-10-23 | Extends 0017, related to 0004 and 0005 |
+| [0020](0020-generate-bot-reports-and-commit-only-the-showcase-report.md) | Generate Bot Reports and commit only the Showcase Report | Accepted | 2026-10-23 | Extends 0017, related to 0004 and 0005 |
 
 ### Saved Data
 
@@ -59,8 +59,8 @@ Dependencies, tools, and continuous integration.
 
 | Status | ADRs |
 | --- | --- |
-| Accepted | 0001–0019 |
-| Proposed | 0020 |
+| Accepted | 0001–0020 |
+| Proposed | none |
 | Rejected | none |
 | Deprecated | none |
 | Superseded | none |

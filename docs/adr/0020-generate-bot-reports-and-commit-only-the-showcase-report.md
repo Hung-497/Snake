@@ -1,6 +1,6 @@
 # Generate Bot Reports and commit only the Showcase Report
 
-- Status: Proposed
+- Status: Accepted
 - Category: Bots & Training
 - Recorded: 2026-10-23
 - Discussed in: [#194](https://github.com/Hung-497/Snake/issues/194)

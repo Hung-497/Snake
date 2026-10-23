@@ -4,6 +4,11 @@ Results of experiments run with the project's own commands. To run your own,
 see [Training the Learning Bots](training.md) and
 [Bot Experiments](bot-experiments.md).
 
+The [Showcase Report](results/showcase.md) ([page](results/showcase.html))
+holds the generated numbers and charts for the Showcase Bots and the
+non-learning Baselines on the study games. This page explains the experiments
+behind them and what they show.
+
 ## Feature Set v3 experiment
 
 Feature Set v3 ([ADR 0009](adr/0009-version-learned-artifacts-by-feature-set.md))
