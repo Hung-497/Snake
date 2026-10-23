@@ -31,10 +31,10 @@ class EvaluateView(arcade.gui.UIView):
     The bot plays in Evaluation Mode, so nothing it plays changes its save.
     It runs fast by default; W shows the game being played, and both give
     the same result. A finished run is saved as a Bot Experiment report and
-    the local Bot Report is rebuilt, which Open report (or R) shows in the
-    browser next to every bot that played the same games. Leaving early saves
-    nothing. This view only draws, keeps time, and passes key presses on; the
-    games and the reports belong to the EvaluationSession.
+    the local Bot Report is rebuilt; Open report (or R) shows this run's own
+    page in the browser, next to every bot that played the same games.
+    Leaving early saves nothing. This view only draws, keeps time, and passes
+    key presses on; the games and the reports belong to the EvaluationSession.
     """
 
     def __init__(self, shell, bot_mode, game_count, source="training"):
@@ -122,7 +122,7 @@ class EvaluateView(arcade.gui.UIView):
             self.open_report()
 
     def open_report(self, *_):
-        webbrowser.open(self.session.bot_report_path.resolve().as_uri())
+        webbrowser.open(self.session.run_report_path.resolve().as_uri())
 
     def add_report_button(self):
         layout = arcade.gui.UIAnchorLayout()
@@ -140,7 +140,7 @@ class EvaluateView(arcade.gui.UIView):
         if self.session is None:
             return
         if self.session.finished:
-            if self.report_button is None and self.session.bot_report_path is not None:
+            if self.report_button is None and self.session.run_report_path is not None:
                 self.add_report_button()
             return
         if self.watching:

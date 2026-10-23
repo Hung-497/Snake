@@ -148,7 +148,9 @@ def test_runs_with_different_experiment_conditions_are_never_mixed(tmp_path):
 
     assert result.returncode == 0, result.stderr
     markdown = read_markdown(tmp_path)
-    sections = markdown.split("\n## ")[1:]
+    # One section per group of Experiment Conditions, then the recent evaluations.
+    sections = markdown.split("\n## ")[1:-1]
+    assert markdown.split("\n## ")[-1].startswith("Recent evaluations")
     assert len(sections) == 3
     by_heading = {section.splitlines()[0]: section for section in sections}
     short = by_heading["24 × 25 board, 5000-move limit, seeds 200000–200001 (2 games)"]
@@ -272,7 +274,8 @@ def test_a_bot_file_evaluated_twice_shows_only_its_newest_run(tmp_path):
     rows = table_rows(markdown, "Q Learning v3")
     assert len(rows) == 1
     assert rows[0][2] == "2026-10-05 00:00"
-    assert "2026-10-01" not in markdown
+    # The old run keeps its own run page, so only the recent list may name it.
+    assert "2026-10-01" not in markdown.split("## Recent evaluations")[0]
     assert not table_rows(markdown, "Q Learning v3 combined (2 bot files)")
 
 
@@ -504,8 +507,11 @@ def test_showcase_report_uses_only_showcase_bots_and_baselines_on_the_study_game
     assert not (tmp_path / "reports").exists()
     assert "3 runs left out" in result.stdout
     assert "Hamiltonian follows one route over the whole board" in markdown
-    # The committed report never points at whichever run happened to be newest.
+    # The committed report never points at whichever run happened to be newest,
+    # and its runs are not local, so it has no run pages to list.
     assert "Newest" not in markdown
+    assert "Recent evaluations" not in markdown
+    assert "Recent evaluations" not in (folder / "showcase.html").read_text(encoding="utf-8")
     # The report had no Training History; the catalogue knows the seed.
     assert table_rows(markdown, "Q Learning v3", PROVENANCE)[0][5] == "15000"
 
@@ -551,7 +557,7 @@ def test_html_lets_readers_pick_which_two_bots_to_compare(tmp_path):
 
     assert result.returncode == 0, result.stderr
     page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
-    # One experiment saved all three bots at once, so none is marked newest.
+    # No bot is ever marked as the newest one.
     assert 'class="newest"' not in page
     # Two dropdowns start on the two best bots, and that comparison is written
     # into the page, so it reads the same without JavaScript.
@@ -626,11 +632,11 @@ def test_a_showcase_table_with_windows_line_endings_is_the_same_bot(tmp_path):
     assert "Q Learning v3 Showcase Bot" not in markdown.split("## Not evaluated yet")[1]
 
 
-def test_the_newest_run_is_marked_and_compared_with_the_leader_first(tmp_path):
-    write_report(tmp_path, "old.json", sample_report({
+def test_the_full_report_opens_on_the_top_two_and_lists_recent_evaluations(tmp_path):
+    write_report(tmp_path, "experiment_old.json", sample_report({
         "hamiltonian": games_from([120, 121, 122]), "search_based": games_from([40, 50, 60]),
     }, date="2026-10-01T00:00:00+00:00"))
-    write_report(tmp_path, "new.json", sample_report(
+    write_report(tmp_path, "experiment_new.json", sample_report(
         {"rule": games_from([5, 7, 9])}, date="2026-10-05T00:00:00+00:00",
     ))
 
@@ -638,15 +644,41 @@ def test_the_newest_run_is_marked_and_compared_with_the_leader_first(tmp_path):
 
     assert result.returncode == 0, result.stderr
     page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
-    assert '<span class="newest">Newest</span>' in page
-    newest_row = page.split('<span class="newest">Newest</span>')[0].rsplit('<div class="rank', 1)[1]
-    assert "Rule Based" in newest_row
-    # The face-off opens on the newest bot against the leader.
+    # A newer run changes nothing about where the face-off starts.
+    assert "Newest" not in page
     first = page.split('<select class="pick-a">')[1].split("</select>")[0]
     second = page.split('<select class="pick-b">')[1].split("</select>")[0]
-    assert '<option value="Rule Based" selected>' in first
-    assert '<option value="Hamiltonian" selected>' in second
-    assert "Newest run in this group: Rule Based, 2026-10-05 00:00 UTC." in read_markdown(tmp_path)
+    assert '<option value="Hamiltonian" selected>' in first
+    assert '<option value="Search-Based" selected>' in second
+    # Recent evaluations link to their run pages, newest first.
+    recent = page.split('<nav class="recent"')[1].split("</nav>")[0]
+    assert re.findall(r'<a href="([^"]+)">([^<]+)</a>', recent) == [
+        ("runs/experiment_new.html", "2026-10-05 00:00 UTC: Rule Based"),
+        ("runs/experiment_old.html", "2026-10-01 00:00 UTC: Hamiltonian, Search-Based"),
+    ]
+    markdown = read_markdown(tmp_path)
+    assert "Newest" not in markdown
+    assert ("## Recent evaluations\n\n"
+            "- 2026-10-05 00:00 UTC: Rule Based (runs/experiment_new.html)\n"
+            "- 2026-10-01 00:00 UTC: Hamiltonian, Search-Based (runs/experiment_old.html)\n"
+            ) in markdown
+
+
+def test_only_the_five_most_recent_evaluations_are_listed(tmp_path):
+    for day in range(1, 8):
+        write_report(tmp_path, f"experiment_day{day}.json", sample_report(
+            {"rule": games_from([day, day, day])}, date=f"2026-10-0{day}T00:00:00+00:00",
+        ))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    recent = page.split('<nav class="recent"')[1].split("</nav>")[0]
+    assert re.findall(r'href="runs/([^"]+)\.html"', recent) == [
+        "experiment_day7", "experiment_day6", "experiment_day5", "experiment_day4",
+        "experiment_day3",
+    ]
 
 
 def run_page(tmp_path, name):

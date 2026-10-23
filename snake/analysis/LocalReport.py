@@ -10,7 +10,9 @@ no run pages.
 
 from pathlib import Path
 
-from snake.analysis.BotReport import build_bot_report, chart_files, write_markdown
+from snake.analysis.BotReport import (
+    RUN_PAGE_FOLDER, build_bot_report, chart_files, write_markdown,
+)
 from snake.analysis.ExperimentRuns import read_experiment_runs
 from snake.analysis.ReportPage import write_html
 from snake.analysis.RunPage import write_run_html
@@ -19,8 +21,6 @@ from snake.analysis.RunReport import build_run_reports
 
 LOCAL_REPORT_NAME = "bot_report"
 LOCAL_REPORT_FOLDER = Path("reports")
-# Each saved report's run page, next to the full Bot Report.
-RUN_PAGE_FOLDER = "runs"
 
 
 def write_report_files(report, name, output):
@@ -44,11 +44,20 @@ def write_charts(report, folder):
         (folder / name).write_text(svg, encoding="utf-8")
 
 
+def run_page_path(report_path, output=LOCAL_REPORT_FOLDER):
+    """Where the run page of a saved report is written: named after its file."""
+    return Path(output) / RUN_PAGE_FOLDER / f"{Path(report_path).stem}.html"
+
+
 def print_bot_report(report_path):
-    """After a terminal command saves a run, rebuild the local report and say where."""
+    """After a terminal command saves a run, rebuild the local report and say where.
+
+    The run page shows the run just saved; the Bot Report shows every run.
+    """
     page = write_local_report(Path(report_path).parent)
     if page is not None:
         print(f"Bot Report: {page}")
+        print(f"Run report: {run_page_path(report_path)}")
 
 
 def write_local_report(experiments, output=LOCAL_REPORT_FOLDER):

@@ -10,7 +10,7 @@ from pathlib import Path
 import random
 import time
 
-from snake.analysis.LocalReport import LOCAL_REPORT_FOLDER, write_local_report
+from snake.analysis.LocalReport import LOCAL_REPORT_FOLDER, run_page_path, write_local_report
 from snake.bots.QLearningBot import QLearningBot
 from snake.engine.GameConfig import GameConfig
 from snake.sessions.ExperimentReport import (
@@ -73,8 +73,9 @@ class EvaluationSession:
         self.records = []
         self.elapsed_seconds = 0.0
         self.report_path = None
-        # The local Bot Report, rebuilt once the run is saved, with every bot to compare.
-        self.bot_report_path = None
+        # This run's page, written with the local Bot Report once the run is saved;
+        # it compares the run with every bot that played the same games.
+        self.run_report_path = None
         self._start_game()
 
     @property
@@ -145,7 +146,8 @@ class EvaluationSession:
         report.update(self.extra_report)
         report["evaluated"] = self.evaluated
         self.report_path = save_report(report, self.report_directory)
-        self.bot_report_path = write_local_report(self.report_directory, self.bot_report_directory)
+        if write_local_report(self.report_directory, self.bot_report_directory) is not None:
+            self.run_report_path = run_page_path(self.report_path, self.bot_report_directory)
 
 
 def start_q_learning_evaluation(

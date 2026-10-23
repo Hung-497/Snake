@@ -289,3 +289,7 @@ def test_a_bot_experiment_rebuilds_the_local_bot_report(tmp_path):
     page = tmp_path / "reports" / "bot_report.html"
     assert "Rule Based" in page.read_text(encoding="utf-8")
     assert f"Bot Report: {Path('reports') / 'bot_report.html'}" in result.stdout
+    saved = Path(result.stdout.split("Saved experiment: ")[1].splitlines()[0])
+    run_page = Path("reports") / "runs" / f"{saved.stem}.html"
+    assert f"Run report: {run_page}" in result.stdout
+    assert "Rule Based eats" in (tmp_path / run_page).read_text(encoding="utf-8")

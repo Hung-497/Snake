@@ -28,6 +28,10 @@ COMPARISON_HEADINGS = (
 PROVENANCE_HEADINGS = (
     "Bot", "Bot file", "Feature Set", "Games trained", "Trained by", "Training seeds", "Code",
 )
+# Each saved run's page, in this folder next to the local Bot Report.
+RUN_PAGE_FOLDER = "runs"
+# How many of the latest saved runs the local Bot Report links to.
+RECENT_COUNT = 5
 # Shown where a field does not apply, such as a non-learning bot's Feature Set.
 NOT_APPLICABLE = "—"
 UNKNOWN = "unknown"
@@ -78,16 +82,30 @@ class ConditionsGroup:
     rows: tuple
     matchups: tuple
     provenance: tuple
-    # The bot with the most recently saved run in the group, and when (UTC);
-    # the committed Showcase Report leaves these out.
-    newest_bot: str | None = None
-    newest_at: str | None = None
     # The Experiment Conditions every run in the group shares.
     conditions: ExperimentConditions | None = None
 
     @property
     def comparisons(self):
         return tuple(comparison_cells(matchup) for matchup in self.matchups)
+
+
+@dataclass(frozen=True)
+class RecentRun:
+    """A saved run the local Bot Report links to, by its run page."""
+
+    # The saved report's file name without ".json", which names its run page.
+    source: str
+    created_at: str
+    bots: tuple
+
+    @property
+    def page(self):
+        return f"{RUN_PAGE_FOLDER}/{self.source}.html"
+
+    @property
+    def text(self):
+        return f"{self.created_at} UTC: {', '.join(self.bots)}"
 
 
 @dataclass(frozen=True)
@@ -100,6 +118,8 @@ class BotReport:
     # on the local experiments folder, such as skipped files.
     showcase: bool = False
     not_evaluated: tuple = ()
+    # The latest saved runs, newest first; the Showcase Report has none.
+    recent: tuple = ()
 
 
 def build_bot_report(runs, skipped_files, showcase=False, not_evaluated=()):
@@ -108,37 +128,41 @@ def build_bot_report(runs, skipped_files, showcase=False, not_evaluated=()):
     for run in runs:
         runs_by_conditions.setdefault(run.conditions, []).append(run)
 
-    latest = None if showcase else latest_single_run(runs)
     groups = []
     run_count = 0
     for conditions in sorted(runs_by_conditions):
         newest = newest_runs(runs_by_conditions[conditions])
         run_count += len(newest)
-        is_latest_group = latest is not None and latest.conditions == conditions
         groups.append(ConditionsGroup(
             conditions_title(conditions), summary_rows(newest), comparison_rows(newest),
-            tuple(provenance_cells(run) for run in newest),
-            newest_bot=bot_label(latest) if is_latest_group else None,
-            newest_at=latest.created_at.strftime("%Y-%m-%d %H:%M") if is_latest_group else None,
-            conditions=conditions,
+            tuple(provenance_cells(run) for run in newest), conditions=conditions,
         ))
     title = "Showcase Report" if showcase else "Bot Report"
     return BotReport(
         run_count, skipped_files, tuple(groups), title, showcase, tuple(not_evaluated),
+        () if showcase else recent_runs(runs),
     )
 
 
-def latest_single_run(runs):
-    """The most recently saved run, so a fresh evaluation is easy to find.
+def recent_runs(runs):
+    """The latest saved runs, newest first, each with the bots it evaluated.
 
-    One experiment can evaluate several bots at once; they share its save time,
-    so no single bot is the newest and None is returned.
+    This only lists them; nothing on the report is chosen by which run is newest.
     """
-    if not runs:
-        return None
-    latest_time = max(run.created_at for run in runs)
-    latest = [run for run in runs if run.created_at == latest_time]
-    return latest[0] if len({bot_label(run) for run in latest}) == 1 else None
+    runs_by_source = {}
+    for run in runs:
+        if run.source is not None:
+            runs_by_source.setdefault(run.source, []).append(run)
+    # Runs saved at the same time keep file name order.
+    sources = sorted(runs_by_source)
+    sources.sort(key=lambda source: runs_by_source[source][0].created_at, reverse=True)
+    return tuple(
+        RecentRun(
+            source, runs_by_source[source][0].created_at.strftime("%Y-%m-%d %H:%M"),
+            tuple(sorted({bot_label(run) for run in runs_by_source[source]})),
+        )
+        for source in sources[:RECENT_COUNT]
+    )
 
 
 def bot_label(run):
@@ -462,8 +486,6 @@ def write_markdown(report, chart_folder):
     charts = chart_files(report)
     for group, (chart_name, _) in zip(report.groups, charts):
         lines += ["", f"## {group.title}", ""]
-        if group.newest_bot:
-            lines += [f"Newest run in this group: {group.newest_bot}, {group.newest_at} UTC.", ""]
         lines += markdown_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
         lines += ["", f"![{chart_title(group)}]({chart_folder}/{chart_name})"]
         lines += ["", "### Scores per game", ""]
@@ -478,4 +500,7 @@ def write_markdown(report, chart_folder):
     if report.not_evaluated:
         lines += ["", "## Not evaluated yet", "", NOT_EVALUATED_SENTENCE, ""]
         lines += [f"- {name}" for name in report.not_evaluated]
+    if report.recent:
+        lines += ["", "## Recent evaluations", ""]
+        lines += [f"- {recent.text} ({recent.page})" for recent in report.recent]
     return "\n".join(lines) + "\n"

@@ -138,3 +138,5 @@ def test_evaluation_preserves_existing_experiment_report(tmp_path, trained_dqn_r
     # The local Bot Report is rebuilt, skipping the file that is not a report.
     assert (tmp_path / "reports" / "bot_report.html").exists()
     assert "Bot Report:" in evaluated.stdout
+    run_page = Path("reports") / "runs" / f"{generated.stem}.html"
+    assert f"Run report: {run_page}" in evaluated.stdout
