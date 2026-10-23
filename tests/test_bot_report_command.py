@@ -1,5 +1,6 @@
 """The Bot Report command is tested through its terminal interface."""
 
+import hashlib
 import json
 import os
 from xml.etree import ElementTree
@@ -428,3 +429,101 @@ def test_a_group_with_one_bot_has_nothing_to_compare(tmp_path):
     markdown = read_markdown(tmp_path)
     assert "Only one bot was evaluated under these conditions" in markdown
     assert "| Better bot |" not in markdown
+
+
+STUDY_SEED = 200000
+
+
+def make_showcase_files(tmp_path):
+    """Fake Showcase Bot files at the catalogue's paths; returns each file's hash."""
+    folder = tmp_path / "starter_data" / "showcase"
+    folder.mkdir(parents=True)
+    hashes = {}
+    for name in ("q_table_v2_seed12000.json", "q_table_v3_seed15000.json", "dqn_v3_seed9000.pt"):
+        content = f"showcase {name}".encode()
+        (folder / name).write_bytes(content)
+        hashes[name] = hashlib.sha256(content).hexdigest()
+    return hashes
+
+
+def study_report(bot_mode, scores, identity=None, base_seed=STUDY_SEED, max_moves=5000,
+                 date="2026-10-20T12:00:00+00:00"):
+    report = sample_report({bot_mode: games_from(scores, base_seed=base_seed)},
+                           base_seed=base_seed, max_moves=max_moves, date=date)
+    if identity is not None:
+        report[bot_mode] = identity
+    return report
+
+
+def study_scores(offset):
+    return [offset + number % 7 for number in range(200)]
+
+
+def test_showcase_report_uses_only_showcase_bots_and_baselines_on_the_study_games(tmp_path):
+    hashes = make_showcase_files(tmp_path)
+    showcase_sha = hashes["q_table_v3_seed15000.json"]
+    write_report(tmp_path, "showcase.json", study_report(
+        "q_learning_v3", study_scores(100), q_table_identity(showcase_sha),
+    ))
+    write_report(tmp_path, "baseline.json", study_report("rule", study_scores(10)))
+    # Not the shipped file, too few games, and other Experiment Conditions.
+    write_report(tmp_path, "own.json", study_report(
+        "q_learning_v3", study_scores(500), q_table_identity("9" * 64),
+    ))
+    write_report(tmp_path, "quick.json", study_report(
+        "q_learning_v3", [700] * 20, q_table_identity(showcase_sha),
+    ))
+    write_report(tmp_path, "long.json", study_report(
+        "q_learning_v3", study_scores(800), q_table_identity(showcase_sha), max_moves=20000,
+    ))
+
+    result = run_bot_report(tmp_path, "--showcase")
+
+    assert result.returncode == 0, result.stderr
+    folder = tmp_path / "docs" / "results"
+    markdown = (folder / "showcase.md").read_text(encoding="utf-8")
+    assert markdown.startswith("# Showcase Report")
+    assert markdown.count("\n## 24 × 25 board") == 1
+    assert [row[1] for row in table_rows(markdown, "Q Learning v3")] == [showcase_sha[:8]]
+    assert table_rows(markdown, "Q Learning v3")[0][4] == "103.0"
+    assert len(table_rows(markdown, "Rule Based")) == 1
+    # Showcase Bots and Baselines without a study run are listed, not guessed.
+    not_evaluated = markdown.split("## Not evaluated yet")[1]
+    for label in ("Q Learning v2", "DQN v3", "Hamiltonian", "Search-Based"):
+        assert label in not_evaluated
+    assert (folder / "showcase.html").exists()
+    assert (folder / "showcase_charts" / "scores_1.svg").exists()
+    assert "](showcase_charts/scores_1.svg)" in markdown
+    assert not (tmp_path / "reports").exists()
+    assert "3 runs left out" in result.stdout
+
+
+def test_showcase_report_does_not_depend_on_other_local_files(tmp_path):
+    hashes = make_showcase_files(tmp_path)
+    write_report(tmp_path, "showcase.json", study_report(
+        "dqn", study_scores(130), dqn_identity(hashes["dqn_v3_seed9000.pt"]),
+    ))
+    run_bot_report(tmp_path, "--showcase")
+    markdown_path = tmp_path / "docs" / "results" / "showcase.md"
+    first = markdown_path.read_bytes()
+
+    write_report(tmp_path, "broken.json", "{")
+    write_report(tmp_path, "own.json", study_report("q_learning_v3", study_scores(1)))
+    result = run_bot_report(tmp_path, "--showcase")
+
+    assert result.returncode == 0, result.stderr
+    assert markdown_path.read_bytes() == first
+    assert "skipped" not in first.decode("utf-8")
+
+
+def test_showcase_report_without_qualifying_runs_writes_nothing(tmp_path):
+    make_showcase_files(tmp_path)
+    write_report(tmp_path, "own.json", study_report(
+        "q_learning_v3", study_scores(1), q_table_identity("9" * 64),
+    ))
+
+    result = run_bot_report(tmp_path, "--showcase")
+
+    assert result.returncode == 1
+    assert "No study evaluations of a Showcase Bot or Baseline" in result.stderr
+    assert not (tmp_path / "docs").exists()

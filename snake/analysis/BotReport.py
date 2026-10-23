@@ -30,8 +30,6 @@ PROVENANCE_HEADINGS = (
 # Shown where a field does not apply, such as a non-learning bot's Feature Set.
 NOT_APPLICABLE = "—"
 UNKNOWN = "unknown"
-# The Markdown links to each group's chart in this folder, next to it.
-CHART_FOLDER = "bot_report_charts"
 
 
 @dataclass(frozen=True)
@@ -66,9 +64,14 @@ class BotReport:
     run_count: int
     skipped_files: int
     groups: tuple
+    title: str = "Bot Report"
+    # The Showcase Report is committed, so it leaves out anything that depends
+    # on the local experiments folder, such as skipped files.
+    showcase: bool = False
+    not_evaluated: tuple = ()
 
 
-def build_bot_report(runs, skipped_files):
+def build_bot_report(runs, skipped_files, showcase=False, not_evaluated=()):
     """Group runs by Experiment Conditions and summarise each run from its games."""
     runs_by_conditions = {}
     for run in runs:
@@ -83,7 +86,10 @@ def build_bot_report(runs, skipped_files):
             conditions_title(conditions), summary_rows(newest), comparison_rows(newest),
             tuple(provenance_cells(run) for run in newest),
         ))
-    return BotReport(run_count, skipped_files, tuple(groups))
+    title = "Showcase Report" if showcase else "Bot Report"
+    return BotReport(
+        run_count, skipped_files, tuple(groups), title, showcase, tuple(not_evaluated),
+    )
 
 
 def bot_label(run):
@@ -276,7 +282,9 @@ def source_sentence(report):
     text = f"Built from {runs} in {groups} group" + ("" if groups == 1 else "s") + (
         " of Experiment Conditions. Runs are only compared inside the same group."
     )
-    if report.skipped_files:
+    if report.showcase:
+        text = SHOWCASE_INTRODUCTION + " " + text
+    elif report.skipped_files:
         text += (
             f" {report.skipped_files} report file"
             + (" was" if report.skipped_files == 1 else "s were")
@@ -284,6 +292,15 @@ def source_sentence(report):
         )
     return text
 
+
+SHOWCASE_INTRODUCTION = (
+    "The Showcase Bots shipped with the app and the non-learning Baselines, each "
+    "measured in Evaluation Mode on the same 200 study games."
+)
+NOT_EVALUATED_SENTENCE = (
+    "These have no full study evaluation on the shipped file yet, so they are "
+    "not shown above:"
+)
 
 READING_NOTES = (
     "Every number is computed from the saved games. The Move-limit rate is the "
@@ -329,15 +346,16 @@ def chart_files(report):
     ]
 
 
-def write_markdown(report):
-    lines = ["# Bot Report", "", source_sentence(report)]
+def write_markdown(report, chart_folder):
+    """The Markdown report; its charts are linked from chart_folder, next to it."""
+    lines = [f"# {report.title}", "", source_sentence(report)]
     for note in READING_NOTES:
         lines += ["", note]
     charts = chart_files(report)
     for group, (chart_name, _) in zip(report.groups, charts):
         lines += ["", f"## {group.title}", ""]
         lines += markdown_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
-        lines += ["", f"![{chart_title(group)}]({CHART_FOLDER}/{chart_name})"]
+        lines += ["", f"![{chart_title(group)}]({chart_folder}/{chart_name})"]
         lines += ["", "### Game by game", ""]
         if group.comparisons:
             lines += markdown_table(COMPARISON_HEADINGS, group.comparisons)
@@ -345,6 +363,9 @@ def write_markdown(report):
             lines.append(ONE_BOT_SENTENCE)
         lines += ["", "### Where each bot came from", ""]
         lines += markdown_table(PROVENANCE_HEADINGS, group.provenance)
+    if report.not_evaluated:
+        lines += ["", "## Not evaluated yet", "", NOT_EVALUATED_SENTENCE, ""]
+        lines += [f"- {name}" for name in report.not_evaluated]
     return "\n".join(lines) + "\n"
 
 
@@ -387,11 +408,11 @@ def write_html(report):
         "<head>",
         '<meta charset="utf-8">',
         '<meta name="viewport" content="width=device-width, initial-scale=1">',
-        "<title>Bot Report</title>",
+        f"<title>{escape(report.title)}</title>",
         f"<style>{HTML_STYLE}</style>",
         "</head>",
         "<body>",
-        "<h1>Bot Report</h1>",
+        f"<h1>{escape(report.title)}</h1>",
         f"<p>{escape(source_sentence(report))}</p>",
     ]
     parts += [f"<p>{escape(note)}</p>" for note in READING_NOTES]
@@ -406,5 +427,9 @@ def write_html(report):
             parts.append(f"<p>{escape(ONE_BOT_SENTENCE)}</p>")
         parts.append("<h3>Where each bot came from</h3>")
         parts += html_table(PROVENANCE_HEADINGS, group.provenance)
+    if report.not_evaluated:
+        parts += ["<h2>Not evaluated yet</h2>", f"<p>{escape(NOT_EVALUATED_SENTENCE)}</p>", "<ul>"]
+        parts += [f"<li>{escape(name)}</li>" for name in report.not_evaluated]
+        parts.append("</ul>")
     parts += ["</body>", "</html>"]
     return "\n".join(parts) + "\n"
