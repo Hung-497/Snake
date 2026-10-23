@@ -277,3 +277,15 @@ def test_report_summarizes_known_games_and_identifies_the_workload(tmp_path):
     assert "Search-Based:" in result.stdout
     assert str(report_path.relative_to(tmp_path)) in result.stdout
     assert table_path.read_text() == original_table
+
+
+def test_a_bot_experiment_rebuilds_the_local_bot_report(tmp_path):
+    result = run_experiment(
+        tmp_path, "--bots", "rule", "--width", "4", "--height", "4",
+        "--games", "2", "--seed", "7", "--max-moves", "20",
+    )
+
+    assert result.returncode == 0, result.stderr
+    page = tmp_path / "reports" / "bot_report.html"
+    assert "Rule Based" in page.read_text(encoding="utf-8")
+    assert f"Bot Report: {Path('reports') / 'bot_report.html'}" in result.stdout

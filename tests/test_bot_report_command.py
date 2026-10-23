@@ -503,6 +503,8 @@ def test_showcase_report_uses_only_showcase_bots_and_baselines_on_the_study_game
     assert not (tmp_path / "reports").exists()
     assert "3 runs left out" in result.stdout
     assert "Hamiltonian follows one route over the whole board" in markdown
+    # The committed report never points at whichever run happened to be newest.
+    assert "Newest" not in markdown
     # The report had no Training History; the catalogue knows the seed.
     assert table_rows(markdown, "Q Learning v3", PROVENANCE)[0][5] == "15000"
 
@@ -548,6 +550,8 @@ def test_html_lets_readers_pick_which_two_bots_to_compare(tmp_path):
 
     assert result.returncode == 0, result.stderr
     page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    # One experiment saved all three bots at once, so none is marked newest.
+    assert 'class="newest"' not in page
     # Two dropdowns start on the two best bots, and that comparison is written
     # into the page, so it reads the same without JavaScript.
     assert '<select class="pick-a"' in page and '<select class="pick-b"' in page
@@ -619,3 +623,26 @@ def test_a_showcase_table_with_windows_line_endings_is_the_same_bot(tmp_path):
     markdown = (tmp_path / "docs" / "results" / "showcase.md").read_text(encoding="utf-8")
     assert len(table_rows(markdown, "Q Learning v3")) == 1
     assert "Q Learning v3 Showcase Bot" not in markdown.split("## Not evaluated yet")[1]
+
+
+def test_the_newest_run_is_marked_and_compared_with_the_leader_first(tmp_path):
+    write_report(tmp_path, "old.json", sample_report({
+        "hamiltonian": games_from([120, 121, 122]), "search_based": games_from([40, 50, 60]),
+    }, date="2026-10-01T00:00:00+00:00"))
+    write_report(tmp_path, "new.json", sample_report(
+        {"rule": games_from([5, 7, 9])}, date="2026-10-05T00:00:00+00:00",
+    ))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    assert '<span class="newest">Newest</span>' in page
+    newest_row = page.split('<span class="newest">Newest</span>')[0].rsplit('<div class="rank', 1)[1]
+    assert "Rule Based" in newest_row
+    # The face-off opens on the newest bot against the leader.
+    first = page.split('<select class="pick-a">')[1].split("</select>")[0]
+    second = page.split('<select class="pick-b">')[1].split("</select>")[0]
+    assert '<option value="Rule Based" selected>' in first
+    assert '<option value="Hamiltonian" selected>' in second
+    assert "Newest run in this group: Rule Based, 2026-10-05 00:00 UTC." in read_markdown(tmp_path)

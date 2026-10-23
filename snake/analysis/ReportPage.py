@@ -90,6 +90,8 @@ section.group {{ margin-top: 72px; display: flex; flex-direction: column; gap: 5
   animation: grow .9s cubic-bezier(.2,.8,.2,1) both; }}
 .rank .value {{ width: 60px; text-align: right; font-weight: 600; font-size: 18px;
   animation: rise .5s ease-out both; }}
+.rank .newest {{ font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px;
+  background: var(--ink); color: var(--surface); }}
 .rank .kind {{ flex: 0 0 112px; text-align: center; font-size: 13px; color: var(--muted);
   padding: 2px 10px; border-radius: 999px; border: 1px solid var(--line); }}
 @keyframes grow {{ from {{ transform: scaleX(0); }} to {{ transform: scaleX(1); }} }}
@@ -341,7 +343,9 @@ def ranking(group, palette):
             f'<div class="rank {palette.of(row.bot)}" role="listitem" '
             f'title="{escape(row.bot)}: {row.mean_score:.1f} food per game on average, '
             f'best game {row.best_score}">'
-            f'<span class="name"><span class="swatch"></span>{escape(row.bot)}</span>'
+            f'<span class="name"><span class="swatch"></span>{escape(row.bot)}'
+            + ('<span class="newest">Newest</span>' if row.bot == group.newest_bot else "")
+            + "</span>"
             f'<span class="track"><span class="lane"><span class="fill" style="display: block; '
             f'width: {row.mean_score / top * 92:.1f}%; animation-delay: {delay}"></span></span>'
             f'<span class="value" style="animation-delay: {delay}">{row.mean_score:.1f}</span></span>'
@@ -487,13 +491,21 @@ def select(kind, bots, chosen, label, color):
             f'<select class="pick-{kind}">{options}</select>{CHEVRON}</span></label>')
 
 
+def opening_pair(group, bots):
+    """The face-off to show first: the newest bot against the leader, else the top two."""
+    if group.newest_bot in bots and group.newest_bot != bots[0]:
+        return group.newest_bot, bots[0]
+    return bots[0], bots[1]
+
+
 def comparison(group, palette):
     bots = [row.bot for row in ranking_rows(group)]
+    first_bot, second_bot = opening_pair(group, bots)
     every_pair = {
         f"{first}|{second}": verdict_parts(group, palette, first, second)
         for first in bots for second in bots if first != second
     }
-    shown = every_pair[f"{bots[0]}|{bots[1]}"]
+    shown = every_pair[f"{first_bot}|{second_bot}"]
     # A "</" inside the data would end the script tag early.
     data = json.dumps(every_pair, ensure_ascii=False).replace("</", "<\\/")
 
@@ -516,9 +528,9 @@ def comparison(group, palette):
         '<div class="card compare">',
         f'<script type="application/json" class="matchups">{data}</script>',
         '<div class="picker">',
-        select("a", bots, bots[0], "First bot", shown["firstColor"]),
+        select("a", bots, first_bot, "First bot", shown["firstColor"]),
         '<span class="against">versus</span>',
-        select("b", bots, bots[1], "Second bot", shown["secondColor"]),
+        select("b", bots, second_bot, "Second bot", shown["secondColor"]),
         "</div>",
         '<p class="same muted" hidden>Pick two different bots to compare them.</p>',
         '<div class="verdict">',

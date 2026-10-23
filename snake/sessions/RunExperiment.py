@@ -3,6 +3,7 @@
 import argparse
 import random
 
+from snake.analysis.LocalReport import print_bot_report
 from snake.bots.BotFactory import (
     OPT_IN_EXPERIMENT_MODES, create_bot_mode, normal_experiment_modes, supports_board,
 )
@@ -173,6 +174,7 @@ def main(argv=None):
             f"games/s {summary['games_per_second']:.1f}"
         )
     print(f"Saved experiment: {result_path}")
+    print_bot_report(result_path)
     return 0
 
 

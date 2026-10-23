@@ -122,7 +122,15 @@ uv run python -m snake.sessions.AnalyseBots
 ```
 
 It writes `reports/bot_report.html`, `reports/bot_report.md`, and the charts in
-`reports/bot_report_charts/`. Reports are grouped by their Experiment
+`reports/bot_report_charts/`. You rarely need to run it yourself: every finished
+Evaluate in the app, `RunExperiment`, and `EvaluateDQN` rebuilds this local report
+right after saving, so a newly evaluated bot appears next to every bot that played
+the same games. The app's Evaluate screen then offers Open report (or R), and the
+terminal commands print where the report is. The bot with the newest run is
+marked Newest, and the face-off opens on it against the leader. To compare a new
+bot with the others, evaluate it on the 200 study games; a 20-game run uses other
+seeds, so it gets its own group. The committed Showcase Report is never rebuilt
+automatically. Reports are grouped by their Experiment
 Conditions (board, move limit, and exact seed list), and runs are only compared
 inside a group. Each group shows:
 

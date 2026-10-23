@@ -9,13 +9,13 @@ import argparse
 from pathlib import Path
 import sys
 
-from snake.analysis.BotReport import build_bot_report, chart_files, write_markdown
+from snake.analysis.BotReport import build_bot_report
 from snake.analysis.ExperimentRuns import read_experiment_runs
-from snake.analysis.ReportPage import write_html
+from snake.analysis.LocalReport import LOCAL_REPORT_FOLDER, LOCAL_REPORT_NAME, write_report_files
 from snake.analysis.Showcase import select_showcase_runs
 
 
-LOCAL_REPORT = ("bot_report", Path("reports"))
+LOCAL_REPORT = (LOCAL_REPORT_NAME, LOCAL_REPORT_FOLDER)
 SHOWCASE_REPORT = ("showcase", Path("docs") / "results")
 
 
@@ -57,13 +57,8 @@ def main(argv=None):
         report = build_bot_report(runs, skipped)
 
     output = Path(options.output) if options.output else default_output
-    output.mkdir(parents=True, exist_ok=True)
-    chart_folder = f"{name}_charts"
-    markdown_path = output / f"{name}.md"
-    html_path = output / f"{name}.html"
-    markdown_path.write_text(write_markdown(report, chart_folder), encoding="utf-8")
-    html_path.write_text(write_html(report), encoding="utf-8")
-    write_charts(report, output / chart_folder)
+    html_path = write_report_files(report, name, output)
+    markdown_path = html_path.with_suffix(".md")
 
     print(
         f"{report.title}: {count(report.run_count, 'run')} in "
@@ -76,15 +71,6 @@ def main(argv=None):
 
 def count(number, noun):
     return f"{number} {noun}" + ("" if number == 1 else "s")
-
-
-def write_charts(report, folder):
-    """Save each group's chart, removing charts of groups that no longer exist."""
-    folder.mkdir(exist_ok=True)
-    for old_chart in folder.glob("scores_*.svg"):
-        old_chart.unlink()
-    for name, svg in chart_files(report):
-        (folder / name).write_text(svg, encoding="utf-8")
 
 
 if __name__ == "__main__":

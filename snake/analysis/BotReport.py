@@ -77,6 +77,10 @@ class ConditionsGroup:
     rows: tuple
     matchups: tuple
     provenance: tuple
+    # The bot with the most recently saved run in the group, and when (UTC);
+    # the committed Showcase Report leaves these out.
+    newest_bot: str | None = None
+    newest_at: str | None = None
 
     @property
     def comparisons(self):
@@ -101,19 +105,36 @@ def build_bot_report(runs, skipped_files, showcase=False, not_evaluated=()):
     for run in runs:
         runs_by_conditions.setdefault(run.conditions, []).append(run)
 
+    latest = None if showcase else latest_single_run(runs)
     groups = []
     run_count = 0
     for conditions in sorted(runs_by_conditions):
         newest = newest_runs(runs_by_conditions[conditions])
         run_count += len(newest)
+        is_latest_group = latest is not None and latest.conditions == conditions
         groups.append(ConditionsGroup(
             conditions_title(conditions), summary_rows(newest), comparison_rows(newest),
             tuple(provenance_cells(run) for run in newest),
+            newest_bot=bot_label(latest) if is_latest_group else None,
+            newest_at=latest.created_at.strftime("%Y-%m-%d %H:%M") if is_latest_group else None,
         ))
     title = "Showcase Report" if showcase else "Bot Report"
     return BotReport(
         run_count, skipped_files, tuple(groups), title, showcase, tuple(not_evaluated),
     )
+
+
+def latest_single_run(runs):
+    """The most recently saved run, so a fresh evaluation is easy to find.
+
+    One experiment can evaluate several bots at once; they share its save time,
+    so no single bot is the newest and None is returned.
+    """
+    if not runs:
+        return None
+    latest_time = max(run.created_at for run in runs)
+    latest = [run for run in runs if run.created_at == latest_time]
+    return latest[0] if len({bot_label(run) for run in latest}) == 1 else None
 
 
 def bot_label(run):
@@ -437,6 +458,8 @@ def write_markdown(report, chart_folder):
     charts = chart_files(report)
     for group, (chart_name, _) in zip(report.groups, charts):
         lines += ["", f"## {group.title}", ""]
+        if group.newest_bot:
+            lines += [f"Newest run in this group: {group.newest_bot}, {group.newest_at} UTC.", ""]
         lines += markdown_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
         lines += ["", f"![{chart_title(group)}]({chart_folder}/{chart_name})"]
         lines += ["", "### Scores per game", ""]

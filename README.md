@@ -275,9 +275,11 @@ move. Add `--bots rule q_learning hamiltonian` to leave it out.
 - [Bot Experiments](docs/bot-experiments.md): choosing bots, adding DQN, and
   what each JSON report records.
 
-To analyse every saved experiment and evaluation, write a Bot Report: a page
-with tables, charts, and game-by-game comparisons in `reports/bot_report.html`,
-and the same numbers for agents in `reports/bot_report.md`:
+Every finished evaluation (Evaluate in the app, `RunExperiment`, or
+`EvaluateDQN`) rebuilds a Bot Report: a page with charts and a face-off between
+any two bots in `reports/bot_report.html`, and the same numbers for agents in
+`reports/bot_report.md`. Evaluate's Open report button (or R) opens it. To
+rebuild it by hand:
 
 ```bash
 uv run python -m snake.sessions.AnalyseBots

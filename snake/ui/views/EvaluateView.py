@@ -1,3 +1,5 @@
+import webbrowser
+
 import arcade
 import arcade.gui
 
@@ -17,6 +19,7 @@ EVALUATE_HUD_HEIGHT = 100
 # Fast mode plays for this long each frame, like Live Training's Background.
 FAST_BUDGET_SECONDS = 0.05
 WATCH_KEY = arcade.key.W
+REPORT_KEY = arcade.key.R
 # How far below the progress line the controls line sits.
 CONTROLS_GAP = 28
 
@@ -27,9 +30,11 @@ class EvaluateView(arcade.gui.UIView):
 
     The bot plays in Evaluation Mode, so nothing it plays changes its save.
     It runs fast by default; W shows the game being played, and both give
-    the same result. A finished run is saved as a Bot Experiment report, and
-    leaving early saves nothing. This view only draws, keeps time, and passes
-    key presses on; the games and the report belong to the EvaluationSession.
+    the same result. A finished run is saved as a Bot Experiment report and
+    the local Bot Report is rebuilt, which Open report (or R) shows in the
+    browser next to every bot that played the same games. Leaving early saves
+    nothing. This view only draws, keeps time, and passes key presses on; the
+    games and the reports belong to the EvaluationSession.
     """
 
     def __init__(self, shell, bot_mode, game_count, source="training"):
@@ -55,6 +60,8 @@ class EvaluateView(arcade.gui.UIView):
         self.back_button = Theme.add_back_to_menu_button(
             self.ui, self.back_to_menu, sizes.body
         )
+        # Added once the run is finished and its Bot Report is written.
+        self.report_button = None
 
         # Text objects are reused because drawing new text every frame is slow.
         board = STUDY_GAMES.config
@@ -111,10 +118,30 @@ class EvaluateView(arcade.gui.UIView):
             self.back_to_menu()
         elif symbol == WATCH_KEY and self.session is not None:
             self.watching = not self.watching
+        elif symbol == REPORT_KEY and self.report_button is not None:
+            self.open_report()
+
+    def open_report(self, *_):
+        webbrowser.open(self.session.bot_report_path.resolve().as_uri())
+
+    def add_report_button(self):
+        layout = arcade.gui.UIAnchorLayout()
+        self.report_button = Theme.create_primary_button(
+            "Open report", self.open_report,
+            button_width=Theme.HUD_BUTTON_WIDTH, button_height=Theme.HUD_BUTTON_HEIGHT,
+            font_size=Theme.type_sizes(self.window.width).body,
+        )
+        layout.add(self.report_button, anchor_x="center", anchor_y="bottom",
+                   align_y=Theme.SPACE_WIDE)
+        self.ui.add(layout)
 
     def on_update(self, delta_time):
         self.ui.on_update(delta_time)
-        if self.session is None or self.session.finished:
+        if self.session is None:
+            return
+        if self.session.finished:
+            if self.report_button is None and self.session.bot_report_path is not None:
+                self.add_report_button()
             return
         if self.watching:
             self.session.make_move()
@@ -125,6 +152,8 @@ class EvaluateView(arcade.gui.UIView):
         positions = view_label_positions(width, height, 60)
         sizes = Theme.type_sizes(width)
         Theme.set_button_font_size(self.back_button, sizes.body)
+        if self.report_button is not None:
+            Theme.set_button_font_size(self.report_button, sizes.body)
         left = positions["bot_mode"][0]
         top = height - EVALUATE_HUD_HEIGHT
         self.title_label.x, self.title_label.y = left, top + 70
@@ -175,13 +204,14 @@ class EvaluateView(arcade.gui.UIView):
                 f"Finished: {progress.game_count} games\n"
                 f"Average {progress.average_score:.1f} · Best {progress.best_score} · "
                 f"{progress.move_limits} stopped at the move limit\n"
-                f"Saved {self.session.report_path}"
+                f"Saved {self.session.report_path}\n"
+                "Open report (R) compares it with every bot that played the same games"
             )
         return f"Evaluating fast: {progress.games_done} of {progress.game_count} games done"
 
     def controls_text(self):
         if self.session.finished:
-            return "Finished · W to see the last game"
+            return "Finished · W to see the last game · R to open the report"
         if self.watching:
             return "Watching · W for fast"
         return "Fast · W to watch"
