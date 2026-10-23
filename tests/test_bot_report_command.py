@@ -56,7 +56,7 @@ def write_report(tmp_path, name, report):
 
 
 def read_markdown(tmp_path):
-    return (tmp_path / "reports" / "bot_report.md").read_text()
+    return (tmp_path / "reports" / "bot_report.md").read_text(encoding="utf-8")
 
 
 def table_rows(markdown, first_cell):
@@ -200,7 +200,7 @@ def test_html_is_complete_and_shows_the_same_rows(tmp_path):
     result = run_bot_report(tmp_path, "--output", "out")
 
     assert result.returncode == 0, result.stderr
-    page = (tmp_path / "out" / "bot_report.html").read_text()
+    page = (tmp_path / "out" / "bot_report.html").read_text(encoding="utf-8")
     assert page.startswith("<!doctype html>")
     assert page.rstrip().endswith("</html>")
     assert "Search-Based" in page and "Q Learning v2" in page
