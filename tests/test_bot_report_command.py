@@ -59,6 +59,30 @@ def read_markdown(tmp_path):
     return (tmp_path / "reports" / "bot_report.md").read_text()
 
 
+def table_rows(markdown, first_cell):
+    """The cells of every Markdown table row whose first cell is first_cell."""
+    rows = []
+    for line in markdown.splitlines():
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if line.startswith("|") and cells[0] == first_cell:
+            rows.append(cells)
+    return rows
+
+
+def q_table_identity(sha, feature_set="v3", games=2000, history=None):
+    identity = {"table_sha256": sha, "feature_set": feature_set, "game_trained": games}
+    if history is not None:
+        identity["training_history"] = history
+    return identity
+
+
+def dqn_identity(sha, feature_schema="q_learning_space_state_v3", seed=9000, games=2000):
+    return {
+        "model_sha256": sha, "feature_schema": feature_schema,
+        "base_seed": seed, "game_trained": games,
+    }
+
+
 def test_writes_an_overview_table_computed_from_the_games(tmp_path):
     games = games_from([10, 20, 30], outcomes=["collision", "collision", "move_limit"])
     write_report(tmp_path, "one.json", sample_report({"q_learning_v3": games}))
@@ -68,11 +92,11 @@ def test_writes_an_overview_table_computed_from_the_games(tmp_path):
     assert result.returncode == 0, result.stderr
     markdown = read_markdown(tmp_path)
     assert "24 × 25 board, 5000-move limit, seeds 200000–200002 (3 games)" in markdown
-    row = next(line for line in markdown.splitlines() if line.startswith("| Q Learning v3"))
-    cells = [cell.strip() for cell in row.strip("|").split("|")]
-    # Bot, run date, games, mean, median, best, std dev, win rate, move-limit rate
-    assert cells == [
-        "Q Learning v3", "2026-10-20 12:00", "3", "20.0", "20.0", "30", "8.2", "0.0%", "33.3%",
+    # Bot, bot file, run date, games, mean, median, best, std dev, win rate,
+    # move-limit rate; a report without the bot's identity has an unknown file.
+    assert table_rows(markdown, "Q Learning v3")[0] == [
+        "Q Learning v3", "unknown", "2026-10-20 12:00", "3", "20.0", "20.0", "30", "8.2",
+        "0.0%", "33.3%",
     ]
     assert "bot_report.html" in result.stdout
 
@@ -193,3 +217,109 @@ def test_the_command_does_not_import_pytorch(tmp_path):
     )
 
     assert result.stdout.strip() == "False", result.stderr
+
+
+def test_each_bot_file_is_its_own_row_with_a_combined_row(tmp_path):
+    for name, sha, scores in (("a.json", "a" * 64, [10, 20]), ("b.json", "b" * 64, [30, 40])):
+        report = sample_report({"q_learning_v3": games_from(scores)})
+        report["q_learning_v3"] = q_table_identity(sha)
+        write_report(tmp_path, name, report)
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    runs = table_rows(markdown, "Q Learning v3")
+    assert sorted(row[1] for row in runs[:2]) == ["aaaaaaaa", "bbbbbbbb"]
+    combined = table_rows(markdown, "Q Learning v3 combined (2 bot files)")
+    assert len(combined) == 1
+    # The combined row pools both files' games: mean of 10, 20, 30, 40.
+    assert combined[0][3:6] == ["4", "25.0", "25.0"]
+
+
+def test_a_bot_file_evaluated_twice_shows_only_its_newest_run(tmp_path):
+    for name, date, scores in (
+        ("old.json", "2026-10-01T00:00:00+00:00", [1, 1]),
+        ("new.json", "2026-10-05T00:00:00+00:00", [9, 9]),
+    ):
+        report = sample_report({"q_learning_v3": games_from(scores)}, date=date)
+        report["q_learning_v3"] = q_table_identity("c" * 64)
+        write_report(tmp_path, name, report)
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    rows = table_rows(markdown, "Q Learning v3")
+    assert len(rows) == 2  # one overview row and one provenance row
+    assert rows[0][2] == "2026-10-05 00:00"
+    assert "2026-10-01" not in markdown
+    assert not table_rows(markdown, "Q Learning v3 combined (2 bot files)")
+
+
+def test_non_learning_bots_evaluated_twice_show_only_the_newest_run(tmp_path):
+    for name, date in (("old.json", "2026-10-01T00:00:00+00:00"),
+                       ("new.json", "2026-10-05T00:00:00+00:00")):
+        write_report(tmp_path, name, sample_report({"rule": games_from([3, 5])}, date=date))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    rows = table_rows(read_markdown(tmp_path), "Rule Based")
+    assert [row[2] for row in rows[:1]] == ["2026-10-05 00:00"]
+    assert len(rows) == 2
+
+
+def test_provenance_shows_how_each_bot_file_was_trained(tmp_path):
+    report = sample_report({"q_learning_v3": games_from([5, 6]), "dqn": games_from([7, 8])})
+    report["q_learning_v3"] = q_table_identity("d" * 64, history=[
+        {"source": "train_command", "seed": 12000, "games_at_end": 2000},
+    ])
+    report["dqn"] = dqn_identity("e" * 64, feature_schema="q_learning_space_state_v2", seed=9000)
+    report["code"] = {"git_commit": "1234567890abcdef", "source_sha256": "f" * 64}
+    write_report(tmp_path, "one.json", report)
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    assert "## " in markdown and "### Where each bot came from" in markdown
+    # Bot, bot file, Feature Set, games trained, trained by, training seeds, code
+    assert table_rows(markdown, "Q Learning v3")[1] == [
+        "Q Learning v3", "dddddddd", "v3", "2000", "Terminal command", "12000", "1234567",
+    ]
+    # Terminal experiments save every DQN as "dqn"; the Feature Set names it.
+    assert table_rows(markdown, "DQN v2")[1] == [
+        "DQN v2", "eeeeeeee", "v2", "2000", "Terminal command", "9000", "1234567",
+    ]
+
+
+def test_app_trained_bots_are_marked_as_app_training(tmp_path):
+    report = sample_report({"dqn": games_from([7, 8])})
+    report["dqn"] = dqn_identity("1" * 64, seed=0)
+    report["evaluated"] = "app_training"
+    write_report(tmp_path, "one.json", report)
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert table_rows(read_markdown(tmp_path), "DQN v3")[1][4] == "App"
+
+
+def test_missing_provenance_is_shown_as_unknown(tmp_path):
+    report = sample_report({"q_learning": games_from([5, 6]), "rule": games_from([1, 2])})
+    report["q_learning"] = {"table_sha256": "2" * 64}
+    del report["code"]
+    write_report(tmp_path, "one.json", report)
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    markdown = read_markdown(tmp_path)
+    # Tables saved before Feature Sets were recorded are v2.
+    assert table_rows(markdown, "Q Learning v2")[1] == [
+        "Q Learning v2", "22222222", "v2", "unknown", "unknown", "unknown", "unknown",
+    ]
+    assert table_rows(markdown, "Rule Based")[1] == [
+        "Rule Based", "—", "—", "—", "—", "—", "unknown",
+    ]

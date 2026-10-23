@@ -9,22 +9,28 @@ from dataclasses import dataclass
 from html import escape
 import statistics
 
-from snake.bots.BotModeCatalogue import BOT_MODES
+from snake.bots.BotModeCatalogue import BOT_MODES, FAMILY_LABELS
 
 
-# Terminal experiments save any DQN model as "dqn", so its Feature Set is not
-# known from the name alone.
-BOT_LABELS = {**{mode.key: mode.label for mode in BOT_MODES}, "dqn": "DQN"}
+BOT_MODES_BY_KEY = {mode.key: mode for mode in BOT_MODES}
+LABELS_BY_VERSION = {(mode.family, mode.version): mode.label for mode in BOT_MODES}
 
-TABLE_HEADINGS = (
-    "Bot", "Run date (UTC)", "Games", "Mean", "Median", "Best", "Std dev",
+OVERVIEW_HEADINGS = (
+    "Bot", "Bot file", "Run date (UTC)", "Games", "Mean", "Median", "Best", "Std dev",
     "Win rate", "Move-limit rate",
 )
+PROVENANCE_HEADINGS = (
+    "Bot", "Bot file", "Feature Set", "Games trained", "Trained by", "Training seeds", "Code",
+)
+# Shown where a field does not apply, such as a non-learning bot's Feature Set.
+NOT_APPLICABLE = "—"
+UNKNOWN = "unknown"
 
 
 @dataclass(frozen=True)
 class RunSummary:
     label: str
+    bot_file: str
     created_at: str
     game_count: int
     mean_score: float
@@ -39,6 +45,7 @@ class RunSummary:
 class ConditionsGroup:
     title: str
     rows: tuple
+    provenance: tuple
 
 
 @dataclass(frozen=True)
@@ -55,21 +62,93 @@ def build_bot_report(runs, skipped_files):
         runs_by_conditions.setdefault(run.conditions, []).append(run)
 
     groups = []
+    run_count = 0
     for conditions in sorted(runs_by_conditions):
-        rows = sorted(
-            (summarize_run(run) for run in runs_by_conditions[conditions]),
-            key=lambda row: (row.label, row.created_at, row.mean_score),
-        )
-        groups.append(ConditionsGroup(conditions_title(conditions), tuple(rows)))
-    return BotReport(len(runs), skipped_files, tuple(groups))
+        newest = newest_runs(runs_by_conditions[conditions])
+        run_count += len(newest)
+        groups.append(ConditionsGroup(
+            conditions_title(conditions), summary_rows(newest),
+            tuple(provenance_cells(run) for run in newest),
+        ))
+    return BotReport(run_count, skipped_files, tuple(groups))
 
 
-def summarize_run(run):
-    scores = [game.score for game in run.games]
-    outcomes = [game.outcome for game in run.games]
+def bot_label(run):
+    """The app's name for the bot, using its Feature Set when the report has one.
+
+    Terminal experiments save any DQN model as "dqn", so the Feature Set, not
+    the name, says whether it was DQN v2 or v3.
+    """
+    mode = BOT_MODES_BY_KEY.get(run.bot_mode)
+    if mode is None:
+        return run.bot_mode
+    if mode.family is None or run.bot_file is None or run.bot_file.feature_set is None:
+        return mode.label
+    feature_set = run.bot_file.feature_set
+    return LABELS_BY_VERSION.get(
+        (mode.family, feature_set), f"{FAMILY_LABELS[mode.family]} {feature_set}",
+    )
+
+
+def is_learning(run):
+    mode = BOT_MODES_BY_KEY.get(run.bot_mode)
+    return run.bot_file is not None or (mode is not None and mode.family is not None)
+
+
+def file_key(run):
+    """Runs with the same key played the same bot; only the newest is kept.
+
+    A non-learning bot has no file, so each of its runs shares one key.
+    """
+    return (bot_label(run), run.bot_file.sha256 if run.bot_file else None)
+
+
+def newest_runs(runs):
+    newest = {}
+    for run in runs:
+        key = file_key(run)
+        if key not in newest or run.created_at > newest[key].created_at:
+            newest[key] = run
+    return sorted(
+        newest.values(),
+        key=lambda run: (bot_label(run), run.created_at, file_key(run)[1] or ""),
+    )
+
+
+def short_file(run):
+    if run.bot_file is not None:
+        return run.bot_file.sha256[:8]
+    return UNKNOWN if is_learning(run) else NOT_APPLICABLE
+
+
+def summary_rows(runs):
+    """One row per run, then a combined row for a bot with several bot files."""
+    rows = []
+    runs_by_label = {}
+    for run in runs:
+        runs_by_label.setdefault(bot_label(run), []).append(run)
+    for label in sorted(runs_by_label):
+        label_runs = runs_by_label[label]
+        for run in label_runs:
+            rows.append(summarize_games(
+                label, short_file(run), run.created_at.strftime("%Y-%m-%d %H:%M"), run.games,
+            ))
+        if len(label_runs) > 1:
+            pooled = [game for run in label_runs for game in run.games]
+            rows.append(summarize_games(
+                f"{label} combined ({len(label_runs)} bot files)", NOT_APPLICABLE,
+                NOT_APPLICABLE, pooled,
+            ))
+    return tuple(rows)
+
+
+def summarize_games(label, bot_file, created_at, games):
+    scores = [game.score for game in games]
+    outcomes = [game.outcome for game in games]
     return RunSummary(
-        label=BOT_LABELS.get(run.bot_mode, run.bot_mode),
-        created_at=run.created_at.strftime("%Y-%m-%d %H:%M"),
+        label=label,
+        bot_file=bot_file,
+        created_at=created_at,
         game_count=len(scores),
         mean_score=statistics.mean(scores),
         median_score=statistics.median(scores),
@@ -77,6 +156,24 @@ def summarize_run(run):
         score_std_dev=statistics.pstdev(scores),
         win_rate=outcomes.count("won") / len(outcomes),
         move_limit_rate=outcomes.count("move_limit") / len(outcomes),
+    )
+
+
+def provenance_cells(run):
+    code = run.code_version or UNKNOWN
+    if not is_learning(run):
+        return (bot_label(run), *[NOT_APPLICABLE] * 5, code)
+    bot_file = run.bot_file
+    if bot_file is None:
+        return (bot_label(run), *[UNKNOWN] * 5, code)
+    return (
+        bot_label(run),
+        short_file(run),
+        bot_file.feature_set or UNKNOWN,
+        UNKNOWN if bot_file.games_trained is None else str(bot_file.games_trained),
+        bot_file.trained_by or UNKNOWN,
+        ", ".join(str(seed) for seed in bot_file.training_seeds) or UNKNOWN,
+        code,
     )
 
 
@@ -95,7 +192,7 @@ def conditions_title(conditions):
 
 def row_cells(row):
     return (
-        row.label, row.created_at, str(row.game_count), f"{row.mean_score:.1f}",
+        row.label, row.bot_file, row.created_at, str(row.game_count), f"{row.mean_score:.1f}",
         f"{row.median_score:.1f}", str(row.best_score), f"{row.score_std_dev:.1f}",
         f"{row.win_rate:.1%}", f"{row.move_limit_rate:.1%}",
     )
@@ -116,19 +213,32 @@ def source_sentence(report):
     return text
 
 
+READING_NOTES = (
+    "Every number is computed from the saved games. The Move-limit rate is the "
+    "share of games stopped by the move limit rather than ended by a win or a "
+    "collision.",
+    "A bot file is the saved Q-table or DQN model, shown by the start of its "
+    "hash. When the same bot file was evaluated more than once, only its newest "
+    "run is shown. A combined row pools the games of every bot file of that bot.",
+)
+
+
+def markdown_table(headings, rows):
+    lines = ["| " + " | ".join(headings) + " |"]
+    lines.append("|" + "|".join(" --- " for _ in headings) + "|")
+    lines += ["| " + " | ".join(cells) + " |" for cells in rows]
+    return lines
+
+
 def write_markdown(report):
-    lines = ["# Bot Report", "", source_sentence(report), ""]
-    lines += [
-        "Every number is computed from the saved games. The Move-limit rate is "
-        "the share of games stopped by the move limit rather than ended by a win "
-        "or a collision.",
-    ]
+    lines = ["# Bot Report", "", source_sentence(report)]
+    for note in READING_NOTES:
+        lines += ["", note]
     for group in report.groups:
         lines += ["", f"## {group.title}", ""]
-        lines.append("| " + " | ".join(TABLE_HEADINGS) + " |")
-        lines.append("|" + "|".join(" --- " for _ in TABLE_HEADINGS) + "|")
-        for row in group.rows:
-            lines.append("| " + " | ".join(row_cells(row)) + " |")
+        lines += markdown_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
+        lines += ["", "### Where each bot came from", ""]
+        lines += markdown_table(PROVENANCE_HEADINGS, group.provenance)
     return "\n".join(lines) + "\n"
 
 
@@ -139,7 +249,7 @@ HTML_STYLE = """
   :root { --text: #e6edf3; --muted: #9198a1; --background: #0d1117;
     --line: #3d444d; --header: #151b23; }
 }
-body { margin: 0 auto; max-width: 1000px; padding: 24px 16px; color: var(--text);
+body { margin: 0 auto; max-width: 1100px; padding: 24px 16px; color: var(--text);
   background: var(--background); font: 15px/1.5 system-ui, sans-serif; }
 p { color: var(--muted); }
 .table-scroll { overflow-x: auto; }
@@ -149,6 +259,18 @@ th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: ri
 th { background: var(--header); }
 th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
 """
+
+
+def html_table(headings, rows):
+    parts = ['<div class="table-scroll"><table>']
+    parts.append(
+        "<thead><tr>" + "".join(f"<th>{escape(heading)}</th>" for heading in headings)
+        + "</tr></thead><tbody>"
+    )
+    for cells in rows:
+        parts.append("<tr>" + "".join(f"<td>{escape(cell)}</td>" for cell in cells) + "</tr>")
+    parts.append("</tbody></table></div>")
+    return parts
 
 
 def write_html(report):
@@ -165,18 +287,11 @@ def write_html(report):
         "<h1>Bot Report</h1>",
         f"<p>{escape(source_sentence(report))}</p>",
     ]
+    parts += [f"<p>{escape(note)}</p>" for note in READING_NOTES]
     for group in report.groups:
         parts.append(f"<h2>{escape(group.title)}</h2>")
-        parts.append('<div class="table-scroll"><table>')
-        parts.append(
-            "<thead><tr>"
-            + "".join(f"<th>{escape(heading)}</th>" for heading in TABLE_HEADINGS)
-            + "</tr></thead><tbody>"
-        )
-        for row in group.rows:
-            parts.append(
-                "<tr>" + "".join(f"<td>{escape(cell)}</td>" for cell in row_cells(row)) + "</tr>"
-            )
-        parts.append("</tbody></table></div>")
+        parts += html_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
+        parts.append("<h3>Where each bot came from</h3>")
+        parts += html_table(PROVENANCE_HEADINGS, group.provenance)
     parts += ["</body>", "</html>"]
     return "\n".join(parts) + "\n"

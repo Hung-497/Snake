@@ -34,11 +34,28 @@ class GameResult:
 
 
 @dataclass(frozen=True)
+class BotFile:
+    """The saved Q-table or DQN model a learning Bot Mode played with.
+
+    Anything the report did not record is None, so it can be shown as unknown.
+    """
+
+    sha256: str
+    feature_set: str | None
+    games_trained: int | None
+    trained_by: str | None
+    training_seeds: tuple
+
+
+@dataclass(frozen=True)
 class ExperimentRun:
     bot_mode: str
     created_at: datetime
     conditions: ExperimentConditions
     games: tuple
+    # None for non-learning Bot Modes and for reports that did not identify the file.
+    bot_file: BotFile | None = None
+    code_version: str | None = None
 
 
 def read_experiment_runs(directory):
@@ -82,10 +99,70 @@ def read_runs(report):
     bots = report["bots"]
     if not isinstance(bots, dict) or not bots:
         raise ValueError("A report needs at least one bot")
+    code = report.get("code")
+    commit = code.get("git_commit") if isinstance(code, dict) else None
+    code_version = commit[:7] if isinstance(commit, str) and commit else None
     return [
-        ExperimentRun(bot_mode, created_at, conditions, read_games(bot["games"], seeds))
+        ExperimentRun(
+            bot_mode, created_at, conditions, read_games(bot["games"], seeds),
+            read_bot_file(report, bot_mode), code_version,
+        )
         for bot_mode, bot in bots.items()
     ]
+
+
+# Training History sources -> how the report names them.
+TRAINING_SOURCES = {"app": "App", "train_command": "Terminal command"}
+
+
+def read_bot_file(report, bot_mode):
+    """Identify the learning bot's saved file; provenance it lacks stays None.
+
+    Evaluation saves the bot's identity next to "bots", under the Bot Mode name.
+    """
+    identity = report.get(bot_mode)
+    if not isinstance(identity, dict):
+        return None
+    sha256 = identity.get("table_sha256") or identity.get("model_sha256")
+    if not isinstance(sha256, str):
+        return None
+    games_trained = identity.get("game_trained")
+    if type(games_trained) is not int:
+        games_trained = None
+
+    if "table_sha256" in identity:
+        # Q-tables saved before Feature Sets were recorded are v2.
+        feature_set = identity.get("feature_set", "v2")
+        trained_by, training_seeds = q_table_training(identity.get("training_history"))
+    else:
+        feature_set = identity.get("feature_set")
+        schema = identity.get("feature_schema")
+        if feature_set is None and isinstance(schema, str):
+            # DQN models name their Feature Set at the end, e.g. ..._space_state_v3.
+            feature_set = schema.rsplit("_", 1)[-1]
+        trained_by = "App" if report.get("evaluated") == "app_training" else "Terminal command"
+        seed = identity.get("base_seed")
+        training_seeds = (seed,) if type(seed) is int else ()
+    if not isinstance(feature_set, str):
+        feature_set = None
+    return BotFile(sha256, feature_set, games_trained, trained_by, training_seeds)
+
+
+def q_table_training(history):
+    """Who trained a Q-table, and with which seeds, from its Training History."""
+    if not isinstance(history, list):
+        return None, ()
+    sources = []
+    seeds = []
+    for entry in history:
+        if not isinstance(entry, dict) or entry.get("source") == "unrecorded":
+            continue
+        source = TRAINING_SOURCES.get(entry.get("source"), entry.get("source"))
+        if isinstance(source, str) and source not in sources:
+            sources.append(source)
+        if type(entry.get("seed")) is int and entry["seed"] not in seeds:
+            seeds.append(entry["seed"])
+    return (", ".join(sources) or None), tuple(seeds)
 
 
 def read_games(games, seeds):
