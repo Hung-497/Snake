@@ -8,7 +8,9 @@ import argparse
 from pathlib import Path
 import sys
 
-from snake.analysis.BotReport import build_bot_report, write_html, write_markdown
+from snake.analysis.BotReport import (
+    CHART_FOLDER, build_bot_report, chart_files, write_html, write_markdown,
+)
 from snake.analysis.ExperimentRuns import read_experiment_runs
 
 
@@ -38,6 +40,7 @@ def main(argv=None):
     html_path = output / f"{REPORT_NAME}.html"
     markdown_path.write_text(write_markdown(report), encoding="utf-8")
     html_path.write_text(write_html(report), encoding="utf-8")
+    write_charts(report, output / CHART_FOLDER)
 
     print(
         f"Bot Report: {report.run_count} runs in {len(report.groups)} groups, "
@@ -45,6 +48,15 @@ def main(argv=None):
     )
     print(f"Wrote {markdown_path} and {html_path}")
     return 0
+
+
+def write_charts(report, folder):
+    """Save each group's chart, removing charts of groups that no longer exist."""
+    folder.mkdir(exist_ok=True)
+    for old_chart in folder.glob("scores_*.svg"):
+        old_chart.unlink()
+    for name, svg in chart_files(report):
+        (folder / name).write_text(svg, encoding="utf-8")
 
 
 if __name__ == "__main__":

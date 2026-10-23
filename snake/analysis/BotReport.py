@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from html import escape
 import statistics
 
+from snake.analysis.ScoreChart import score_chart_svg
 from snake.bots.BotModeCatalogue import BOT_MODES, FAMILY_LABELS
 
 
@@ -17,7 +18,7 @@ LABELS_BY_VERSION = {(mode.family, mode.version): mode.label for mode in BOT_MOD
 
 OVERVIEW_HEADINGS = (
     "Bot", "Bot file", "Run date (UTC)", "Games", "Mean", "Median", "Best", "Std dev",
-    "Win rate", "Move-limit rate",
+    "Win rate", "Move-limit rate", "Moves per point",
 )
 PROVENANCE_HEADINGS = (
     "Bot", "Bot file", "Feature Set", "Games trained", "Trained by", "Training seeds", "Code",
@@ -25,6 +26,8 @@ PROVENANCE_HEADINGS = (
 # Shown where a field does not apply, such as a non-learning bot's Feature Set.
 NOT_APPLICABLE = "—"
 UNKNOWN = "unknown"
+# The Markdown links to each group's chart in this folder, next to it.
+CHART_FOLDER = "bot_report_charts"
 
 
 @dataclass(frozen=True)
@@ -39,6 +42,11 @@ class RunSummary:
     score_std_dev: float
     win_rate: float
     move_limit_rate: float
+    min_score: int
+    lower_quartile: float
+    upper_quartile: float
+    # None when no game scored, as there is no point to divide by.
+    moves_per_point: float | None
 
 
 @dataclass(frozen=True)
@@ -145,6 +153,14 @@ def summary_rows(runs):
 def summarize_games(label, bot_file, created_at, games):
     scores = [game.score for game in games]
     outcomes = [game.outcome for game in games]
+    # The middle half of games lies between the lower and upper quartile.
+    if len(scores) > 1:
+        lower_quartile, _, upper_quartile = statistics.quantiles(
+            scores, n=4, method="inclusive",
+        )
+    else:
+        lower_quartile = upper_quartile = scores[0]
+    total_score = sum(scores)
     return RunSummary(
         label=label,
         bot_file=bot_file,
@@ -156,6 +172,12 @@ def summarize_games(label, bot_file, created_at, games):
         score_std_dev=statistics.pstdev(scores),
         win_rate=outcomes.count("won") / len(outcomes),
         move_limit_rate=outcomes.count("move_limit") / len(outcomes),
+        min_score=min(scores),
+        lower_quartile=lower_quartile,
+        upper_quartile=upper_quartile,
+        moves_per_point=(
+            sum(game.moves for game in games) / total_score if total_score else None
+        ),
     )
 
 
@@ -195,6 +217,7 @@ def row_cells(row):
         row.label, row.bot_file, row.created_at, str(row.game_count), f"{row.mean_score:.1f}",
         f"{row.median_score:.1f}", str(row.best_score), f"{row.score_std_dev:.1f}",
         f"{row.win_rate:.1%}", f"{row.move_limit_rate:.1%}",
+        NOT_APPLICABLE if row.moves_per_point is None else f"{row.moves_per_point:.1f}",
     )
 
 
@@ -216,7 +239,12 @@ def source_sentence(report):
 READING_NOTES = (
     "Every number is computed from the saved games. The Move-limit rate is the "
     "share of games stopped by the move limit rather than ended by a win or a "
-    "collision.",
+    "collision. Moves per point is how many moves the bot needed for each point "
+    "of score; a high value with a high Move-limit rate suggests circling "
+    "instead of chasing food.",
+    "In each chart the line runs from the lowest to the best score, the box holds "
+    "the middle half of the games, the line inside the box is the median, and the "
+    "dot is the mean.",
     "A bot file is the saved Q-table or DQN model, shown by the start of its "
     "hash. When the same bot file was evaluated more than once, only its newest "
     "run is shown. A combined row pools the games of every bot file of that bot.",
@@ -230,13 +258,27 @@ def markdown_table(headings, rows):
     return lines
 
 
+def chart_title(group):
+    return f"Scores per game: {group.title}"
+
+
+def chart_files(report):
+    """Each group's chart as (file name, SVG), in the order of the groups."""
+    return [
+        (f"scores_{number}.svg", score_chart_svg(chart_title(group), group.rows))
+        for number, group in enumerate(report.groups, start=1)
+    ]
+
+
 def write_markdown(report):
     lines = ["# Bot Report", "", source_sentence(report)]
     for note in READING_NOTES:
         lines += ["", note]
-    for group in report.groups:
+    charts = chart_files(report)
+    for group, (chart_name, _) in zip(report.groups, charts):
         lines += ["", f"## {group.title}", ""]
         lines += markdown_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
+        lines += ["", f"![{chart_title(group)}]({CHART_FOLDER}/{chart_name})"]
         lines += ["", "### Where each bot came from", ""]
         lines += markdown_table(PROVENANCE_HEADINGS, group.provenance)
     return "\n".join(lines) + "\n"
@@ -252,7 +294,8 @@ HTML_STYLE = """
 body { margin: 0 auto; max-width: 1100px; padding: 24px 16px; color: var(--text);
   background: var(--background); font: 15px/1.5 system-ui, sans-serif; }
 p { color: var(--muted); }
-.table-scroll { overflow-x: auto; }
+.table-scroll, .chart { overflow-x: auto; }
+.chart { margin: 16px 0; }
 table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
 th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: right;
   white-space: nowrap; }
@@ -288,9 +331,10 @@ def write_html(report):
         f"<p>{escape(source_sentence(report))}</p>",
     ]
     parts += [f"<p>{escape(note)}</p>" for note in READING_NOTES]
-    for group in report.groups:
+    for group, (_, chart) in zip(report.groups, chart_files(report)):
         parts.append(f"<h2>{escape(group.title)}</h2>")
         parts += html_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
+        parts.append(f'<div class="chart">{chart}</div>')
         parts.append("<h3>Where each bot came from</h3>")
         parts += html_table(PROVENANCE_HEADINGS, group.provenance)
     parts += ["</body>", "</html>"]

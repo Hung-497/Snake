@@ -2,6 +2,7 @@
 
 import json
 import os
+from xml.etree import ElementTree
 from pathlib import Path
 import subprocess
 import sys
@@ -93,10 +94,11 @@ def test_writes_an_overview_table_computed_from_the_games(tmp_path):
     markdown = read_markdown(tmp_path)
     assert "24 × 25 board, 5000-move limit, seeds 200000–200002 (3 games)" in markdown
     # Bot, bot file, run date, games, mean, median, best, std dev, win rate,
-    # move-limit rate; a report without the bot's identity has an unknown file.
+    # move-limit rate, moves per point (630 moves / 60 points); a report
+    # without the bot's identity has an unknown file.
     assert table_rows(markdown, "Q Learning v3")[0] == [
         "Q Learning v3", "unknown", "2026-10-20 12:00", "3", "20.0", "20.0", "30", "8.2",
-        "0.0%", "33.3%",
+        "0.0%", "33.3%", "10.5",
     ]
     assert "bot_report.html" in result.stdout
 
@@ -323,3 +325,50 @@ def test_missing_provenance_is_shown_as_unknown(tmp_path):
     assert table_rows(markdown, "Rule Based")[1] == [
         "Rule Based", "—", "—", "—", "—", "—", "unknown",
     ]
+
+
+def test_a_run_that_never_scored_has_no_moves_per_point(tmp_path):
+    write_report(tmp_path, "zero.json", sample_report({"rule": games_from([0, 0])}))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    assert table_rows(read_markdown(tmp_path), "Rule Based")[0][-1] == "—"
+
+
+def test_each_group_gets_a_score_chart_in_both_files(tmp_path):
+    write_report(tmp_path, "short.json", sample_report({
+        "rule": games_from([5, 9, 13]), "search_based": games_from([40, 50, 60]),
+    }))
+    write_report(tmp_path, "long.json", sample_report(
+        {"dqn": games_from([80, 90, 100])}, max_moves=20000,
+    ))
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    charts = sorted((tmp_path / "reports" / "bot_report_charts").glob("*.svg"))
+    assert [chart.name for chart in charts] == ["scores_1.svg", "scores_2.svg"]
+    markdown = read_markdown(tmp_path)
+    page = (tmp_path / "reports" / "bot_report.html").read_text(encoding="utf-8")
+    for chart, labels in zip(charts, (["Rule Based", "Search-Based"], ["DQN"])):
+        # Each chart is a complete SVG file that names every bot it shows.
+        root = ElementTree.parse(chart).getroot()
+        assert root.tag == "{http://www.w3.org/2000/svg}svg"
+        text = chart.read_text(encoding="utf-8")
+        assert all(label in text for label in labels)
+        assert f"](bot_report_charts/{chart.name})" in markdown
+    assert page.count("<svg") == 2
+
+
+def test_charts_from_an_earlier_report_are_removed(tmp_path):
+    write_report(tmp_path, "a.json", sample_report({"rule": games_from([1, 2])}))
+    write_report(tmp_path, "b.json", sample_report({"rule": games_from([3, 4])}, base_seed=7))
+    run_bot_report(tmp_path)
+    (tmp_path / "experiments" / "b.json").unlink()
+
+    result = run_bot_report(tmp_path)
+
+    assert result.returncode == 0, result.stderr
+    charts = (tmp_path / "reports" / "bot_report_charts").glob("*.svg")
+    assert [chart.name for chart in charts] == ["scores_1.svg"]
