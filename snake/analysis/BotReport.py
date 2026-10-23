@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from html import escape
 import statistics
 
+from snake.analysis import ReportColors
 from snake.analysis.PairedComparison import compare_paired
 from snake.analysis.ScoreChart import score_chart_svg
 from snake.bots.BotModeCatalogue import BOT_MODES, FAMILY_LABELS
@@ -35,6 +36,8 @@ UNKNOWN = "unknown"
 @dataclass(frozen=True)
 class RunSummary:
     label: str
+    # The bot's plain name, the same for its file rows and its combined row.
+    bot: str
     bot_file: str
     created_at: str
     game_count: int
@@ -150,12 +153,13 @@ def summary_rows(runs):
         label_runs = runs_by_label[label]
         for run in label_runs:
             rows.append(summarize_games(
-                label, short_file(run), run.created_at.strftime("%Y-%m-%d %H:%M"), run.games,
+                label, label, short_file(run), run.created_at.strftime("%Y-%m-%d %H:%M"),
+                run.games,
             ))
         if len(label_runs) > 1:
             pooled = [game for run in label_runs for game in run.games]
             rows.append(summarize_games(
-                f"{label} combined ({len(label_runs)} bot files)", NOT_APPLICABLE,
+                f"{label} combined ({len(label_runs)} bot files)", label, NOT_APPLICABLE,
                 NOT_APPLICABLE, pooled,
             ))
     return tuple(rows)
@@ -205,7 +209,7 @@ def comparison_cells(first, second, comparison):
     )
 
 
-def summarize_games(label, bot_file, created_at, games):
+def summarize_games(label, bot, bot_file, created_at, games):
     scores = [game.score for game in games]
     outcomes = [game.outcome for game in games]
     # The middle half of games lies between the lower and upper quartile.
@@ -218,6 +222,7 @@ def summarize_games(label, bot_file, created_at, games):
     total_score = sum(scores)
     return RunSummary(
         label=label,
+        bot=bot,
         bot_file=bot_file,
         created_at=created_at,
         game_count=len(scores),
@@ -381,36 +386,182 @@ def write_markdown(report, chart_folder):
     return "\n".join(lines) + "\n"
 
 
-HTML_STYLE = """
-:root { color-scheme: light dark; --text: #1f2328; --muted: #59636e;
-  --background: #ffffff; --line: #d1d9e0; --header: #f6f8fa; }
-@media (prefers-color-scheme: dark) {
-  :root { --text: #e6edf3; --muted: #9198a1; --background: #0d1117;
-    --line: #3d444d; --header: #151b23; }
-}
-body { margin: 0 auto; max-width: 1100px; padding: 24px 16px; color: var(--text);
-  background: var(--background); font: 15px/1.5 system-ui, sans-serif; }
-p { color: var(--muted); }
-.table-scroll, .chart { overflow-x: auto; }
-.chart { margin: 16px 0; }
-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-th, td { border-bottom: 1px solid var(--line); padding: 6px 10px; text-align: right;
-  white-space: nowrap; }
-th { background: var(--header); }
-th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
+C = ReportColors
+# The app's dark board, as a page: a faint cell grid behind raised panels, and
+# each bot in its Records Analytics colour.
+HTML_STYLE = f"""
+:root {{ color-scheme: dark; --surface: {C.SURFACE}; --raised: {C.SURFACE_RAISED};
+  --border: {C.BORDER}; --grid: #0F2036; --text: {C.TEXT}; --muted: {C.TEXT_MUTED};
+  --head: {C.SNAKE_HEAD}; --body: #2EAA82; --food: {C.FOOD}; }}
+* {{ box-sizing: border-box; }}
+body {{ margin: 0; color: var(--text); background-color: var(--surface);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  font: 15px/1.6 Inter, ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums; }}
+main {{ max-width: 1080px; margin: 0 auto; padding: 48px 20px 64px; }}
+h1 {{ font-size: clamp(34px, 6vw, 52px); line-height: 1.05; letter-spacing: -0.02em;
+  margin: 0 0 14px; font-weight: 700; }}
+h2 {{ font-size: 22px; line-height: 1.3; margin: 0 0 18px; font-weight: 650;
+  letter-spacing: -0.01em; }}
+h3 {{ font-size: 15px; font-weight: 600; margin: 28px 0 10px; color: var(--muted); }}
+.lede {{ max-width: 68ch; color: var(--muted); font-size: 17px; margin: 0 0 18px; }}
+p {{ max-width: 72ch; }}
+details.notes {{ max-width: 72ch; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--raised); padding: 4px 18px; margin-bottom: 8px; }}
+details.notes summary {{ cursor: pointer; padding: 10px 0; font-weight: 600; }}
+details.notes p {{ color: var(--muted); margin: 0 0 14px; }}
+summary:focus-visible {{ outline: 2px solid var(--head); outline-offset: 4px;
+  border-radius: 4px; }}
+section.group {{ margin-top: 56px; }}
+ol.ranking {{ list-style: none; display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px 0; padding: 0; margin: 0 0 22px; }}
+ol.ranking li {{ position: relative; min-width: 118px; padding: 10px 14px 9px;
+  margin-right: 12px; border-radius: 8px; background: var(--raised);
+  border: 1px solid var(--border); border-top: 3px solid var(--bot); }}
+ol.ranking li + li::before {{ content: ""; position: absolute; left: -13px; top: 50%;
+  width: 13px; height: 6px; margin-top: -3px; background: var(--body); }}
+ol.ranking li.head {{ background: var(--head); border-color: var(--head);
+  color: {C.SURFACE}; padding-left: 24px; }}
+ol.ranking li.head::after {{ content: ""; position: absolute; top: 12px; left: 9px;
+  width: 5px; height: 5px; border-radius: 50%; background: {C.SURFACE};
+  box-shadow: 0 9px 0 {C.SURFACE}; }}
+ol.ranking .food {{ width: 12px; height: 12px; border-radius: 50%; background: var(--food);
+  margin-right: 14px; min-width: 0; padding: 0; border: 0; }}
+ol.ranking .name {{ display: block; font-weight: 600; font-size: 14px; white-space: nowrap; }}
+ol.ranking .score {{ display: block; font-size: 22px; font-weight: 700; line-height: 1.2; }}
+ol.ranking li.head .score, ol.ranking li.head .name {{ color: {C.SURFACE}; }}
+.panel {{ background: var(--raised); border: 1px solid var(--border); border-radius: 10px;
+  overflow-x: auto; }}
+.chart {{ margin: 0 0 18px; overflow-x: auto; border-radius: 10px; }}
+.chart svg {{ display: block; width: 100%; min-width: 620px; height: auto; }}
+table {{ border-collapse: collapse; width: 100%; }}
+th, td {{ padding: 9px 14px; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--border); }}
+tbody tr:last-child td {{ border-bottom: 0; }}
+th {{ color: var(--muted); font-weight: 500; font-size: 13px; }}
+th.text, td.text {{ text-align: left; }}
+td.bot {{ text-align: left; font-weight: 500; }}
+td.text:not(.bot) {{ color: var(--muted); }}
+.swatch {{ display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+  margin-right: 9px; background: var(--bot); vertical-align: 0; }}
+td.unsure {{ color: var(--muted); font-style: italic; }}
+.empty {{ color: var(--muted); }}
+.picker {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px;
+  margin: 0 0 12px; color: var(--muted); }}
+.picker select {{ font: inherit; color: var(--text); background: var(--raised);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; }}
+.picker select:focus-visible {{ outline: 2px solid var(--head); outline-offset: 2px; }}
+tr[hidden] {{ display: none; }}
+ul.missing {{ padding-left: 20px; color: var(--muted); }}
+@media (max-width: 600px) {{ main {{ padding: 32px 16px 48px; }}
+  ol.ranking li {{ min-width: 0; margin-right: 8px; }}
+  ol.ranking li + li::before {{ display: none; }} }}
 """
 
+# Columns that name a bot, per table, get the bot's colour swatch; text
+# columns align left and numbers right.
+BOT_COLUMNS = {"overview": (0,), "comparisons": (0, 1), "provenance": (0,)}
+TEXT_COLUMNS = {"overview": (0, 1, 2), "comparisons": (0, 1, 5), "provenance": (0, 1, 4)}
 
-def html_table(headings, rows):
-    parts = ['<div class="table-scroll"><table>']
-    parts.append(
-        "<thead><tr>" + "".join(f"<th>{escape(heading)}</th>" for heading in headings)
-        + "</tr></thead><tbody>"
-    )
+
+def bot_cell(name, colors):
+    color = colors.get(name, C.TEXT_MUTED)
+    return (f'<td class="bot" style="--bot: {color}"><span class="swatch"></span>'
+            f"{escape(name)}</td>")
+
+
+def html_table(headings, rows, colors, table):
+    bot_columns, text_columns = BOT_COLUMNS[table], TEXT_COLUMNS[table]
+    parts = ['<div class="panel"><table>']
+    parts.append("<thead><tr>" + "".join(
+        f'<th class="text">{escape(heading)}</th>' if column in text_columns
+        else f"<th>{escape(heading)}</th>"
+        for column, heading in enumerate(headings)
+    ) + "</tr></thead><tbody>")
     for cells in rows:
-        parts.append("<tr>" + "".join(f"<td>{escape(cell)}</td>" for cell in cells) + "</tr>")
+        row = []
+        # A comparison row names its pair, so the picker can show just that pair.
+        opening = (f'<tr data-pair="{escape(cells[0])}|{escape(cells[1])}">'
+                   if table == "comparisons" else "<tr>")
+        for column, cell in enumerate(cells):
+            if column in bot_columns:
+                row.append(bot_cell(cell, colors))
+            elif cell in ("No reliable difference", "Too few games"):
+                row.append(f'<td class="text unsure">{escape(cell)}</td>')
+            elif column in text_columns:
+                row.append(f'<td class="text">{escape(cell)}</td>')
+            else:
+                row.append(f"<td>{escape(cell)}</td>")
+        parts.append(opening + "".join(row) + "</tr>")
     parts.append("</tbody></table></div>")
     return parts
+
+
+def ranking_rows(group):
+    """One row per bot, best mean first: its combined row when it has one."""
+    best_row = {}
+    for row in group.rows:
+        if row.bot not in best_row or row.label != row.bot:
+            best_row[row.bot] = row
+    return sorted(best_row.values(), key=lambda row: (-row.mean_score, row.bot))
+
+
+def ranking_snake(group):
+    """The group's ranking drawn as a snake: the leader is the head, nearest the food."""
+    parts = ['<ol class="ranking" aria-label="Bots ranked by mean score, best first">',
+             '<li class="food" aria-hidden="true"></li>']
+    for place, row in enumerate(ranking_rows(group)):
+        head = ' class="head"' if place == 0 else ""
+        parts.append(
+            f'<li{head} style="--bot: {C.bot_color(row.bot)}">'
+            f'<span class="name">{escape(row.bot)}</span>'
+            f'<span class="score">{row.mean_score:.1f}</span></li>'
+        )
+    parts.append("</ol>")
+    return parts
+
+
+def compare_picker(group):
+    """Two dropdowns that narrow the Game by game table, starting on the top two bots."""
+    bots = [row.bot for row in ranking_rows(group)]
+
+    def select(kind, chosen):
+        options = ['<option value="">Any bot</option>'] + [
+            f'<option value="{escape(bot)}"{" selected" if bot == chosen else ""}>'
+            f"{escape(bot)}</option>"
+            for bot in bots
+        ]
+        name = "First bot" if kind == "a" else "Second bot"
+        return (f'<select class="pick-{kind}" aria-label="{name}">'
+                + "".join(options) + "</select>")
+
+    return [
+        '<div class="picker">Compare', select("a", bots[0]), "with", select("b", bots[1]),
+        "</div>",
+    ]
+
+
+# Narrows each Game by game table to the chosen pair; without it every row shows.
+PICKER_SCRIPT = """
+document.querySelectorAll(".picker").forEach(function (picker) {
+  var a = picker.querySelector(".pick-a"), b = picker.querySelector(".pick-b");
+  var rows = picker.nextElementSibling.querySelectorAll("tr[data-pair]");
+  function update() {
+    rows.forEach(function (row) {
+      var pair = row.dataset.pair.split("|");
+      var fits = [a.value, b.value].every(function (bot) {
+        return bot === "" || pair.indexOf(bot) >= 0;
+      });
+      row.hidden = !fits || (a.value !== "" && a.value === b.value);
+    });
+  }
+  a.addEventListener("change", update);
+  b.addEventListener("change", update);
+  update();
+});
+"""
 
 
 def write_html(report):
@@ -424,24 +575,33 @@ def write_html(report):
         f"<style>{HTML_STYLE}</style>",
         "</head>",
         "<body>",
+        "<main>",
         f"<h1>{escape(report.title)}</h1>",
-        f"<p>{escape(source_sentence(report))}</p>",
+        f'<p class="lede">{escape(source_sentence(report))}</p>',
+        '<details class="notes"><summary>How to read this report</summary>',
     ]
     parts += [f"<p>{escape(note)}</p>" for note in reading_notes(report)]
+    parts.append("</details>")
     for group, (_, chart) in zip(report.groups, chart_files(report)):
-        parts.append(f"<h2>{escape(group.title)}</h2>")
-        parts += html_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows])
+        colors = {row.label: C.bot_color(row.bot) for row in group.rows}
+        parts += ['<section class="group">', f"<h2>{escape(group.title)}</h2>"]
+        parts += ranking_snake(group)
         parts.append(f'<div class="chart">{chart}</div>')
+        parts += html_table(OVERVIEW_HEADINGS, [row_cells(row) for row in group.rows],
+                            colors, "overview")
         parts.append("<h3>Game by game</h3>")
         if group.comparisons:
-            parts += html_table(COMPARISON_HEADINGS, group.comparisons)
+            parts += compare_picker(group)
+            parts += html_table(COMPARISON_HEADINGS, group.comparisons, colors, "comparisons")
         else:
-            parts.append(f"<p>{escape(ONE_BOT_SENTENCE)}</p>")
+            parts.append(f'<p class="empty">{escape(ONE_BOT_SENTENCE)}</p>')
         parts.append("<h3>Where each bot came from</h3>")
-        parts += html_table(PROVENANCE_HEADINGS, group.provenance)
+        parts += html_table(PROVENANCE_HEADINGS, group.provenance, colors, "provenance")
+        parts.append("</section>")
     if report.not_evaluated:
-        parts += ["<h2>Not evaluated yet</h2>", f"<p>{escape(NOT_EVALUATED_SENTENCE)}</p>", "<ul>"]
+        parts += ['<section class="group">', "<h2>Not evaluated yet</h2>",
+                  f"<p>{escape(NOT_EVALUATED_SENTENCE)}</p>", '<ul class="missing">']
         parts += [f"<li>{escape(name)}</li>" for name in report.not_evaluated]
-        parts.append("</ul>")
-    parts += ["</body>", "</html>"]
+        parts += ["</ul>", "</section>"]
+    parts += ["</main>", f"<script>{PICKER_SCRIPT}</script>", "</body>", "</html>"]
     return "\n".join(parts) + "\n"

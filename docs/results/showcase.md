@@ -16,12 +16,12 @@ Hamiltonian follows one route over the whole board, so it never collides, but fi
 
 | Bot | Bot file | Run date (UTC) | Games | Mean | Median | Best | Std dev | Win rate | Move-limit rate | Moves per point |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| DQN v3 | 18b5932f | 2026-10-09 23:49 | 200 | 140.8 | 146.5 | 162 | 18.2 | 0.0% | 79.5% | 33.0 |
-| Hamiltonian | — | 2026-10-23 11:41 | 200 | 122.5 | 123.0 | 132 | 3.9 | 0.0% | 100.0% | 40.8 |
-| Q Learning v2 | 331d4d4a | 2026-10-11 18:15 | 200 | 44.1 | 44.0 | 87 | 14.8 | 0.0% | 0.0% | 24.3 |
-| Q Learning v3 | 5a63bb03 | 2026-10-09 22:22 | 200 | 127.7 | 134.5 | 162 | 21.1 | 0.0% | 51.5% | 33.4 |
-| Rule Based | — | 2026-10-23 11:41 | 200 | 13.9 | 13.0 | 37 | 9.4 | 0.0% | 0.0% | 16.5 |
-| Search-Based | — | 2026-10-23 11:41 | 200 | 38.0 | 36.0 | 85 | 14.2 | 0.0% | 0.0% | 18.3 |
+| DQN v3 | 18b5932f | 2026-10-23 17:27 | 200 | 140.8 | 146.5 | 162 | 18.2 | 0.0% | 79.5% | 33.0 |
+| Hamiltonian | — | 2026-10-23 17:27 | 200 | 122.5 | 123.0 | 132 | 3.9 | 0.0% | 100.0% | 40.8 |
+| Q Learning v2 | 331d4d4a | 2026-10-23 17:27 | 200 | 44.1 | 44.0 | 87 | 14.8 | 0.0% | 0.0% | 24.3 |
+| Q Learning v3 | 27fde16d | 2026-10-23 17:27 | 200 | 127.7 | 134.5 | 162 | 21.1 | 0.0% | 51.5% | 33.4 |
+| Rule Based | — | 2026-10-23 17:27 | 200 | 13.9 | 13.0 | 37 | 9.4 | 0.0% | 0.0% | 16.5 |
+| Search-Based | — | 2026-10-23 17:27 | 200 | 38.0 | 36.0 | 85 | 14.2 | 0.0% | 0.0% | 18.3 |
 
 ![Scores per game: 24 × 25 board, 5000-move limit, seeds 200000–200199 (200 games)](showcase_charts/scores_1.svg)
 
@@ -49,9 +49,9 @@ Hamiltonian follows one route over the whole board, so it never collides, but fi
 
 | Bot | Bot file | Feature Set | Games trained | Trained by | Training seeds | Code |
 | --- | --- | --- | --- | --- | --- | --- |
-| DQN v3 | 18b5932f | v3 | 2000 | Terminal command | 9000 | aad7d5d |
-| Hamiltonian | — | — | — | — | — | 700bc2b |
-| Q Learning v2 | 331d4d4a | v2 | 2000 | unknown | 12000 | e2a6d8f |
-| Q Learning v3 | 5a63bb03 | v3 | 2000 | unknown | 15000 | aad7d5d |
-| Rule Based | — | — | — | — | — | 700bc2b |
-| Search-Based | — | — | — | — | — | 700bc2b |
+| DQN v3 | 18b5932f | v3 | 2000 | Terminal command | 9000 | 1b597fe |
+| Hamiltonian | — | — | — | — | — | 1b597fe |
+| Q Learning v2 | 331d4d4a | v2 | 2000 | unknown | 12000 | 1b597fe |
+| Q Learning v3 | 27fde16d | v3 | 2000 | unknown | 15000 | 1b597fe |
+| Rule Based | — | — | — | — | — | 1b597fe |
+| Search-Based | — | — | — | — | — | 1b597fe |

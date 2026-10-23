@@ -24,22 +24,31 @@ BASELINE_BOT_MODES = tuple(mode for mode in BOT_MODES if mode.family is None)
 SHOWCASE_BOT_MODES = tuple(mode for mode in BOT_MODES if mode.showcase is not None)
 
 
-def file_sha256(path):
-    """The hash of a shipped file, or None when it is missing."""
+def file_hashes(path):
+    """Every hash a run of this shipped file may report; empty when it is missing.
+
+    Git on Windows may check out a JSON Q-table with CRLF line endings, which
+    changes its bytes but not its table, so both line endings count. A DQN
+    model is binary and is only ever its own hash.
+    """
     try:
-        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        content = Path(path).read_bytes()
     except OSError:
-        return None
+        return set()
+    versions = {content}
+    if Path(path).suffix == ".json":
+        unix = content.replace(b"\r\n", b"\n")
+        versions |= {unix, unix.replace(b"\n", b"\r\n")}
+    return {hashlib.sha256(version).hexdigest() for version in versions}
 
 
 def select_showcase_runs(runs):
     """Return the qualifying runs and labels of those with no study run yet."""
     showcase_hashes = {
-        mode.key: file_sha256(mode.showcase.path) for mode in SHOWCASE_BOT_MODES
+        mode.key: file_hashes(mode.showcase.path) for mode in SHOWCASE_BOT_MODES
     }
     modes_by_hash = {
-        showcase_hashes[mode.key]: mode for mode in SHOWCASE_BOT_MODES
-        if showcase_hashes[mode.key] is not None
+        sha: mode for mode in SHOWCASE_BOT_MODES for sha in showcase_hashes[mode.key]
     }
     baseline_keys = {mode.key for mode in BASELINE_BOT_MODES}
     selected = []
@@ -55,8 +64,7 @@ def select_showcase_runs(runs):
     found_baselines = {run.bot_mode for run in selected}
     not_evaluated = [
         f"{mode.label} Showcase Bot ({mode.showcase.label})"
-        for mode in SHOWCASE_BOT_MODES
-        if showcase_hashes[mode.key] is None or showcase_hashes[mode.key] not in found_hashes
+        for mode in SHOWCASE_BOT_MODES if not showcase_hashes[mode.key] & found_hashes
     ]
     not_evaluated += [
         f"{mode.label} Baseline"
