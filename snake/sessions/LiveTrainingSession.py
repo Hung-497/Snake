@@ -110,7 +110,7 @@ class LiveTrainingSession:
         except ValueError as error:
             raise LiveTrainingCheckpointError(
                 f"Saved Live Training could not be read.\n"
-                f"Delete {checkpoint_path} to start over."
+                f"Start new training to keep {checkpoint_path} as a backup."
             ) from error
         metadata = data["metadata"]
         feature_set = artifact_feature_set(metadata, checkpoint_path)
@@ -118,7 +118,7 @@ class LiveTrainingSession:
             raise LiveTrainingCheckpointError(
                 f"Saved Live Training uses Feature Set {feature_set}, "
                 f"but this DQN uses Feature Set {expected_feature_set}.\n"
-                f"Delete {checkpoint_path} to start over."
+                f"Start new training to keep {checkpoint_path} as a backup."
             )
         # The save may come from another board size. Feature Set inputs do not
         # depend on the board, so the same DQN keeps learning here (ADR 0012),
