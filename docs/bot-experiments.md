@@ -162,7 +162,8 @@ A run page shows, for each bot in that run:
 It compares that run's own games, even when the bot has other bot files or later
 runs. A run with several bots lists them at the top to jump to. A bot that no
 other bot played the same games with says so, and lists the games other bots
-were evaluated on. Pages of deleted reports are removed.
+were evaluated on. Pages of deleted reports are removed, except when no usable
+report is left: then nothing is rewritten and the old pages stay.
 
 The HTML pages have a light and a dark theme (they follow the system until you
 choose one) and use system fonts, so they work offline.

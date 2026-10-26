@@ -38,8 +38,9 @@ if (-not (Test-Path learning_data\q_table_space_state_v2.json)) { Copy-Item star
 
 Both copy the starter only when the local table does not already exist, so an
 existing local table is never overwritten. Later training updates the local copy; the
-Starter Q-table stays unchanged. The app can also start Q Learning without a
-saved table, beginning new local progress instead of loading the starter.
+Starter Q-table stays unchanged. The app trains its own table instead
+(`learning_data/q_table_app_v2.json` or `q_table_app_v3.json`), copied once from
+this local table the first time you open that version (ADR 0016).
 
 ## Q Learning
 
@@ -52,8 +53,9 @@ uv run python -m snake.sessions.TrainQLearning --games 100 --width 24 --height 2
 This resumes the existing saved Q-table and saves learning progress back to it
 after each game. A missing or malformed table stops the command with an error;
 training does not start a new table unless you ask for one with `--new-table`
-(see [Q Learning v3](#q-learning-v3)). The command prints score and learning
-progress in the terminal. It does not add game records or replays.
+(see [Q Learning v3](#q-learning-v3)). When it finishes, the command prints one
+summary line: average and best score, wins, move-limit games, epsilon, and the
+total games trained. It does not add game records or replays.
 
 `--games` is required. The default board is 24 × 25, the default Tile Size is
 25, the default seed is 0, and the default move limit is 5000 per game.
@@ -98,8 +100,8 @@ starts an empty v2 table when `--bot` is left out; give it its own
 ## DQN
 
 DQN is an optional, CPU-only Deep Q Learning experiment. Its action values come
-from a neural network instead of a Q-table. It runs only from the terminal; the
-app does not offer it.
+from a neural network instead of a Q-table. The terminal commands below train
+and evaluate it; the app trains it in Live Training (Play → DQN → a version).
 
 ### Install PyTorch
 

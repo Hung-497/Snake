@@ -34,7 +34,7 @@ PAUSE_KEYS = (arcade.key.P, arcade.key.SPACE)
 
 # The prompt Human Play shows for each session status.
 HUMAN_PROMPTS = {
-    "waiting_to_start": "Press an arrow key to start",
+    "waiting_to_start": "Press an arrow key or WASD to start",
     "paused": "Paused \u00b7 P or Space to resume",
     "showing_result": "Space / Enter to play again \u00b7 Esc for menu",
 }

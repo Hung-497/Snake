@@ -74,9 +74,11 @@ shows a message and the choices still apply until the app closes. The file
 stays in the Snake folder and is not tracked by Git.
 
 The speed names mean
-different delays for bots and for you: bots move every 10, 5, or 1 ms on Slow,
-Normal, or Fast, and Human Play moves every 150, 100, or 70 ms so you can
-react.
+different delays for bots and for you: Human Play moves every 150, 100, or
+70 ms on Slow, Normal, or Fast, so you can react. Bots move every 10, 5, or
+1 ms, up to 50 moves per frame. Search-Based is the exception: it plans every
+move, so it makes at most one move per frame (about 60 a second) and looks the
+same on every speed.
 
 ### Human Play controls
 
@@ -161,7 +163,8 @@ Evaluate always uses the 24 × 25 board, seeds starting at 200000, and a
 5000-move limit, regardless of Settings. **W** switches between fast play and
 watching. A completed run saves a JSON report; leaving early saves no report.
 
-Open **Records → Evaluate** to revisit completed app runs. Rows show Your bot
+Open **Records → Evaluate** to revisit completed app runs (its dates are UTC;
+the Games tab shows local time). Rows show Your bot
 or Showcase Bot, version, game count, average, best, and UTC date, with board,
 seeds, and move limit underneath. Newer/Older pages through the history.
 Watched training and Human Play games stay in Compare, Trends, and Games;
