@@ -340,6 +340,9 @@ created when you play, train, run Bot Experiments, or write a Bot Report.
 
 ## Documentation
 
+- [Requirements](docs/requirements/requirements-engineering-v1/index.md): what
+  the product must do, with acceptance criteria, starting from the
+  [product definition](docs/requirements/product-definition.md)
 - [Training the Learning Bots](docs/training.md)
 - [Bot Experiments](docs/bot-experiments.md)
 - [Results](docs/results.md) and the generated
